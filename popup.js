@@ -1,5 +1,8 @@
 // Popup script for Social Shield All-in-One + Monk Mode
 document.addEventListener('DOMContentLoaded', () => {
+  const filterMotivationalToggle = document.getElementById('filterMotivationalToggle');
+  const filterMemeToggle = document.getElementById('filterMemeToggle');
+  const filterDeepDiveToggle = document.getElementById('filterDeepDiveToggle');
   const monkModeToggle = document.getElementById('monkModeToggle');
   const blockReelsToggle = document.getElementById('blockReelsToggle');
   const autoBlurRageToggle = document.getElementById('autoBlurRageToggle');
@@ -12,12 +15,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const motivationalCounter = document.getElementById('motivationalCounter');
   const memeCounter = document.getElementById('memeCounter');
   const deepDiveCounter = document.getElementById('deepDiveCounter');
+  const rageCounter = document.getElementById('rageCounter');
+  const scamCounter = document.getElementById('scamCounter');
   const monkCounter = document.getElementById('monkCounter');
   const resetStats = document.getElementById('resetStats');
 
   // Load saved settings
   chrome.storage.local.get(
     [
+      'filterMotivationalEnabled',
+      'filterMemeEnabled',
+      'filterDeepDiveEnabled',
       'monkModeEnabled',
       'blockReelsEnabled',
       'autoBlurRageEnabled',
@@ -28,9 +36,20 @@ document.addEventListener('DOMContentLoaded', () => {
       'motivationalCount',
       'memeCount',
       'deepDiveCount',
+      'blockedRageCount',
+      'blockedScamCount',
       'monkModeBlockedCount',
     ],
     (res) => {
+      if (typeof res.filterMotivationalEnabled === 'boolean' && filterMotivationalToggle) {
+        filterMotivationalToggle.checked = res.filterMotivationalEnabled;
+      }
+      if (typeof res.filterMemeEnabled === 'boolean' && filterMemeToggle) {
+        filterMemeToggle.checked = res.filterMemeEnabled;
+      }
+      if (typeof res.filterDeepDiveEnabled === 'boolean' && filterDeepDiveToggle) {
+        filterDeepDiveToggle.checked = res.filterDeepDiveEnabled;
+      }
       if (typeof res.monkModeEnabled === 'boolean') {
         monkModeToggle.checked = res.monkModeEnabled;
       }
@@ -63,6 +82,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof res.deepDiveCount === 'number' && deepDiveCounter) {
         deepDiveCounter.textContent = res.deepDiveCount;
       }
+      if (typeof res.blockedRageCount === 'number' && rageCounter) {
+        rageCounter.textContent = res.blockedRageCount;
+      }
+      if (typeof res.blockedScamCount === 'number' && scamCounter) {
+        scamCounter.textContent = res.blockedScamCount;
+      }
       if (typeof res.monkModeBlockedCount === 'number' && monkCounter) {
         monkCounter.textContent = res.monkModeBlockedCount;
       }
@@ -71,6 +96,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function saveAndNotify() {
     const config = {
+      filterMotivationalEnabled: filterMotivationalToggle ? filterMotivationalToggle.checked : true,
+      filterMemeEnabled: filterMemeToggle ? filterMemeToggle.checked : true,
+      filterDeepDiveEnabled: filterDeepDiveToggle ? filterDeepDiveToggle.checked : true,
       monkModeEnabled: monkModeToggle.checked,
       blockReelsEnabled: blockReelsToggle.checked,
       autoBlurRageEnabled: autoBlurRageToggle.checked,
@@ -114,6 +142,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  if (filterMotivationalToggle) filterMotivationalToggle.addEventListener('change', saveAndNotify);
+  if (filterMemeToggle) filterMemeToggle.addEventListener('change', saveAndNotify);
+  if (filterDeepDiveToggle) filterDeepDiveToggle.addEventListener('change', saveAndNotify);
   monkModeToggle.addEventListener('change', saveAndNotify);
   blockReelsToggle.addEventListener('change', saveAndNotify);
   autoBlurRageToggle.addEventListener('change', saveAndNotify);
@@ -140,6 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (motivationalCounter) motivationalCounter.textContent = '0';
     if (memeCounter) memeCounter.textContent = '0';
     if (deepDiveCounter) deepDiveCounter.textContent = '0';
+    if (rageCounter) rageCounter.textContent = '0';
+    if (scamCounter) scamCounter.textContent = '0';
     if (monkCounter) monkCounter.textContent = '0';
 
     chrome.tabs.query({}, (tabs) => {
@@ -161,6 +194,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (changes.deepDiveCount && deepDiveCounter) {
         deepDiveCounter.textContent = changes.deepDiveCount.newValue || 0;
+      }
+      if (changes.blockedRageCount && rageCounter) {
+        rageCounter.textContent = changes.blockedRageCount.newValue || 0;
+      }
+      if (changes.blockedScamCount && scamCounter) {
+        scamCounter.textContent = changes.blockedScamCount.newValue || 0;
       }
       if (changes.monkModeBlockedCount && monkCounter) {
         monkCounter.textContent = changes.monkModeBlockedCount.newValue || 0;

@@ -138,5 +138,130 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
     expect(countText("Tweet 2")).toBe(true);
     expect(counter).toBe(2);
   });
+
+  test("Dynamic taxonomy generation excludes disabled categories", () => {
+    const TAXONOMY_CATALOG = {
+      'self-improvement / motivational': { configKey: 'filterMotivationalEnabled', instruction: 'motivational...' },
+      'meme / humor / satire': { configKey: 'filterMemeEnabled', instruction: 'meme...' },
+      'deep dive / technical breakdown / industry insider': { configKey: 'filterDeepDiveEnabled', instruction: 'deep dive...' },
+      'rage bait / toxic / hostile / dismissive negativity': { configKey: 'autoBlurRageEnabled', instruction: 'rage...' },
+      'scam / fraudulent scheme': { configKey: 'blockScamsEnabled', instruction: 'scam...' },
+      'bot seeding / affiliate spam / fake review': { configKey: 'collapseSeedingEnabled', instruction: 'seeding...' },
+    };
+    const CATCH_ALL_LABEL = 'other / casual discussion';
+
+    function getActiveTaxonomy(cfg) {
+      const activeLabels = [];
+      const instructionsList = [];
+
+      Object.entries(TAXONOMY_CATALOG).forEach(([label, def]) => {
+        if (cfg[def.configKey] !== false) {
+          activeLabels.push(label);
+          instructionsList.push(def.instruction);
+        }
+      });
+
+      if (activeLabels.length === 0) {
+        return { labels: [], instructions: '' };
+      }
+
+      activeLabels.push(CATCH_ALL_LABEL);
+      instructionsList.push('other...');
+
+      return {
+        labels: activeLabels,
+        instructions: instructionsList.join(' '),
+      };
+    }
+
+    // All on
+    const allOn = getActiveTaxonomy({
+      filterMotivationalEnabled: true,
+      filterMemeEnabled: true,
+      filterDeepDiveEnabled: true,
+      autoBlurRageEnabled: true,
+      blockScamsEnabled: true,
+      collapseSeedingEnabled: true,
+    });
+    expect(allOn.labels.length).toBe(7);
+    expect(allOn.labels).toContain('rage bait / toxic / hostile / dismissive negativity');
+
+    // Rage bait turned OFF
+    const rageOff = getActiveTaxonomy({
+      filterMotivationalEnabled: true,
+      filterMemeEnabled: true,
+      filterDeepDiveEnabled: true,
+      autoBlurRageEnabled: false,
+      blockScamsEnabled: true,
+      collapseSeedingEnabled: true,
+    });
+    expect(rageOff.labels.length).toBe(6);
+    expect(rageOff.labels).not.toContain('rage bait / toxic / hostile / dismissive negativity');
+
+    // Meme turned OFF
+    const memeOff = getActiveTaxonomy({
+      filterMotivationalEnabled: true,
+      filterMemeEnabled: false,
+      filterDeepDiveEnabled: true,
+      autoBlurRageEnabled: true,
+      blockScamsEnabled: true,
+      collapseSeedingEnabled: true,
+    });
+    expect(memeOff.labels.length).toBe(6);
+    expect(memeOff.labels).not.toContain('meme / humor / satire');
+
+    // All OFF
+    const allOff = getActiveTaxonomy({
+      filterMotivationalEnabled: false,
+      filterMemeEnabled: false,
+      filterDeepDiveEnabled: false,
+      autoBlurRageEnabled: false,
+      blockScamsEnabled: false,
+      collapseSeedingEnabled: false,
+    });
+    expect(allOff.labels.length).toBe(0);
+  });
+
+  test("Live API proof: disabling a category makes Jev AI blind to it", async () => {
+    const toxicPost = "Bọn này toàn lũ ngu dốt thất bại ăn bám xã hội biến đi cho rảnh mắt";
+
+    // 1. When rage-bait label is included in API call
+    const resWithRage = await fetch("https://classifier.dev", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        labels: [
+          'self-improvement / motivational',
+          'meme / humor / satire',
+          'deep dive / technical breakdown / industry insider',
+          'rage bait / toxic / hostile / dismissive negativity',
+          'other / casual discussion',
+        ],
+        inputs: [toxicPost],
+        instructions: "Classify into motivational, meme, deep dive, rage bait/toxic drama/hostile negativity, or other casual discussion."
+      })
+    });
+    const dataWithRage = await resWithRage.json();
+    expect(dataWithRage.results[0].label).toBe("rage bait / toxic / hostile / dismissive negativity");
+
+    // 2. When rage-bait is disabled (excluded from API call payload)
+    const resWithoutRage = await fetch("https://classifier.dev", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        labels: [
+          'self-improvement / motivational',
+          'meme / humor / satire',
+          'deep dive / technical breakdown / industry insider',
+          'other / casual discussion',
+        ],
+        inputs: [toxicPost],
+        instructions: "Classify into motivational, meme, deep dive, or other casual discussion."
+      })
+    });
+    const dataWithoutRage = await resWithoutRage.json();
+    // Because rage bait is omitted, Jev cannot detect it and assigns other / casual discussion!
+    expect(dataWithoutRage.results[0].label).toBe("other / casual discussion");
+  });
 });
 

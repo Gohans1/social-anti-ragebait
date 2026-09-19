@@ -159,8 +159,8 @@
     }
     .stats {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 4px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
       text-align: center;
       margin-bottom: 12px;
     }
@@ -217,6 +217,44 @@
   </div>
 
   <div class="section">
+    <!-- Cụm 1: Bộ lọc Tinh hoa (AI Gắn Badge) -->
+    <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">✨ Bộ Lọc Tinh Hoa (Gắn Badge)</div>
+    <div class="row">
+      <div>
+        <div class="label" style="color: #fbbf24;">🌱 Động lực / Mindset</div>
+        <div class="sublabel">Phát triển bản thân, tư duy, năng lượng tích cực</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="filterMotivationalToggle" class="motivational-toggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+      <div>
+        <div class="label" style="color: #f472b6;">🎭 Meme / Giải trí</div>
+        <div class="sublabel">Ảnh chế, câu nói hài hước, troll vui</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="filterMemeToggle" class="meme-toggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+      <div>
+        <div class="label" style="color: #818cf8;">🔬 Mổ xẻ / Deep Dive</div>
+        <div class="sublabel">Phân tích chuyên sâu, kinh nghiệm người trong ngành</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="filterDeepDiveToggle" class="deepdive-toggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- Cụm 2: Khiên Phòng Thủ (AI Làm Mờ & Thu Gọn) -->
+    <div style="font-size: 11px; font-weight: 700; color: #f87171; text-transform: uppercase; margin: 14px 0 8px 0; padding-top: 12px; border-top: 1.5px solid rgba(255, 255, 255, 0.1); letter-spacing: 0.05em;">🛡️ Khiên Phòng Thủ & Cai Nghiện</div>
+
     <!-- Monk Mode -->
     <div class="row">
       <div>
@@ -244,7 +282,7 @@
     <!-- Rage Bait -->
     <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
       <div>
-        <div class="label">Làm mờ Rage Bait & War</div>
+        <div class="label">🚨 Làm mờ Rage Bait & War</div>
         <div class="sublabel">Chặn bài phốt, kích động thù hận, drama</div>
       </div>
       <label class="switch">
@@ -256,7 +294,7 @@
     <!-- Scams -->
     <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
       <div>
-        <div class="label">Chặn Bẫy Lừa Đảo (Scams)</div>
+        <div class="label">🛑 Chặn Bẫy Lừa Đảo (Scams)</div>
         <div class="sublabel">Làm mờ bẫy CTV, lùa gà crypto, đa cấp</div>
       </div>
       <label class="switch">
@@ -268,7 +306,7 @@
     <!-- Seeding -->
     <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
       <div>
-        <div class="label">Thu gọn Comment Seeding</div>
+        <div class="label">🧹 Thu gọn Comment Seeding</div>
         <div class="sublabel">Tự động ẩn bot clone, "check ib", review ảo</div>
       </div>
       <label class="switch">
@@ -315,6 +353,14 @@
     <div class="stat-card">
       <div class="stat-num" id="deepDiveCounter" style="color: #818cf8;">0</div>
       <div class="stat-lbl">🔬 Deep Dive</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="rageCounter" style="color: #f87171;">0</div>
+      <div class="stat-lbl">🚨 Rage Bait</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="scamCounter" style="color: #ef4444;">0</div>
+      <div class="stat-lbl">🛑 Lừa đảo</div>
     </div>
     <div class="stat-card">
       <div class="stat-num" id="monkCounter" style="color: #38bdf8;">0</div>

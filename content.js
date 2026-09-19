@@ -7,6 +7,9 @@
     apiEndpoint: 'https://classifier.dev/',
     batchDebounceMs: 120,
     confidenceThreshold: 0.30,
+    filterMotivationalEnabled: true,
+    filterMemeEnabled: true,
+    filterDeepDiveEnabled: true,
     monkModeEnabled: true,       // Hardcore Monk Mode: Block all photos/videos with women & goon-bait
     blockReelsEnabled: true,     // Block Reels pop-ups & short videos on Facebook
     autoBlurRageEnabled: true,
@@ -77,6 +80,9 @@
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     chrome.storage.local.get(
       [
+        'filterMotivationalEnabled',
+        'filterMemeEnabled',
+        'filterDeepDiveEnabled',
         'monkModeEnabled',
         'blockReelsEnabled',
         'autoBlurRageEnabled',
@@ -93,6 +99,9 @@
         'deepDiveCount',
       ],
       (res) => {
+        if (typeof res.filterMotivationalEnabled === 'boolean') config.filterMotivationalEnabled = res.filterMotivationalEnabled;
+        if (typeof res.filterMemeEnabled === 'boolean') config.filterMemeEnabled = res.filterMemeEnabled;
+        if (typeof res.filterDeepDiveEnabled === 'boolean') config.filterDeepDiveEnabled = res.filterDeepDiveEnabled;
         if (typeof res.monkModeEnabled === 'boolean') config.monkModeEnabled = res.monkModeEnabled;
         if (typeof res.blockReelsEnabled === 'boolean') config.blockReelsEnabled = res.blockReelsEnabled;
         if (typeof res.autoBlurRageEnabled === 'boolean') config.autoBlurRageEnabled = res.autoBlurRageEnabled;
@@ -118,6 +127,9 @@
 
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.type === 'UPDATE_CONFIG') {
+        if (typeof request.config.filterMotivationalEnabled === 'boolean') config.filterMotivationalEnabled = request.config.filterMotivationalEnabled;
+        if (typeof request.config.filterMemeEnabled === 'boolean') config.filterMemeEnabled = request.config.filterMemeEnabled;
+        if (typeof request.config.filterDeepDiveEnabled === 'boolean') config.filterDeepDiveEnabled = request.config.filterDeepDiveEnabled;
         config.monkModeEnabled = request.config.monkModeEnabled;
         if (typeof request.config.blockReelsEnabled === 'boolean') config.blockReelsEnabled = request.config.blockReelsEnabled;
         config.autoBlurRageEnabled = request.config.autoBlurRageEnabled;
@@ -125,6 +137,8 @@
         config.collapseSeedingEnabled = request.config.collapseSeedingEnabled;
         if (typeof request.config.hideFloatingPill === 'boolean') config.hideFloatingPill = request.config.hideFloatingPill;
         config.confidenceThreshold = request.config.confidenceThreshold;
+        textCache.clear();
+        saveCacheToStorage();
         updatePill();
         applyStateToDOM();
         sendResponse({ status: 'ok' });
@@ -146,6 +160,25 @@
     if (chrome.storage && chrome.storage.onChanged) {
       chrome.storage.onChanged.addListener((changes, area) => {
         if (area !== 'local') return;
+        let configChanged = false;
+        [
+          'filterMotivationalEnabled',
+          'filterMemeEnabled',
+          'filterDeepDiveEnabled',
+          'monkModeEnabled',
+          'blockReelsEnabled',
+          'autoBlurRageEnabled',
+          'blockScamsEnabled',
+          'collapseSeedingEnabled',
+          'confidenceThreshold',
+          'hideFloatingPill',
+        ].forEach((key) => {
+          if (changes[key]) {
+            config[key] = changes[key].newValue;
+            configChanged = true;
+          }
+        });
+
         if (changes.motivationalCount) motivationalCount = changes.motivationalCount.newValue || 0;
         if (changes.memeCount) memeCount = changes.memeCount.newValue || 0;
         if (changes.deepDiveCount) deepDiveCount = changes.deepDiveCount.newValue || 0;
@@ -153,49 +186,73 @@
         if (changes.blockedRageCount) blockedRageCount = changes.blockedRageCount.newValue || 0;
         if (changes.blockedScamCount) blockedScamCount = changes.blockedScamCount.newValue || 0;
         if (changes.cleanedSeedingCount) cleanedSeedingCount = changes.cleanedSeedingCount.newValue || 0;
-        if (changes.confidenceThreshold) config.confidenceThreshold = changes.confidenceThreshold.newValue;
-        if (changes.hideFloatingPill) config.hideFloatingPill = changes.hideFloatingPill.newValue;
+
+        if (configChanged) {
+          textCache.clear();
+          saveCacheToStorage();
+          applyStateToDOM();
+        }
+
         updatePill();
       });
     }
   }
 
-  const LABELS = [
-    'self-improvement / motivational',
-    'meme / humor / satire',
-    'deep dive / technical breakdown / industry insider',
-    'other / casual discussion',
-  ];
-
-  const INSTRUCTIONS =
-    'Classify social media content in Vietnamese or English into exactly one category: ' +
-    '1. "self-improvement / motivational": personal growth, discipline, fitness, productivity lessons, inspiring mindsets, self-help, stoicism. ' +
-    '2. "meme / humor / satire": lighthearted jokes, funny memes, sarcastic humor, parody, troll posts. ' +
-    '3. "deep dive / technical breakdown / industry insider": in-depth technical threads, architectural teardowns, insider industry analysis, comprehensive teardowns of complex problems. ' +
-    '4. "other / casual discussion": everyday personal chatter, news, generic talk, or any content that does not fit the other three categories.';
-
-  const BADGE_MAP = {
+  const TAXONOMY_CATALOG = {
     'self-improvement / motivational': {
-      text: '🌱 Động lực / Mindset',
-      desc: 'Personal growth, productivity, and constructive mindset (Phát triển bản thân, động lực)',
-      bg: 'rgba(245, 158, 11, 0.18)',
-      border: '#f59e0b',
-      color: '#fbbf24',
+      configKey: 'filterMotivationalEnabled',
+      instruction: '1. "self-improvement / motivational": personal growth, discipline, fitness, productivity lessons, inspiring mindsets, self-help, stoicism.',
+      badge: {
+        text: '🌱 Động lực / Mindset',
+        desc: 'Personal growth, productivity, and constructive mindset (Phát triển bản thân, động lực)',
+        bg: 'rgba(245, 158, 11, 0.18)',
+        border: '#f59e0b',
+        color: '#fbbf24',
+      },
     },
     'meme / humor / satire': {
-      text: '🎭 Meme / Giải trí',
-      desc: 'Humor, memes, satire, and playful wit (Hài hước, ảnh chế, troll vui)',
-      bg: 'rgba(236, 72, 153, 0.18)',
-      border: '#ec4899',
-      color: '#f472b6',
+      configKey: 'filterMemeEnabled',
+      instruction: '2. "meme / humor / satire": lighthearted jokes, funny memes, sarcastic humor, parody, troll posts.',
+      badge: {
+        text: '🎭 Meme / Giải trí',
+        desc: 'Humor, memes, satire, and playful wit (Hài hước, ảnh chế, troll vui)',
+        bg: 'rgba(236, 72, 153, 0.18)',
+        border: '#ec4899',
+        color: '#f472b6',
+      },
     },
     'deep dive / technical breakdown / industry insider': {
-      text: '🔬 Mổ xẻ / Deep Dive',
-      desc: 'Detailed domain teardown, insider analysis, or technical deep dive (Phân tích chuyên sâu)',
-      bg: 'rgba(99, 102, 241, 0.2)',
-      border: '#6366f1',
-      color: '#818cf8',
+      configKey: 'filterDeepDiveEnabled',
+      instruction: '3. "deep dive / technical breakdown / industry insider": in-depth technical threads, architectural teardowns, insider industry analysis, comprehensive teardowns of complex problems.',
+      badge: {
+        text: '🔬 Mổ xẻ / Deep Dive',
+        desc: 'Detailed domain teardown, insider analysis, or technical deep dive (Phân tích chuyên sâu)',
+        bg: 'rgba(99, 102, 241, 0.2)',
+        border: '#6366f1',
+        color: '#818cf8',
+      },
     },
+    'rage bait / toxic / hostile / dismissive negativity': {
+      configKey: 'autoBlurRageEnabled',
+      instruction: '4. "rage bait / toxic / hostile / dismissive negativity": provocative content designed to incite outrage, anger, toxic drama, hostile or dismissive negativity, cynicism, or insults.',
+    },
+    'scam / fraudulent scheme': {
+      configKey: 'blockScamsEnabled',
+      instruction: '5. "scam / fraudulent scheme": online fraud, deceptive financial schemes, crypto Ponzi, fake high-yield investment, or fake remote job scams.',
+    },
+    'bot seeding / affiliate spam / fake review': {
+      configKey: 'collapseSeedingEnabled',
+      instruction: '6. "bot seeding / affiliate spam / fake review": commercial astroturfing, bot farming, fake praise, affiliate link spam, or deceptive promotional clone comments.',
+    },
+  };
+
+  const CATCH_ALL_LABEL = 'other / casual discussion';
+  const CATCH_ALL_INSTRUCTION = '7. "other / casual discussion": everyday personal chatter, news, generic talk, or any content that does not fit the other categories.';
+
+  const BADGE_MAP = {
+    'self-improvement / motivational': TAXONOMY_CATALOG['self-improvement / motivational'].badge,
+    'meme / humor / satire': TAXONOMY_CATALOG['meme / humor / satire'].badge,
+    'deep dive / technical breakdown / industry insider': TAXONOMY_CATALOG['deep dive / technical breakdown / industry insider'].badge,
     'other / casual discussion': {
       text: '💬 Thảo luận / Khác',
       desc: 'Everyday casual talk or general post (Thảo luận bình thường)',
@@ -204,6 +261,32 @@
       color: '#94a3b8',
     },
   };
+
+  function getActiveTaxonomy(cfg) {
+    const activeLabels = [];
+    const instructionsList = [];
+
+    Object.entries(TAXONOMY_CATALOG).forEach(([label, def]) => {
+      if (cfg[def.configKey] !== false) {
+        activeLabels.push(label);
+        instructionsList.push(def.instruction);
+      }
+    });
+
+    if (activeLabels.length === 0) {
+      return { labels: [], instructions: '' };
+    }
+
+    activeLabels.push(CATCH_ALL_LABEL);
+    instructionsList.push(CATCH_ALL_INSTRUCTION);
+
+    return {
+      labels: activeLabels,
+      instructions:
+        'Classify social media content in Vietnamese or English into exactly one category: ' +
+        instructionsList.join(' '),
+    };
+  }
 
   let queue = [];
   let debounceTimer = null;
@@ -241,7 +324,23 @@
     }
     initPill();
     const pName = getPlatform().toUpperCase();
-    pill.innerHTML = `🛡️ ${pName}: <span style="color:#4ade80">ON</span> | 👁️ Quét: <span style="color:#a5f3fc">${scannedCount}</span> | 🌱 Động lực: <span style="color:#fbbf24">${motivationalCount}</span> | 🎭 Meme: <span style="color:#f472b6">${memeCount}</span> | 🔬 Deep Dive: <span style="color:#818cf8">${deepDiveCount}</span> <span class="x-jev-pill-close" title="Ẩn thanh trạng thái nổi này (bật lại trong popup)">✕</span>`;
+    const parts = [
+      `🛡️ ${pName}: <span style="color:#4ade80">ON</span>`,
+      `👁️ Quét: <span style="color:#a5f3fc">${scannedCount}</span>`,
+    ];
+    if (config.autoBlurRageEnabled) {
+      parts.push(`🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span>`);
+    }
+    if (config.filterMotivationalEnabled !== false) {
+      parts.push(`🌱 Động lực: <span style="color:#fbbf24">${motivationalCount}</span>`);
+    }
+    if (config.filterMemeEnabled !== false) {
+      parts.push(`🎭 Meme: <span style="color:#f472b6">${memeCount}</span>`);
+    }
+    if (config.filterDeepDiveEnabled !== false) {
+      parts.push(`🔬 Deep Dive: <span style="color:#818cf8">${deepDiveCount}</span>`);
+    }
+    pill.innerHTML = parts.join(' | ') + ` <span class="x-jev-pill-close" title="Ẩn thanh trạng thái nổi này (bật lại trong popup)">✕</span>`;
     const closeBtn = pill.querySelector('.x-jev-pill-close');
     if (closeBtn) {
       closeBtn.onclick = (e) => {
@@ -447,7 +546,12 @@
   // Call Jev API: Route via background service worker to bypass page CSP
   // Call Jev API: Route via background service worker to bypass page CSP
   async function callJevBatch(inputs) {
-    console.log(`[Social Shield] 📡 Gửi ${inputs.length} mẫu text lên Jev AI...`);
+    const taxonomy = getActiveTaxonomy(config);
+    if (!taxonomy.labels || taxonomy.labels.length <= 1) {
+      return inputs.map(() => ({ label: CATCH_ALL_LABEL, confidence: 1 }));
+    }
+
+    console.log(`[Social Shield] 📡 Gửi ${inputs.length} mẫu text lên Jev AI (active labels: ${taxonomy.labels.length})...`);
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
       return new Promise((resolve) => {
         try {
@@ -455,42 +559,46 @@
             {
               type: 'CLASSIFY_BATCH',
               payload: {
-                labels: LABELS,
+                labels: taxonomy.labels,
                 inputs: inputs,
-                instructions: INSTRUCTIONS,
+                instructions: taxonomy.instructions,
               },
             },
             (response) => {
               if (chrome.runtime.lastError) {
                 console.warn('[Social Shield] Worker error, direct fetch fallback:', chrome.runtime.lastError.message);
-                directFetch(inputs).then(resolve);
+                directFetch(inputs, taxonomy).then(resolve);
               } else if (response && response.success) {
                 console.log(`[Social Shield] ✅ Nhận kết quả Jev cho ${response.results?.length} items.`);
                 resolve(response.results || []);
               } else {
-                directFetch(inputs).then(resolve);
+                directFetch(inputs, taxonomy).then(resolve);
               }
             }
           );
         } catch (e) {
-          directFetch(inputs).then(resolve);
+          directFetch(inputs, taxonomy).then(resolve);
         }
       });
     }
-    return directFetch(inputs);
+    return directFetch(inputs, taxonomy);
   }
 
-  async function directFetch(inputs) {
+  async function directFetch(inputs, activeTax) {
     try {
+      const tax = activeTax || getActiveTaxonomy(config);
+      if (!tax.labels || tax.labels.length <= 1) {
+        return inputs.map(() => ({ label: CATCH_ALL_LABEL, confidence: 1 }));
+      }
       const res = await fetch(config.apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          labels: LABELS,
+          labels: tax.labels,
           inputs: inputs,
-          instructions: INSTRUCTIONS,
+          instructions: tax.instructions,
         }),
       });
       const data = await res.json();
@@ -733,6 +841,18 @@
 
   async function flushQueue() {
     if (queue.length === 0) return;
+
+    const taxonomy = getActiveTaxonomy(config);
+    if (!taxonomy.labels || taxonomy.labels.length <= 1) {
+      const currentBatch = queue.splice(0, 15);
+      currentBatch.forEach((item) => {
+        item.postEl.setAttribute('data-jev-handled', 'true');
+      });
+      if (queue.length > 0) {
+        debounceTimer = setTimeout(flushQueue, 80);
+      }
+      return;
+    }
 
     const currentBatch = queue.splice(0, 15);
     const uncachedIndices = [];
