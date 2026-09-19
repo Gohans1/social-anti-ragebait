@@ -333,6 +333,14 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
       border: 1px solid rgba(255,255,255,0.12) !important;
     }
+    .x-jev-floating-pill.x-jev-pill-hidden,
+    .x-jev-floating-pill[data-hidden="true"],
+    .x-jev-pill-hidden {
+      display: none !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
+    }
     .x-jev-pill-close {
       display: inline-flex !important;
       align-items: center !important;
@@ -404,12 +412,35 @@
 
   const pill = document.createElement('div');
   pill.className = 'x-jev-floating-pill';
-  function updatePill() {
+
+  function initPill() {
     if (hideFloatingPill) {
-      pill.style.display = 'none';
+      pill.setAttribute('data-hidden', 'true');
+      pill.classList.add('x-jev-pill-hidden');
+      pill.style.setProperty('display', 'none', 'important');
+      document.querySelectorAll('.x-jev-floating-pill').forEach((el) => {
+        el.setAttribute('data-hidden', 'true');
+        el.classList.add('x-jev-pill-hidden');
+        el.style.setProperty('display', 'none', 'important');
+        el.remove();
+      });
       return;
     }
-    pill.style.display = 'flex';
+
+    pill.removeAttribute('data-hidden');
+    pill.classList.remove('x-jev-pill-hidden');
+    pill.style.removeProperty('display');
+    if (document.body && !document.contains(pill)) {
+      document.body.appendChild(pill);
+    }
+  }
+
+  function updatePill() {
+    if (hideFloatingPill) {
+      initPill();
+      return;
+    }
+    initPill();
     const pName = getPlatform().toUpperCase();
     pill.innerHTML = `🛡️ ${pName}: <span style="color:#4ade80">ON</span> | 🧘 Monk: <span style="color:#38bdf8">${monkModeBlockedCount}</span> | 🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span> | 🛑 Scam: <span style="color:#fb923c">${blockedScamCount}</span> | 🧹 Seed: <span style="color:#c084fc">${cleanedSeedingCount}</span> <span class="x-jev-pill-close" title="Ẩn thanh trạng thái này">✕</span>`;
     const closeBtn = pill.querySelector('.x-jev-pill-close');
@@ -419,10 +450,11 @@
         e.stopPropagation();
         hideFloatingPill = true;
         try { localStorage.setItem('social_shield_hide_pill', 'true'); } catch (err) {}
-        pill.style.display = 'none';
+        initPill();
       };
     }
   }
+
   updatePill();
   pill.addEventListener('click', (e) => {
     if (e.target.closest('.x-jev-pill-close')) return;
@@ -433,16 +465,6 @@
     CONFIG.collapseSeedingEnabled = !allOn;
     updatePill();
   });
-
-  function initPill() {
-    if (hideFloatingPill) {
-      pill.style.display = 'none';
-      return;
-    }
-    if (document.body && !document.querySelector('.x-jev-floating-pill')) {
-      document.body.appendChild(pill);
-    }
-  }
 
   if (document.body) {
     initPill();

@@ -101,7 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
       '*://youtube.com/*',
     ];
 
-    chrome.tabs.query({ url: targetUrlPatterns }, (tabs) => {
+    // Broadcast config to all tabs
+    chrome.tabs.query({}, (tabs) => {
       if (tabs) {
         tabs.forEach((tab) => {
           chrome.tabs.sendMessage(tab.id, {

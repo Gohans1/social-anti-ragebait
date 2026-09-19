@@ -194,13 +194,35 @@
   // Unified Floating Status Pill UI
   const pill = document.createElement('div');
   pill.className = 'x-jev-floating-pill';
+
+  function initPill() {
+    if (config.hideFloatingPill) {
+      pill.setAttribute('data-hidden', 'true');
+      pill.classList.add('x-jev-pill-hidden');
+      pill.style.setProperty('display', 'none', 'important');
+      document.querySelectorAll('.x-jev-floating-pill').forEach((el) => {
+        el.setAttribute('data-hidden', 'true');
+        el.classList.add('x-jev-pill-hidden');
+        el.style.setProperty('display', 'none', 'important');
+        el.remove();
+      });
+      return;
+    }
+
+    pill.removeAttribute('data-hidden');
+    pill.classList.remove('x-jev-pill-hidden');
+    pill.style.setProperty('display', 'flex', 'important');
+    if (document.body && !document.contains(pill)) {
+      document.body.appendChild(pill);
+    }
+  }
+
   function updatePill() {
     if (config.hideFloatingPill) {
-      pill.style.display = 'none';
+      initPill();
       return;
     }
     initPill();
-    pill.style.display = 'flex';
     const pName = getPlatform().toUpperCase();
     pill.innerHTML = `🛡️ ${pName}: <span style="color:#4ade80">ON</span> | 👁️ Quét: <span style="color:#a5f3fc">${scannedCount}</span> | 🧘 Monk: <span style="color:#38bdf8">${monkModeBlockedCount}</span> | 🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span> | 🛑 Scam: <span style="color:#fb923c">${blockedScamCount}</span> | 🧹 Seed: <span style="color:#c084fc">${cleanedSeedingCount}</span> <span class="x-jev-pill-close" title="Ẩn thanh trạng thái nổi này (bật lại trong popup)">✕</span>`;
     const closeBtn = pill.querySelector('.x-jev-pill-close');
@@ -209,13 +231,14 @@
         e.preventDefault();
         e.stopPropagation();
         config.hideFloatingPill = true;
-        pill.style.display = 'none';
+        initPill();
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
           chrome.storage.local.set({ hideFloatingPill: true });
         }
       };
     }
   }
+
   updatePill();
   pill.title = 'Social Shield: All-in-One Protection (Click to toggle master state)';
   pill.addEventListener('click', (e) => {
@@ -238,16 +261,6 @@
     applyStateToDOM();
   });
 
-  function initPill() {
-    if (config.hideFloatingPill) {
-      pill.style.display = 'none';
-      return;
-    }
-    if (document.body && !document.querySelector('.x-jev-floating-pill')) {
-      document.body.appendChild(pill);
-    }
-    pill.style.display = 'flex';
-  }
   if (document.body) {
     initPill();
   } else {

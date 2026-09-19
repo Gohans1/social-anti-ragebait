@@ -496,7 +496,7 @@ main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
   backdrop-filter: blur(10px) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  display: flex !important;
+  display: flex;
   align-items: center !important;
   gap: 8px !important;
   cursor: pointer !important;
@@ -506,6 +506,15 @@ main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
   opacity: 1 !important;
   pointer-events: auto !important;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+.x-jev-floating-pill.x-jev-pill-hidden,
+.x-jev-floating-pill[data-hidden="true"],
+.x-jev-pill-hidden {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
 }
 
 .x-jev-floating-pill:hover {
