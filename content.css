@@ -1,4 +1,4 @@
-/* Universal Social Shield (Threads, X, Facebook) - Anti-Rage, Anti-Scam, Anti-Seeding */
+/* Universal Social Shield (Threads, X, Facebook) - Anti-Rage, Anti-Scam, Anti-Seeding, Monk Mode */
 
 /* --- Badges --- */
 .x-jev-badge {
@@ -55,6 +55,79 @@
   opacity: 1 !important;
   user-select: auto !important;
   pointer-events: auto !important;
+}
+
+/* --- Monk Mode: Hardcore Anti-Goonbait & Women Media Blocker --- */
+[data-monk-blocked="true"]:not(.monk-revealed) img:not([alt*="avatar"]):not([alt*="profile"]):not([src*="profile_images"]),
+[data-monk-blocked="true"]:not(.monk-revealed) video,
+.monk-blur-media {
+  filter: blur(28px) grayscale(60%) !important;
+  opacity: 0.1 !important;
+  user-select: none !important;
+  pointer-events: none !important;
+  transition: filter 0.25s ease, opacity 0.25s ease !important;
+}
+
+.monk-revealed img,
+.monk-revealed video,
+.monk-revealed .monk-blur-media {
+  filter: none !important;
+  opacity: 1 !important;
+  user-select: auto !important;
+  pointer-events: auto !important;
+}
+
+.x-monk-warning-box {
+  background: rgba(15, 23, 42, 0.9) !important;
+  border: 1.5px solid #0ea5e9 !important;
+  border-radius: 10px !important;
+  padding: 8px 14px !important;
+  margin: 6px 0 10px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  font-size: 12px !important;
+  color: #38bdf8 !important;
+  backdrop-filter: blur(10px) !important;
+  z-index: 99 !important;
+  position: relative !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+.x-monk-warning-text {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-weight: 600 !important;
+  color: #38bdf8 !important;
+  line-height: 1.3 !important;
+}
+
+.x-monk-reveal-btn {
+  background: #0284c7 !important;
+  border: none !important;
+  color: #ffffff !important;
+  padding: 5px 12px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+  transition: all 0.15s ease !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.x-monk-reveal-btn:hover {
+  background: #0369a1 !important;
+  transform: scale(1.04) !important;
 }
 
 /* --- Rage Bait Warning Box --- */

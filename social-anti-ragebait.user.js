@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Social Shield All-in-One: Anti-Ragebait, Anti-Scam, Anti-Seeding
+// @name         Social Shield All-in-One: Anti-Rage, Anti-Scam, Anti-Seeding & Monk Mode
 // @namespace    https://classifier.dev/
-// @version      2.0.0
-// @description  Tự động làm mờ rage-bait, chặn bài viết lừa đảo, và thu gọn comment seeding trên Threads, Facebook, X bằng Jev AI
+// @version      2.1.0
+// @description  Tự động làm mờ rage-bait, chặn bài lừa đảo, thu gọn seeding và kích hoạt Monk Mode chặn ảnh/video phụ nữ & goon-bait trên Threads, Facebook, X
 // @author       Antigravity
 // @match        *://*.threads.com/*
 // @match        *://threads.com/*
@@ -28,11 +28,13 @@
     apiEndpoint: 'https://classifier.dev',
     batchDebounceMs: 120,
     confidenceThreshold: 0.50,
+    monkModeEnabled: true,
     autoBlurRageEnabled: true,
     blockScamsEnabled: true,
     collapseSeedingEnabled: true,
   };
 
+  let monkModeBlockedCount = 0;
   let blockedRageCount = 0;
   let blockedScamCount = 0;
   let cleanedSeedingCount = 0;
@@ -44,21 +46,49 @@
     return 'x';
   }
 
+  const WOMEN_OR_GOONBAIT_REGEX =
+    /(\b(woman|women|girl|girls|female|lady|ladies|bikini|cleavage|swimwear|selfie|thirst\s*trap|goon|gooning|onlyfans|fansly)\b|phụ nữ|con gái|cô gái|gái xinh|nữ sinh|hot girl|mặc hở|khoe thân|áo tắm|nội y|gái|mlem)/i;
+
   const css = `
-    .x-jev-badge {
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 6px !important;
-      padding: 3px 10px !important;
-      border-radius: 9999px !important;
-      font-size: 11.5px !important;
-      font-weight: 600 !important;
-      margin: 4px 0 8px 0 !important;
-      border: 1px solid !important;
-      width: fit-content !important;
+    [data-monk-blocked="true"]:not(.monk-revealed) img:not([alt*="avatar"]):not([alt*="profile"]):not([src*="profile_images"]),
+    [data-monk-blocked="true"]:not(.monk-revealed) video {
+      filter: blur(28px) grayscale(60%) !important;
+      opacity: 0.1 !important;
       user-select: none !important;
-      cursor: help !important;
-      z-index: 10 !important;
+      pointer-events: none !important;
+      transition: filter 0.25s ease, opacity 0.25s ease !important;
+    }
+    .monk-revealed img,
+    .monk-revealed video {
+      filter: none !important;
+      opacity: 1 !important;
+      user-select: auto !important;
+      pointer-events: auto !important;
+    }
+    .x-monk-warning-box {
+      background: rgba(15, 23, 42, 0.9) !important;
+      border: 1.5px solid #0ea5e9 !important;
+      border-radius: 10px !important;
+      padding: 8px 14px !important;
+      margin: 6px 0 10px 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      font-size: 12px !important;
+      color: #38bdf8 !important;
+      z-index: 99 !important;
+      box-sizing: border-box !important;
+      width: 100% !important;
+    }
+    .x-monk-reveal-btn {
+      background: #0284c7 !important;
+      border: none !important;
+      color: #fff !important;
+      padding: 5px 12px !important;
+      border-radius: 6px !important;
+      cursor: pointer !important;
+      font-size: 11.5px !important;
+      font-weight: 700 !important;
     }
     [data-jev-rage="true"]:not(.x-jev-revealed) [data-jev-blur-item="true"],
     [data-jev-scam="true"]:not(.x-jev-revealed) [data-jev-blur-item="true"],
@@ -67,10 +97,8 @@
       opacity: 0.15 !important;
       user-select: none !important;
       pointer-events: none !important;
-      transition: filter 0.2s ease, opacity 0.2s ease !important;
     }
-    .x-jev-revealed [data-jev-blur-item="true"],
-    .x-jev-revealed .x-jev-blurred-content {
+    .x-jev-revealed [data-jev-blur-item="true"] {
       filter: none !important;
       opacity: 1 !important;
       user-select: auto !important;
@@ -87,7 +115,6 @@
       justify-content: space-between !important;
       font-size: 12.5px !important;
       color: #ef4444 !important;
-      z-index: 99 !important;
       width: 100% !important;
       box-sizing: border-box !important;
     }
@@ -102,7 +129,6 @@
       justify-content: space-between !important;
       font-size: 12.5px !important;
       color: #f87171 !important;
-      z-index: 99 !important;
       width: 100% !important;
       box-sizing: border-box !important;
     }
@@ -115,7 +141,6 @@
       cursor: pointer !important;
       font-size: 12px !important;
       font-weight: 700 !important;
-      white-space: nowrap !important;
     }
     .x-jev-seeding-collapsed {
       background: rgba(168, 85, 247, 0.12) !important;
@@ -129,7 +154,6 @@
       font-size: 11.5px !important;
       color: #c084fc !important;
       cursor: pointer !important;
-      user-select: none !important;
       width: 100% !important;
       box-sizing: border-box !important;
     }
@@ -182,6 +206,7 @@
 
   const LABELS = [
     'scam / fraudulent scheme',
+    'goon baiting / thirst trap / seductive woman media',
     'rage bait / outrage',
     'bot seeding / affiliate spam / fake review',
     'fearmongering / doom',
@@ -192,7 +217,7 @@
   ];
 
   const INSTRUCTIONS =
-    'Classify the content into: online scam/financial trap, intentional rage-bait/outrage/drama, bot seeding/affiliate manipulation/fake praise, fearmongering, fomo/hype, wholesome, informative, or casual discussion in Vietnamese or English.';
+    'Classify the content into: online scam/financial trap, goon baiting/thirst trap/seductive suggestive female content/OnlyFans funnel, intentional rage-bait/outrage/drama, bot seeding/affiliate manipulation/fake praise, fearmongering, fomo, wholesome, informative, or casual discussion in Vietnamese or English.';
 
   let queue = [];
   let debounceTimer = null;
@@ -201,11 +226,12 @@
   pill.className = 'x-jev-floating-pill';
   function updatePill() {
     const pName = getPlatform().toUpperCase();
-    pill.innerHTML = `🛡️ ${pName} Shield: <span style="color:#4ade80">ON</span> | 🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span> | 🛑 Scam: <span style="color:#fb923c">${blockedScamCount}</span> | 🧹 Seeding: <span style="color:#c084fc">${cleanedSeedingCount}</span>`;
+    pill.innerHTML = `🛡️ ${pName}: <span style="color:#4ade80">ON</span> | 🧘 Monk: <span style="color:#38bdf8">${monkModeBlockedCount}</span> | 🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span> | 🛑 Scam: <span style="color:#fb923c">${blockedScamCount}</span> | 🧹 Seed: <span style="color:#c084fc">${cleanedSeedingCount}</span>`;
   }
   updatePill();
   pill.addEventListener('click', () => {
-    const allOn = CONFIG.autoBlurRageEnabled || CONFIG.blockScamsEnabled || CONFIG.collapseSeedingEnabled;
+    const allOn = CONFIG.monkModeEnabled || CONFIG.autoBlurRageEnabled || CONFIG.blockScamsEnabled || CONFIG.collapseSeedingEnabled;
+    CONFIG.monkModeEnabled = !allOn;
     CONFIG.autoBlurRageEnabled = !allOn;
     CONFIG.blockScamsEnabled = !allOn;
     CONFIG.collapseSeedingEnabled = !allOn;
@@ -216,6 +242,72 @@
     document.body.appendChild(pill);
   } else {
     document.addEventListener('DOMContentLoaded', () => document.body.appendChild(pill));
+  }
+
+  function checkAndApplyMonkMode(postEl, text) {
+    if (!CONFIG.monkModeEnabled) return false;
+    if (postEl.hasAttribute('data-monk-blocked')) return true;
+
+    const mediaList = postEl.querySelectorAll('img, video');
+    if (mediaList.length === 0) return false;
+
+    let hasWomenMedia = false;
+    let detectedReason = '';
+
+    mediaList.forEach((media) => {
+      const isAvatar = (media.closest('a[href*="/@"]') && (media.width < 50 || media.height < 50)) ||
+                       media.alt?.toLowerCase().includes('avatar') ||
+                       media.alt?.toLowerCase().includes('profile');
+      if (isAvatar) return;
+
+      const altText = (media.alt || '') + ' ' + (media.getAttribute('aria-label') || '') + ' ' + (media.title || '');
+      if (WOMEN_OR_GOONBAIT_REGEX.test(altText)) {
+        hasWomenMedia = true;
+        detectedReason = 'Ảnh/Video phụ nữ (Meta AI Alt-Tag)';
+      }
+    });
+
+    if (!hasWomenMedia && WOMEN_OR_GOONBAIT_REGEX.test(text)) {
+      hasWomenMedia = true;
+      detectedReason = 'Goon-baiting / Thirst trap';
+    }
+
+    if (hasWomenMedia) {
+      postEl.setAttribute('data-monk-blocked', 'true');
+      monkModeBlockedCount++;
+      updatePill();
+
+      if (!postEl.querySelector('.x-monk-warning-box')) {
+        const box = document.createElement('div');
+        box.className = 'x-monk-warning-box';
+        box.innerHTML = `
+          <div>
+            <b>🧘 Monk Mode: Đã che ảnh/video để giữ tập trung tuyệt đối.</b>
+            <div style="font-size:10.5px;opacity:0.9;">${detectedReason}</div>
+          </div>
+        `;
+        const btn = document.createElement('button');
+        btn.className = 'x-monk-reveal-btn';
+        btn.textContent = 'Xem ảnh';
+        btn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const isRevealed = postEl.classList.toggle('monk-revealed');
+          btn.textContent = isRevealed ? 'Ẩn lại' : 'Xem ảnh';
+        };
+        box.appendChild(btn);
+
+        const firstMedia = Array.from(mediaList).find((m) => !m.closest('a[href*="/@"]'));
+        if (firstMedia && firstMedia.parentElement) {
+          firstMedia.parentElement.insertBefore(box, firstMedia);
+        } else {
+          postEl.prepend(box);
+        }
+      }
+      postEl.classList.remove('monk-revealed');
+      return true;
+    }
+    return false;
   }
 
   function callJevBatch(inputs) {
@@ -239,7 +331,7 @@
         url: CONFIG.apiEndpoint,
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'social-shield-userjs/2.0',
+          'User-Agent': 'social-shield-userjs/2.1',
         },
         data: JSON.stringify({
           labels: LABELS,
@@ -264,6 +356,8 @@
   function renderClassification(item, res) {
     const { postEl, textEl } = item;
     if (!textEl || !textEl.parentElement) return;
+
+    checkAndApplyMonkMode(postEl, item.text);
     if (postEl.hasAttribute('data-jev-handled')) return;
 
     const label = res.label;
@@ -307,7 +401,14 @@
       return;
     }
 
-    // 2. RAGE BAIT
+    // 2. GOON BAITING
+    if (label === 'goon baiting / thirst trap / seductive woman media' && confidence >= CONFIG.confidenceThreshold) {
+      checkAndApplyMonkMode(postEl, item.text);
+      postEl.setAttribute('data-jev-handled', 'true');
+      return;
+    }
+
+    // 3. RAGE BAIT
     if (label === 'rage bait / outrage' && confidence >= CONFIG.confidenceThreshold) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-rage', 'true');
@@ -339,7 +440,7 @@
       return;
     }
 
-    // 3. SEEDING
+    // 4. SEEDING
     if (label === 'bot seeding / affiliate spam / fake review' && confidence >= CONFIG.confidenceThreshold) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-seeding', 'true');
@@ -427,6 +528,8 @@
       });
 
       candidates.forEach((cont) => {
+        checkAndApplyMonkMode(cont, cont.innerText || '');
+
         const textEls = cont.querySelectorAll('span[dir="auto"], div[dir="auto"]');
         let bestEl = null;
         let maxLen = 0;
@@ -453,6 +556,7 @@
       });
     } else if (platform === 'facebook') {
       document.querySelectorAll('div[data-pagelet^="FeedUnit_"]:not([data-jev-scanned]), div[role="article"]:not([data-jev-scanned])').forEach((post) => {
+        checkAndApplyMonkMode(post, post.innerText || '');
         const msgEl = post.querySelector('div[data-ad-rendering-role="story_message"], div[data-ad-preview="message"]') ||
                       Array.from(post.querySelectorAll('div[dir="auto"], span[dir="auto"]')).find((el) => el.innerText.trim().length >= 20);
         if (msgEl) {
@@ -469,6 +573,7 @@
       });
     } else if (platform === 'x') {
       document.querySelectorAll('article[data-testid="tweet"]:not([data-jev-scanned])').forEach((post) => {
+        checkAndApplyMonkMode(post, post.innerText || '');
         const textEl = post.querySelector('div[data-testid="tweetText"]');
         if (textEl) {
           const text = textEl.innerText.trim();

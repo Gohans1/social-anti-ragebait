@@ -29,7 +29,7 @@
     .logo {
       width: 32px;
       height: 32px;
-      background: linear-gradient(135deg, #ef4444 0%, #a855f7 100%);
+      background: linear-gradient(135deg, #0284c7 0%, #a855f7 50%, #ef4444 100%);
       border-radius: 8px;
       display: flex;
       align-items: center;
@@ -118,7 +118,10 @@
       transition: .2s;
       border-radius: 50%;
     }
-    input:checked + .slider {
+    input.monk-toggle:checked + .slider {
+      background-color: #0284c7;
+    }
+    input.rage-toggle:checked + .slider {
       background-color: #ef4444;
     }
     input.scam-toggle:checked + .slider {
@@ -138,7 +141,7 @@
     }
     input[type=range] {
       width: 100%;
-      accent-color: #ef4444;
+      accent-color: #0284c7;
       cursor: pointer;
     }
     .range-val {
@@ -150,23 +153,23 @@
     }
     .stats {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 6px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
       text-align: center;
       margin-bottom: 12px;
     }
     .stat-card {
-      padding: 8px 4px;
+      padding: 8px 2px;
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 8px;
     }
     .stat-num {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 800;
     }
     .stat-lbl {
-      font-size: 9.5px;
+      font-size: 9px;
       color: #cbd5e1;
       margin-top: 2px;
     }
@@ -192,10 +195,10 @@
 </head>
 <body>
   <div class="header">
-    <div class="logo">🛡️</div>
+    <div class="logo">🧘</div>
     <div class="title">
       <h1>Social Shield</h1>
-      <p>All-in-One Guardian • Jev Zero-shot AI</p>
+      <p>Monk Mode & Guardian • Jev AI</p>
     </div>
   </div>
 
@@ -207,17 +210,31 @@
   </div>
 
   <div class="section">
+    <!-- Monk Mode -->
     <div class="row">
+      <div>
+        <div class="label" style="color: #38bdf8;">🧘 Monk Mode (Hardcore)</div>
+        <div class="sublabel">Chặn ảnh/video phụ nữ & Goon-bait để tập trung</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="monkModeToggle" class="monk-toggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- Rage Bait -->
+    <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
       <div>
         <div class="label">Làm mờ Rage Bait & War</div>
         <div class="sublabel">Chặn bài phốt, kích động thù hận, drama</div>
       </div>
       <label class="switch">
-        <input type="checkbox" id="autoBlurRageToggle" checked>
+        <input type="checkbox" id="autoBlurRageToggle" class="rage-toggle" checked>
         <span class="slider"></span>
       </label>
     </div>
 
+    <!-- Scams -->
     <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
       <div>
         <div class="label">Chặn Bẫy Lừa Đảo (Scams)</div>
@@ -229,6 +246,7 @@
       </label>
     </div>
 
+    <!-- Seeding -->
     <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
       <div>
         <div class="label">Thu gọn Comment Seeding</div>
@@ -240,10 +258,11 @@
       </label>
     </div>
 
+    <!-- Threshold -->
     <div class="range-wrap">
       <div class="row" style="margin-bottom: 2px;">
         <span class="label" style="font-size: 11px;">Độ nhạy phân loại (Threshold)</span>
-        <span id="thresholdVal" style="font-weight: 700; color: #f87171;">50%</span>
+        <span id="thresholdVal" style="font-weight: 700; color: #38bdf8;">50%</span>
       </div>
       <input type="range" id="thresholdRange" min="30" max="80" step="5" value="50">
       <div class="range-val">
@@ -255,21 +274,25 @@
 
   <div class="stats">
     <div class="stat-card">
+      <div class="stat-num" id="monkCounter" style="color: #38bdf8;">0</div>
+      <div class="stat-lbl">🧘 Monk Media</div>
+    </div>
+    <div class="stat-card">
       <div class="stat-num" id="rageCounter" style="color: #f87171;">0</div>
-      <div class="stat-lbl">Rage Bait Chặn</div>
+      <div class="stat-lbl">🚨 Rage Bait</div>
     </div>
     <div class="stat-card">
       <div class="stat-num" id="scamCounter" style="color: #fb923c;">0</div>
-      <div class="stat-lbl">Lừa Đảo Chặn</div>
+      <div class="stat-lbl">🛑 Lừa Đảo</div>
     </div>
     <div class="stat-card">
       <div class="stat-num" id="seedingCounter" style="color: #c084fc;">0</div>
-      <div class="stat-lbl">Seeding Đã Ẩn</div>
+      <div class="stat-lbl">🧹 Seeding</div>
     </div>
   </div>
 
   <div class="footer">
-    <span>Jev Multilingual AI (~250ms)</span>
+    <span>Jev AI Engine (~250ms)</span>
     <button class="btn-reset" id="resetStats">Đặt lại số đếm</button>
   </div>
 

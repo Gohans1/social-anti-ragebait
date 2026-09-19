@@ -1,5 +1,5 @@
-// Universal Social Shield (Threads, Facebook, X) - Anti-Ragebait, Anti-Scam, Anti-Seeding
-// Powered by Jev Zero-shot AI (classifier.dev)
+// Universal Social Shield (Threads, Facebook, X) - Anti-Rage, Anti-Scam, Anti-Seeding, Monk Mode
+// Powered by Jev Zero-shot AI (classifier.dev) & Client-side Vision Metadata
 (function () {
   'use strict';
 
@@ -7,11 +7,13 @@
     apiEndpoint: 'https://classifier.dev',
     batchDebounceMs: 120,
     confidenceThreshold: 0.50,
+    monkModeEnabled: true,       // Hardcore Monk Mode: Block all photos/videos with women & goon-bait
     autoBlurRageEnabled: true,
     blockScamsEnabled: true,
     collapseSeedingEnabled: true,
   };
 
+  let monkModeBlockedCount = 0;
   let blockedRageCount = 0;
   let blockedScamCount = 0;
   let cleanedSeedingCount = 0;
@@ -22,6 +24,10 @@
     if (host.includes('facebook.com') || host.includes('fb.com')) return 'facebook';
     return 'x';
   }
+
+  // Regex pattern matching women visual tags in Meta/X alt-text and captions
+  const WOMEN_OR_GOONBAIT_REGEX =
+    /(\b(woman|women|girl|girls|female|lady|ladies|bikini|cleavage|swimwear|selfie|thirst\s*trap|goon|gooning|onlyfans|fansly)\b|phụ nữ|con gái|cô gái|gái xinh|nữ sinh|hot girl|mặc hở|khoe thân|áo tắm|nội y|gái|mlem)/i;
 
   // Fast synchronous session cache (0ms instant response on reload)
   const CACHE_KEY = `social_guardian_cache_${getPlatform()}`;
@@ -47,19 +53,24 @@
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     chrome.storage.local.get(
       [
+        'monkModeEnabled',
         'autoBlurRageEnabled',
         'blockScamsEnabled',
         'collapseSeedingEnabled',
         'confidenceThreshold',
+        'monkModeBlockedCount',
         'blockedRageCount',
         'blockedScamCount',
         'cleanedSeedingCount',
       ],
       (res) => {
+        if (typeof res.monkModeEnabled === 'boolean') config.monkModeEnabled = res.monkModeEnabled;
         if (typeof res.autoBlurRageEnabled === 'boolean') config.autoBlurRageEnabled = res.autoBlurRageEnabled;
         if (typeof res.blockScamsEnabled === 'boolean') config.blockScamsEnabled = res.blockScamsEnabled;
         if (typeof res.collapseSeedingEnabled === 'boolean') config.collapseSeedingEnabled = res.collapseSeedingEnabled;
         if (typeof res.confidenceThreshold === 'number') config.confidenceThreshold = res.confidenceThreshold;
+
+        if (typeof res.monkModeBlockedCount === 'number') monkModeBlockedCount = res.monkModeBlockedCount;
         if (typeof res.blockedRageCount === 'number') blockedRageCount = res.blockedRageCount;
         if (typeof res.blockedScamCount === 'number') blockedScamCount = res.blockedScamCount;
         if (typeof res.cleanedSeedingCount === 'number') cleanedSeedingCount = res.cleanedSeedingCount;
@@ -71,6 +82,7 @@
 
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.type === 'UPDATE_CONFIG') {
+        config.monkModeEnabled = request.config.monkModeEnabled;
         config.autoBlurRageEnabled = request.config.autoBlurRageEnabled;
         config.blockScamsEnabled = request.config.blockScamsEnabled;
         config.collapseSeedingEnabled = request.config.collapseSeedingEnabled;
@@ -84,6 +96,7 @@
 
   const LABELS = [
     'scam / fraudulent scheme',
+    'goon baiting / thirst trap / seductive woman media',
     'rage bait / outrage',
     'bot seeding / affiliate spam / fake review',
     'fearmongering / doom',
@@ -94,7 +107,7 @@
   ];
 
   const INSTRUCTIONS =
-    'Classify the content into: online scam/financial trap (fake remote CTV, crypto Ponzi, gambling, impersonation), intentional rage-bait/outrage/drama, bot seeding/affiliate manipulation/fake praise, fearmongering/doom, fomo/hype, wholesome, informative, or casual human discussion in Vietnamese or English.';
+    'Classify the content into: online scam/financial trap (fake remote CTV, crypto Ponzi, gambling), goon baiting/thirst trap/seductive suggestive female content/OnlyFans funnel, intentional rage-bait/outrage/drama, bot seeding/affiliate manipulation/fake praise, fearmongering, fomo, wholesome, informative, or casual discussion in Vietnamese or English.';
 
   const BADGE_MAP = {
     'scam / fraudulent scheme': {
@@ -103,6 +116,13 @@
       bg: 'rgba(220, 38, 38, 0.2)',
       border: '#dc2626',
       color: '#f87171',
+    },
+    'goon baiting / thirst trap / seductive woman media': {
+      text: '🔞 Thirst Trap / Goon-bait',
+      desc: 'Suggestive content, thirst trap, or onlyfans funnel',
+      bg: 'rgba(236, 72, 153, 0.2)',
+      border: '#ec4899',
+      color: '#f472b6',
     },
     'rage bait / outrage': {
       text: '🚨 Rage Bait',
@@ -163,18 +183,20 @@
   pill.className = 'x-jev-floating-pill';
   function updatePill() {
     const pName = getPlatform().toUpperCase();
-    pill.innerHTML = `🛡️ ${pName} Shield: <span style="color:#4ade80">ON</span> | 🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span> | 🛑 Scam: <span style="color:#fb923c">${blockedScamCount}</span> | 🧹 Seeding: <span style="color:#c084fc">${cleanedSeedingCount}</span>`;
+    pill.innerHTML = `🛡️ ${pName}: <span style="color:#4ade80">ON</span> | 🧘 Monk: <span style="color:#38bdf8">${monkModeBlockedCount}</span> | 🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span> | 🛑 Scam: <span style="color:#fb923c">${blockedScamCount}</span> | 🧹 Seed: <span style="color:#c084fc">${cleanedSeedingCount}</span>`;
   }
   updatePill();
-  pill.title = 'Social Shield: All-in-One Protection (Click to toggle master switch)';
+  pill.title = 'Social Shield: All-in-One Protection (Click to toggle master state)';
   pill.addEventListener('click', () => {
-    const allOn = config.autoBlurRageEnabled || config.blockScamsEnabled || config.collapseSeedingEnabled;
+    const allOn = config.monkModeEnabled || config.autoBlurRageEnabled || config.blockScamsEnabled || config.collapseSeedingEnabled;
+    config.monkModeEnabled = !allOn;
     config.autoBlurRageEnabled = !allOn;
     config.blockScamsEnabled = !allOn;
     config.collapseSeedingEnabled = !allOn;
 
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
       chrome.storage.local.set({
+        monkModeEnabled: config.monkModeEnabled,
         autoBlurRageEnabled: config.autoBlurRageEnabled,
         blockScamsEnabled: config.blockScamsEnabled,
         collapseSeedingEnabled: config.collapseSeedingEnabled,
@@ -196,7 +218,19 @@
   }
 
   function applyStateToDOM() {
-    // 1. Rage Bait state
+    // 1. Monk Mode State
+    document.querySelectorAll('[data-monk-blocked="true"]').forEach((post) => {
+      const box = post.querySelector('.x-monk-warning-box');
+      if (config.monkModeEnabled) {
+        post.classList.remove('monk-revealed');
+        if (box) box.style.display = 'flex';
+      } else {
+        post.classList.add('monk-revealed');
+        if (box) box.style.display = 'none';
+      }
+    });
+
+    // 2. Rage Bait state
     document.querySelectorAll('[data-jev-rage="true"]').forEach((post) => {
       const warning = post.querySelector('.x-jev-warning-box');
       if (config.autoBlurRageEnabled) {
@@ -208,7 +242,7 @@
       }
     });
 
-    // 2. Scam state
+    // 3. Scam state
     document.querySelectorAll('[data-jev-scam="true"]').forEach((post) => {
       const scamBox = post.querySelector('.x-jev-scam-box');
       if (config.blockScamsEnabled) {
@@ -220,7 +254,7 @@
       }
     });
 
-    // 3. Seeding collapse state
+    // 4. Seeding collapse state
     document.querySelectorAll('[data-jev-seeding="true"]').forEach((post) => {
       const bar = post.querySelector('.x-jev-seeding-collapsed');
       const content = post.querySelector('[data-jev-seeding-content]');
@@ -232,6 +266,89 @@
         if (content) content.classList.remove('x-jev-collapsed-body');
       }
     });
+  }
+
+  // --- HARDCORE MONK MODE: CLIENT-SIDE INSTANT MEDIA SCANNER ---
+  // Inspects non-avatar images & videos for Meta AI accessibility alt-tags and captions
+  function checkAndApplyMonkMode(postEl, text) {
+    if (!config.monkModeEnabled) return false;
+    if (postEl.hasAttribute('data-monk-blocked')) return true;
+
+    const mediaList = postEl.querySelectorAll('img, video');
+    if (mediaList.length === 0) return false;
+
+    let hasWomenMedia = false;
+    let detectedReason = '';
+
+    // Check media alt tags and aria labels
+    mediaList.forEach((media) => {
+      const isAvatar = (media.closest('a[href*="/@"]') && (media.width < 50 || media.height < 50)) ||
+                       media.alt?.toLowerCase().includes('avatar') ||
+                       media.alt?.toLowerCase().includes('profile') ||
+                       media.src?.includes('profile_images');
+      if (isAvatar) return;
+
+      const altText = (media.alt || '') + ' ' + (media.getAttribute('aria-label') || '') + ' ' + (media.title || '');
+      if (WOMEN_OR_GOONBAIT_REGEX.test(altText)) {
+        hasWomenMedia = true;
+        detectedReason = 'Ảnh/Video phụ nữ (Meta AI Alt-Tag)';
+      }
+    });
+
+    // Also check if text caption has strong goon-bait signals
+    if (!hasWomenMedia && WOMEN_OR_GOONBAIT_REGEX.test(text)) {
+      hasWomenMedia = true;
+      detectedReason = 'Nội dung Goon-baiting / Thirst trap';
+    }
+
+    if (hasWomenMedia) {
+      postEl.setAttribute('data-monk-blocked', 'true');
+      monkModeBlockedCount++;
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ monkModeBlockedCount });
+      }
+      updatePill();
+
+      // Create Monk Mode Warning Bar
+      if (!postEl.querySelector('.x-monk-warning-box')) {
+        const box = document.createElement('div');
+        box.className = 'x-monk-warning-box';
+        box.innerHTML = `
+          <div class="x-monk-warning-text">
+            <span>🧘</span>
+            <div>
+              <b>Monk Mode: Đã che ảnh/video để giữ tập trung tuyệt đối.</b>
+              <div style="font-size:10.5px;font-weight:400;opacity:0.9;margin-top:1px;">${detectedReason}</div>
+            </div>
+          </div>
+        `;
+
+        const btn = document.createElement('button');
+        btn.className = 'x-monk-reveal-btn';
+        btn.textContent = 'Xem ảnh';
+        btn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const isRevealed = postEl.classList.toggle('monk-revealed');
+          btn.textContent = isRevealed ? 'Ẩn lại' : 'Xem ảnh';
+        };
+
+        box.appendChild(btn);
+
+        // Insert at the top of media or before first image
+        const firstMedia = Array.from(mediaList).find((m) => !m.closest('a[href*="/@"]'));
+        if (firstMedia && firstMedia.parentElement) {
+          firstMedia.parentElement.insertBefore(box, firstMedia);
+        } else {
+          postEl.prepend(box);
+        }
+      }
+
+      postEl.classList.remove('monk-revealed');
+      return true;
+    }
+
+    return false;
   }
 
   // Call Jev API: Route via background service worker to bypass page CSP
@@ -287,12 +404,14 @@
     }
   }
 
-  // Unified Rendering Logic: Resolves conflicts so banners NEVER overlap or duplicate
+  // Unified Rendering Logic
   function renderClassification(item, res) {
     const { postEl, textEl } = item;
     if (!textEl || !textEl.parentElement) return;
 
-    // Prevent duplicate banners on the same container
+    // Check Monk Mode first
+    checkAndApplyMonkMode(postEl, item.text);
+
     if (postEl.hasAttribute('data-jev-handled')) return;
 
     const label = res.label;
@@ -311,10 +430,7 @@
 
       textEl.setAttribute('data-jev-blur-item', 'true');
       postEl.querySelectorAll('img, video').forEach((m) => {
-        const isAvatar = (m.closest('a[href*="/@"]') && (m.width < 50 || m.height < 50)) ||
-                         m.alt?.toLowerCase().includes('avatar') ||
-                         m.alt?.toLowerCase().includes('profile');
-        if (!isAvatar) m.setAttribute('data-jev-blur-item', 'true');
+        if (!m.closest('a[href*="/@"]')) m.setAttribute('data-jev-blur-item', 'true');
       });
 
       if (!postEl.querySelector('.x-jev-scam-box')) {
@@ -353,7 +469,14 @@
       return;
     }
 
-    // --- PRIORITY 2: RAGE BAIT / OUTRAGE ---
+    // --- PRIORITY 2: GOON BAITING / THIRST TRAP VIA JEV ---
+    if (label === 'goon baiting / thirst trap / seductive woman media' && confidence >= config.confidenceThreshold) {
+      checkAndApplyMonkMode(postEl, item.text);
+      postEl.setAttribute('data-jev-handled', 'true');
+      return;
+    }
+
+    // --- PRIORITY 3: RAGE BAIT / OUTRAGE ---
     if (label === 'rage bait / outrage' && confidence >= config.confidenceThreshold) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-rage', 'true');
@@ -365,10 +488,7 @@
 
       textEl.setAttribute('data-jev-blur-item', 'true');
       postEl.querySelectorAll('img, video').forEach((m) => {
-        const isAvatar = (m.closest('a[href*="/@"]') && (m.width < 50 || m.height < 50)) ||
-                         m.alt?.toLowerCase().includes('avatar') ||
-                         m.alt?.toLowerCase().includes('profile');
-        if (!isAvatar) m.setAttribute('data-jev-blur-item', 'true');
+        if (!m.closest('a[href*="/@"]')) m.setAttribute('data-jev-blur-item', 'true');
       });
 
       if (!postEl.querySelector('.x-jev-warning-box')) {
@@ -376,7 +496,7 @@
         warningBox.className = 'x-jev-warning-box';
         const pct = Math.round(confidence * 100);
         warningBox.innerHTML = `
-          <span class="x-jev-warning-text">🛡️ <b>Rage Bait Warning (${pct}%):</b> Bài viết kích động phẫn nộ / câu war đã bị làm mờ.</span>
+          <span class="x-jev-warning-text">🛡️ <b>Rage Bait Warning (${pct}%):</b> Bài viết gây war / kích động đã bị làm mờ.</span>
         `;
 
         const revealBtn = document.createElement('button');
@@ -401,7 +521,7 @@
       return;
     }
 
-    // --- PRIORITY 3: BOT SEEDING / AFFILIATE SPAM / FAKE REVIEW ---
+    // --- PRIORITY 4: BOT SEEDING / AFFILIATE SPAM / FAKE REVIEW ---
     if (label === 'bot seeding / affiliate spam / fake review' && confidence >= config.confidenceThreshold) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-seeding', 'true');
@@ -441,7 +561,7 @@
       return;
     }
 
-    // --- PRIORITY 4: INFORMATIVE / WHOLESOME / CASUAL / DOOM / FOMO BADGE ---
+    // --- PRIORITY 5: INFORMATIVE / WHOLESOME / CASUAL / DOOM / FOMO BADGE ---
     const meta = BADGE_MAP[label] || BADGE_MAP['casual discussion / personal'];
     if (!postEl.querySelector('.x-jev-badge')) {
       const badge = document.createElement('div');
@@ -490,7 +610,7 @@
     }
   }
 
-  // Scanner for Posts & Comments on Threads, Facebook, X
+  // Scanner for Posts & Comments
   function scanFeed() {
     const platform = getPlatform();
 
@@ -505,9 +625,7 @@
           let curr = link.parentElement;
           let depth = 0;
           while (curr && curr !== document.body && depth < 8) {
-            const svgs = curr.querySelectorAll('svg').length;
-            const hasText = curr.querySelector('span[dir="auto"], div[dir="auto"]');
-            if (svgs >= 2 && hasText) {
+            if (curr.querySelectorAll('svg').length >= 2 && curr.querySelector('span[dir="auto"], div[dir="auto"]')) {
               container = curr;
               break;
             }
@@ -521,6 +639,9 @@
       });
 
       postContainers.forEach((post) => {
+        // Fast instant client-side check for Monk Mode on any images before waiting for text
+        checkAndApplyMonkMode(post, post.innerText || '');
+
         const textEls = post.querySelectorAll('span[dir="auto"], div[dir="auto"]');
         let longestTextEl = null;
         let maxLen = 0;
@@ -550,6 +671,8 @@
       });
     } else if (platform === 'facebook') {
       document.querySelectorAll('div[data-pagelet^="FeedUnit_"]:not([data-jev-scanned]), div[role="article"]:not([data-jev-scanned]), div[role="feed"] > div:not([data-jev-scanned])').forEach((post) => {
+        checkAndApplyMonkMode(post, post.innerText || '');
+
         const msgEl = post.querySelector('div[data-ad-rendering-role="story_message"], div[data-ad-preview="message"]') ||
                       Array.from(post.querySelectorAll('div[dir="auto"], span[dir="auto"]')).find((el) => el.innerText.trim().length >= 20);
         if (msgEl) {
@@ -565,7 +688,7 @@
         }
       });
 
-      // Individual comments on Facebook
+      // Individual comments
       document.querySelectorAll('div[aria-label*="bình luận"], div[aria-label*="Comment"], ul > li div[dir="auto"]:not([data-jev-scanned])').forEach((cmt) => {
         const t = cmt.innerText.trim();
         if (t.length >= 15 && !cmt.closest('[data-jev-scanned]')) {
@@ -579,6 +702,8 @@
       });
     } else if (platform === 'x') {
       document.querySelectorAll('article[data-testid="tweet"]:not([data-jev-scanned])').forEach((post) => {
+        checkAndApplyMonkMode(post, post.innerText || '');
+
         const textEl = post.querySelector('div[data-testid="tweetText"]');
         if (textEl) {
           const text = textEl.innerText.trim();
@@ -614,5 +739,5 @@
   }
 
   initObserver();
-  console.log(`[Social Shield All-in-One] Active on ${getPlatform().toUpperCase()} (${window.location.hostname}) 🛡️`);
+  console.log(`[Social Shield + Monk Mode] Active on ${getPlatform().toUpperCase()} (${window.location.hostname}) 🛡️`);
 })();

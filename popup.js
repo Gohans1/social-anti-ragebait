@@ -1,11 +1,13 @@
-// Popup script for Social Shield All-in-One
+// Popup script for Social Shield All-in-One + Monk Mode
 document.addEventListener('DOMContentLoaded', () => {
+  const monkModeToggle = document.getElementById('monkModeToggle');
   const autoBlurRageToggle = document.getElementById('autoBlurRageToggle');
   const blockScamsToggle = document.getElementById('blockScamsToggle');
   const collapseSeedingToggle = document.getElementById('collapseSeedingToggle');
   const thresholdRange = document.getElementById('thresholdRange');
   const thresholdVal = document.getElementById('thresholdVal');
 
+  const monkCounter = document.getElementById('monkCounter');
   const rageCounter = document.getElementById('rageCounter');
   const scamCounter = document.getElementById('scamCounter');
   const seedingCounter = document.getElementById('seedingCounter');
@@ -14,15 +16,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load saved settings
   chrome.storage.local.get(
     [
+      'monkModeEnabled',
       'autoBlurRageEnabled',
       'blockScamsEnabled',
       'collapseSeedingEnabled',
       'confidenceThreshold',
+      'monkModeBlockedCount',
       'blockedRageCount',
       'blockedScamCount',
       'cleanedSeedingCount',
     ],
     (res) => {
+      if (typeof res.monkModeEnabled === 'boolean') {
+        monkModeToggle.checked = res.monkModeEnabled;
+      }
       if (typeof res.autoBlurRageEnabled === 'boolean') {
         autoBlurRageToggle.checked = res.autoBlurRageEnabled;
       }
@@ -35,6 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof res.confidenceThreshold === 'number') {
         thresholdRange.value = Math.round(res.confidenceThreshold * 100);
         thresholdVal.textContent = `${thresholdRange.value}%`;
+      }
+
+      if (typeof res.monkModeBlockedCount === 'number') {
+        monkCounter.textContent = res.monkModeBlockedCount;
       }
       if (typeof res.blockedRageCount === 'number') {
         rageCounter.textContent = res.blockedRageCount;
@@ -50,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function saveAndNotify() {
     const config = {
+      monkModeEnabled: monkModeToggle.checked,
       autoBlurRageEnabled: autoBlurRageToggle.checked,
       blockScamsEnabled: blockScamsToggle.checked,
       collapseSeedingEnabled: collapseSeedingToggle.checked,
@@ -85,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  monkModeToggle.addEventListener('change', saveAndNotify);
   autoBlurRageToggle.addEventListener('change', saveAndNotify);
   blockScamsToggle.addEventListener('change', saveAndNotify);
   collapseSeedingToggle.addEventListener('change', saveAndNotify);
@@ -97,10 +110,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   resetStats.addEventListener('click', () => {
     chrome.storage.local.set({
+      monkModeBlockedCount: 0,
       blockedRageCount: 0,
       blockedScamCount: 0,
       cleanedSeedingCount: 0,
     });
+    monkCounter.textContent = '0';
     rageCounter.textContent = '0';
     scamCounter.textContent = '0';
     seedingCounter.textContent = '0';
