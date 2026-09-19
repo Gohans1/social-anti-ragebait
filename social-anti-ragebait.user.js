@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Social Anti-Ragebait & Emotion Predictor (Threads, X, Facebook)
 // @namespace    https://classifier.dev/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Predicts emotional intent & automatically blurs rage-bait posts on Threads (threads.com / threads.net), X (Twitter), and Facebook in English & Vietnamese using Jev
 // @author       Antigravity
 // @match        *://*.threads.com/*
@@ -27,8 +27,8 @@
   // --- CONFIGURATION ---
   const CONFIG = {
     apiEndpoint: 'https://classifier.dev',
-    batchDebounceMs: 350,
-    blurThreshold: 0.65,
+    batchDebounceMs: 120,
+    blurThreshold: 0.50,
     autoBlurEnabled: true,
   };
 
@@ -122,13 +122,20 @@
       opacity: 0.85;
       font-weight: 500;
     }
-    .x-jev-blurred-content {
-      filter: blur(9px) !important;
-      opacity: 0.25 !important;
+    .x-jev-blurred-content,
+    [data-jev-rage="true"]:not(.x-jev-revealed) [data-jev-content="true"],
+    [data-jev-rage="true"]:not(.x-jev-revealed) img:not([alt*="avatar"]):not([alt*="profile"]):not([src*="profile_images"]),
+    [data-jev-rage="true"]:not(.x-jev-revealed) video {
+      filter: blur(14px) !important;
+      opacity: 0.18 !important;
       user-select: none !important;
       pointer-events: none !important;
-      transition: filter 0.25s ease, opacity 0.25s ease !important;
+      transition: filter 0.2s ease, opacity 0.2s ease !important;
     }
+    .x-jev-revealed .x-jev-blurred-content,
+    .x-jev-revealed [data-jev-content="true"],
+    .x-jev-revealed img,
+    .x-jev-revealed video,
     .x-jev-unblurred {
       filter: none !important;
       opacity: 1 !important;
@@ -140,25 +147,28 @@
       border: 1px dashed rgba(239, 68, 68, 0.5);
       border-radius: 10px;
       padding: 8px 12px;
-      margin: 6px 0;
+      margin: 6px 0 8px 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
       font-size: 12.5px;
       color: #fca5a5;
+      width: 100%;
+      box-sizing: border-box;
     }
     .x-jev-reveal-btn {
-      background: rgba(239, 68, 68, 0.25);
-      border: 1px solid rgba(239, 68, 68, 0.6);
+      background: rgba(239, 68, 68, 0.35);
+      border: 1px solid rgba(239, 68, 68, 0.7);
       color: #fff;
       padding: 4px 10px;
       border-radius: 6px;
       cursor: pointer;
       font-size: 11.5px;
       font-weight: 600;
+      white-space: nowrap;
     }
     .x-jev-reveal-btn:hover {
-      background: rgba(239, 68, 68, 0.45);
+      background: rgba(239, 68, 68, 0.55);
     }
     .x-jev-floating-pill {
       position: fixed;
@@ -201,6 +211,26 @@
     return 'x';
   }
 
+  // Synchronous session cache
+  const CACHE_KEY = `x_jev_userjs_cache_${getPlatform()}`;
+  const textCache = new Map();
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      Object.entries(parsed).forEach(([k, v]) => textCache.set(k, v));
+    }
+  } catch (e) {}
+
+  function saveCache() {
+    try {
+      const obj = {};
+      const entries = Array.from(textCache.entries()).slice(-250);
+      entries.forEach(([k, v]) => (obj[k] = v));
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(obj));
+    } catch (e) {}
+  }
+
   let blockedCount = 0;
   const pill = document.createElement('div');
   pill.className = 'x-jev-floating-pill';
@@ -214,13 +244,12 @@
     CONFIG.autoBlurEnabled = !CONFIG.autoBlurEnabled;
     updatePill();
     document.querySelectorAll('[data-jev-rage="true"]').forEach((post) => {
-      const content = post.querySelector('[data-jev-content]');
       const warning = post.querySelector('.x-jev-warning-box');
       if (CONFIG.autoBlurEnabled) {
-        content?.classList.add('x-jev-blurred-content');
+        post.classList.remove('x-jev-revealed');
         if (warning) warning.style.display = 'flex';
       } else {
-        content?.classList.remove('x-jev-blurred-content');
+        post.classList.add('x-jev-revealed');
         if (warning) warning.style.display = 'none';
       }
     });
@@ -237,7 +266,6 @@
     document.addEventListener('DOMContentLoaded', initPill);
   }
 
-  const textCache = new Map();
   let queue = [];
   let debounceTimer = null;
 
@@ -268,7 +296,7 @@
         url: CONFIG.apiEndpoint,
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'social-anti-ragebait/1.2',
+          'User-Agent': 'social-anti-ragebait/1.2.1',
         },
         data: payload,
         onload: function (response) {
@@ -316,6 +344,10 @@
       updatePill();
 
       textEl.setAttribute('data-jev-content', 'true');
+      const contentWrapper = textEl.closest('div[dir="auto"]')?.parentElement || textEl.parentElement;
+      if (contentWrapper) {
+        contentWrapper.setAttribute('data-jev-content', 'true');
+      }
 
       if (!postEl.querySelector('.x-jev-warning-box')) {
         const warningBox = document.createElement('div');
@@ -329,18 +361,18 @@
         revealBtn.textContent = 'Reveal post';
         revealBtn.onclick = (e) => {
           e.stopPropagation();
-          textEl.classList.toggle('x-jev-blurred-content');
-          revealBtn.textContent = textEl.classList.contains('x-jev-blurred-content')
-            ? 'Reveal post'
-            : 'Re-blur';
+          const isRevealed = postEl.classList.toggle('x-jev-revealed');
+          revealBtn.textContent = isRevealed ? 'Re-blur' : 'Reveal post';
         };
 
         warningBox.appendChild(revealBtn);
-        parentContainer.insertBefore(warningBox, textEl);
+        parentContainer.insertBefore(warningBox, badge);
       }
 
       if (CONFIG.autoBlurEnabled) {
-        textEl.classList.add('x-jev-blurred-content');
+        postEl.classList.remove('x-jev-revealed');
+      } else {
+        postEl.classList.add('x-jev-revealed');
       }
     }
   }
@@ -370,10 +402,11 @@
           renderClassification(item, res);
         }
       });
+      saveCache();
     }
 
     if (queue.length > 0) {
-      debounceTimer = setTimeout(flushQueue, 200);
+      debounceTimer = setTimeout(flushQueue, 80);
     }
   }
 
@@ -409,8 +442,6 @@
       });
 
       postContainers.forEach((post) => {
-        post.setAttribute('data-jev-scanned', 'true');
-
         const textEls = post.querySelectorAll('span[dir="auto"], div[dir="auto"]');
         let longestTextEl = null;
         let maxLen = 0;
@@ -430,27 +461,43 @@
         });
 
         if (longestTextEl && maxLen >= 15) {
-          queue.push({ postEl: post, text: longestTextEl.innerText.trim(), textEl: longestTextEl });
+          post.setAttribute('data-jev-scanned', 'true');
+          const cleanText = longestTextEl.innerText.trim();
+          if (textCache.has(cleanText)) {
+            renderClassification({ postEl: post, text: cleanText, textEl: longestTextEl }, textCache.get(cleanText));
+          } else {
+            queue.push({ postEl: post, text: cleanText, textEl: longestTextEl });
+          }
         }
       });
     } else if (platform === 'x') {
       document.querySelectorAll('article[data-testid="tweet"]:not([data-jev-scanned])').forEach((post) => {
-        post.setAttribute('data-jev-scanned', 'true');
         const textEl = post.querySelector('div[data-testid="tweetText"]');
         if (textEl) {
           const text = textEl.innerText.trim();
-          if (text.length >= 15) queue.push({ postEl: post, text, textEl });
+          if (text.length >= 15) {
+            post.setAttribute('data-jev-scanned', 'true');
+            if (textCache.has(text)) {
+              renderClassification({ postEl: post, text, textEl }, textCache.get(text));
+            } else {
+              queue.push({ postEl: post, text, textEl });
+            }
+          }
         }
       });
     } else if (platform === 'facebook') {
       document.querySelectorAll('div[data-pagelet^="FeedUnit_"]:not([data-jev-scanned]), div[role="article"]:not([data-jev-scanned])').forEach((post) => {
-        post.setAttribute('data-jev-scanned', 'true');
         const msgEl = post.querySelector('div[data-ad-rendering-role="story_message"], div[data-ad-preview="message"]') ||
-                      Array.from(post.querySelectorAll('div[dir="auto"]')).find(el => el.innerText.trim().length >= 25);
+                      Array.from(post.querySelectorAll('div[dir="auto"]')).find((el) => el.innerText.trim().length >= 25);
         if (msgEl) {
           const text = msgEl.innerText.trim();
           if (text.length >= 15) {
-            queue.push({ postEl: post, text, textEl: msgEl });
+            post.setAttribute('data-jev-scanned', 'true');
+            if (textCache.has(text)) {
+              renderClassification({ postEl: post, text, textEl: msgEl }, textCache.get(text));
+            } else {
+              queue.push({ postEl: post, text, textEl: msgEl });
+            }
           }
         }
       });

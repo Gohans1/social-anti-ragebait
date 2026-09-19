@@ -1,4 +1,4 @@
-/* Universal Social Anti-Ragebait Stylesheet (X, Threads, Facebook) */
+/* Universal Social Anti-Ragebait Stylesheet (Threads, X, Facebook) */
 
 .x-jev-badge {
   display: inline-flex;
@@ -31,15 +31,23 @@
   font-weight: 500;
 }
 
-/* Blur state for Rage Bait */
-.x-jev-blurred-content {
-  filter: blur(10px) !important;
-  opacity: 0.25 !important;
+/* Blur state for Rage Bait: Blurs text, images, and videos in toxic posts */
+.x-jev-blurred-content,
+[data-jev-rage="true"]:not(.x-jev-revealed) [data-jev-content="true"],
+[data-jev-rage="true"]:not(.x-jev-revealed) img:not([alt*="avatar"]):not([alt*="profile"]):not([src*="profile_images"]),
+[data-jev-rage="true"]:not(.x-jev-revealed) video {
+  filter: blur(14px) !important;
+  opacity: 0.18 !important;
   user-select: none !important;
   pointer-events: none !important;
-  transition: filter 0.25s ease, opacity 0.25s ease !important;
+  transition: filter 0.2s ease, opacity 0.2s ease !important;
 }
 
+/* Restored clean state when user clicks 'Reveal post' */
+.x-jev-revealed .x-jev-blurred-content,
+.x-jev-revealed [data-jev-content="true"],
+.x-jev-revealed img,
+.x-jev-revealed video,
 .x-jev-unblurred {
   filter: none !important;
   opacity: 1 !important;
@@ -53,15 +61,17 @@
   border: 1px dashed rgba(239, 68, 68, 0.6);
   border-radius: 10px;
   padding: 8px 14px;
-  margin: 8px 0;
+  margin: 6px 0 10px 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   font-size: 12.5px;
   color: #ef4444;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
   z-index: 10;
+  width: 100%;
+  box-sizing: border-box;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -98,24 +108,26 @@
   right: 24px;
   z-index: 999999;
   background: rgba(15, 23, 42, 0.92);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
   color: #e2e8f0;
-  padding: 8px 14px;
+  padding: 8px 16px;
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 600;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
   user-select: none;
+  transition: all 0.2s ease;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .x-jev-floating-pill:hover {
-  transform: scale(1.04);
-  border-color: rgba(239, 68, 68, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
+  border-color: rgba(255, 255, 255, 0.25);
 }

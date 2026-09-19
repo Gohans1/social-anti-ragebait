@@ -4,20 +4,57 @@
 
   let config = {
     apiEndpoint: 'https://classifier.dev',
-    batchDebounceMs: 350,
-    blurThreshold: 0.65,
+    batchDebounceMs: 120, // Fast batching for instant response
+    blurThreshold: 0.50,  // Any post where Rage Bait is majority prediction is blurred
     autoBlurEnabled: true,
   };
 
   let blockedCount = 0;
 
-  // Load saved settings
+  // Detect Active Platform (Threads.com, Threads.net, X, Facebook)
+  function getPlatform() {
+    const host = window.location.hostname.toLowerCase();
+    if (host.includes('threads.net') || host.includes('threads.com')) return 'threads';
+    if (host.includes('facebook.com') || host.includes('fb.com')) return 'facebook';
+    return 'x';
+  }
+
+  // Synchronous persistent cache across reloads/new tabs within the session
+  const CACHE_KEY = `x_jev_cache_${getPlatform()}`;
+  const textCache = new Map();
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      Object.entries(parsed).forEach(([k, v]) => textCache.set(k, v));
+    }
+  } catch (e) {}
+
+  function saveCacheToStorage() {
+    try {
+      const obj = {};
+      const entries = Array.from(textCache.entries()).slice(-250);
+      entries.forEach(([k, v]) => (obj[k] = v));
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(obj));
+    } catch (e) {}
+  }
+
+  // Load saved extension settings
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     chrome.storage.local.get(['autoBlurEnabled', 'blurThreshold', 'blockedCount'], (res) => {
-      if (typeof res.autoBlurEnabled === 'boolean') config.autoBlurEnabled = res.autoBlurEnabled;
-      if (typeof res.blurThreshold === 'number') config.blurThreshold = res.blurThreshold;
-      if (typeof res.blockedCount === 'number') blockedCount = res.blockedCount;
+      if (typeof res.autoBlurEnabled === 'boolean') {
+        config.autoBlurEnabled = res.autoBlurEnabled;
+      } else {
+        chrome.storage.local.set({ autoBlurEnabled: true, blurThreshold: 0.50 });
+      }
+      if (typeof res.blurThreshold === 'number') {
+        config.blurThreshold = res.blurThreshold;
+      }
+      if (typeof res.blockedCount === 'number') {
+        blockedCount = res.blockedCount;
+      }
       updatePill();
+      applyCurrentStateToDOM();
     });
 
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -94,24 +131,15 @@
     },
   };
 
-  const textCache = new Map();
   let queue = [];
   let debounceTimer = null;
-
-  // Detect Active Platform (Threads.com, Threads.net, X, Facebook)
-  function getPlatform() {
-    const host = window.location.hostname.toLowerCase();
-    if (host.includes('threads.net') || host.includes('threads.com')) return 'threads';
-    if (host.includes('facebook.com') || host.includes('fb.com')) return 'facebook';
-    return 'x';
-  }
 
   // Floating Status Pill UI
   const pill = document.createElement('div');
   pill.className = 'x-jev-floating-pill';
   function updatePill() {
     const platform = getPlatform().toUpperCase();
-    pill.innerHTML = `🛡️ ${platform} Anti-Ragebait: <span style="color:${config.autoBlurEnabled ? '#4ade80' : '#94a3b8'}">${config.autoBlurEnabled ? 'ON' : 'OFF'}</span> | Blocked: <span style="color:#f87171">${blockedCount}</span>`;
+    pill.innerHTML = `🛡️ ${platform} Anti-Rage: <span style="color:${config.autoBlurEnabled ? '#4ade80' : '#94a3b8'}">${config.autoBlurEnabled ? 'ON' : 'OFF'}</span> | Blocked: <span style="color:#f87171">${blockedCount}</span>`;
   }
   updatePill();
   pill.title = 'Click to toggle Rage Bait auto-blur on this page';
@@ -137,13 +165,12 @@
 
   function applyCurrentStateToDOM() {
     document.querySelectorAll('[data-jev-rage="true"]').forEach((post) => {
-      const content = post.querySelector('[data-jev-content]');
       const warning = post.querySelector('.x-jev-warning-box');
       if (config.autoBlurEnabled) {
-        content?.classList.add('x-jev-blurred-content');
+        post.classList.remove('x-jev-revealed');
         if (warning) warning.style.display = 'flex';
       } else {
-        content?.classList.remove('x-jev-blurred-content');
+        post.classList.add('x-jev-revealed');
         if (warning) warning.style.display = 'none';
       }
     });
@@ -231,6 +258,7 @@
     const parentContainer = textEl.parentElement;
     parentContainer.insertBefore(badge, textEl);
 
+    // If classified as Rage Bait and meets sensitivity threshold
     if (meta.isRage && confidence >= config.blurThreshold) {
       postEl.setAttribute('data-jev-rage', 'true');
       blockedCount++;
@@ -239,7 +267,12 @@
       }
       updatePill();
 
+      // Mark text & parent container for comprehensive content blur (text + images)
       textEl.setAttribute('data-jev-content', 'true');
+      const contentWrapper = textEl.closest('div[dir="auto"]')?.parentElement || textEl.parentElement;
+      if (contentWrapper) {
+        contentWrapper.setAttribute('data-jev-content', 'true');
+      }
 
       if (!postEl.querySelector('.x-jev-warning-box')) {
         const warningBox = document.createElement('div');
@@ -253,18 +286,19 @@
         revealBtn.textContent = 'Reveal post';
         revealBtn.onclick = (e) => {
           e.stopPropagation();
-          textEl.classList.toggle('x-jev-blurred-content');
-          revealBtn.textContent = textEl.classList.contains('x-jev-blurred-content')
-            ? 'Reveal post'
-            : 'Re-blur';
+          const isRevealed = postEl.classList.toggle('x-jev-revealed');
+          revealBtn.textContent = isRevealed ? 'Re-blur' : 'Reveal post';
         };
 
         warningBox.appendChild(revealBtn);
-        parentContainer.insertBefore(warningBox, textEl);
+        // Place warning box right above badge
+        parentContainer.insertBefore(warningBox, badge);
       }
 
       if (config.autoBlurEnabled) {
-        textEl.classList.add('x-jev-blurred-content');
+        postEl.classList.remove('x-jev-revealed');
+      } else {
+        postEl.classList.add('x-jev-revealed');
       }
     }
   }
@@ -294,10 +328,11 @@
           renderClassification(item, res);
         }
       });
+      saveCacheToStorage();
     }
 
     if (queue.length > 0) {
-      debounceTimer = setTimeout(flushQueue, 200);
+      debounceTimer = setTimeout(flushQueue, 80);
     }
   }
 
@@ -338,8 +373,6 @@
       });
 
       postContainers.forEach((post) => {
-        post.setAttribute('data-jev-scanned', 'true');
-
         const textEls = post.querySelectorAll('span[dir="auto"], div[dir="auto"]');
         let longestTextEl = null;
         let maxLen = 0;
@@ -359,30 +392,49 @@
           }
         });
 
+        // ONLY mark scanned if we actually extracted substantive text
         if (longestTextEl && maxLen >= 15) {
-          queue.push({ postEl: post, text: longestTextEl.innerText.trim(), textEl: longestTextEl });
+          post.setAttribute('data-jev-scanned', 'true');
+          const cleanText = longestTextEl.innerText.trim();
+
+          // Check instant cache immediately
+          if (textCache.has(cleanText)) {
+            renderClassification({ postEl: post, text: cleanText, textEl: longestTextEl }, textCache.get(cleanText));
+          } else {
+            queue.push({ postEl: post, text: cleanText, textEl: longestTextEl });
+          }
         }
       });
     } else if (platform === 'x') {
       // X (Twitter)
       document.querySelectorAll('article[data-testid="tweet"]:not([data-jev-scanned])').forEach((post) => {
-        post.setAttribute('data-jev-scanned', 'true');
         const textEl = post.querySelector('div[data-testid="tweetText"]');
         if (textEl) {
           const text = textEl.innerText.trim();
-          if (text.length >= 15) queue.push({ postEl: post, text, textEl });
+          if (text.length >= 15) {
+            post.setAttribute('data-jev-scanned', 'true');
+            if (textCache.has(text)) {
+              renderClassification({ postEl: post, text, textEl }, textCache.get(text));
+            } else {
+              queue.push({ postEl: post, text, textEl });
+            }
+          }
         }
       });
     } else if (platform === 'facebook') {
       // Facebook Feed & Groups
       document.querySelectorAll('div[data-pagelet^="FeedUnit_"]:not([data-jev-scanned]), div[role="article"]:not([data-jev-scanned])').forEach((post) => {
-        post.setAttribute('data-jev-scanned', 'true');
         const msgEl = post.querySelector('div[data-ad-rendering-role="story_message"], div[data-ad-preview="message"]') ||
-                      Array.from(post.querySelectorAll('div[dir="auto"]')).find(el => el.innerText.trim().length >= 25);
+                      Array.from(post.querySelectorAll('div[dir="auto"]')).find((el) => el.innerText.trim().length >= 25);
         if (msgEl) {
           const text = msgEl.innerText.trim();
           if (text.length >= 15) {
-            queue.push({ postEl: post, text, textEl: msgEl });
+            post.setAttribute('data-jev-scanned', 'true');
+            if (textCache.has(text)) {
+              renderClassification({ postEl: post, text, textEl: msgEl }, textCache.get(text));
+            } else {
+              queue.push({ postEl: post, text, textEl: msgEl });
+            }
           }
         }
       });
