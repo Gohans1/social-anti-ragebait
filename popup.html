@@ -127,6 +127,15 @@
     input.deepdive-toggle:checked + .slider {
       background-color: #6366f1;
     }
+    input.wholesome-toggle:checked + .slider {
+      background-color: #10b981;
+    }
+    input.doom-toggle:checked + .slider {
+      background-color: #f97316;
+    }
+    input.fomo-toggle:checked + .slider {
+      background-color: #eab308;
+    }
     input.monk-toggle:checked + .slider {
       background-color: #0284c7;
     }
@@ -261,6 +270,39 @@
       </label>
     </div>
 
+    <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+      <div>
+        <div class="label" style="color: #34d399;">🌿 Wholesome / Tích cực</div>
+        <div class="sublabel">Nội dung ấm áp, nhân văn, năng lượng tích cực</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="filterWholesomeToggle" class="wholesome-toggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+      <div>
+        <div class="label" style="color: #fb923c;">⚠️ Doom / Gieo rắc sợ hãi</div>
+        <div class="sublabel">Cảnh báo tin tức tận thế, đe dọa, gây hoang mang</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="filterDoomToggle" class="doom-toggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+      <div>
+        <div class="label" style="color: #fde047;">⚡ FOMO / Hype</div>
+        <div class="sublabel">Cảnh báo thổi phồng, lùa gà crypto, sợ bỏ lỡ</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="filterFomoToggle" class="fomo-toggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
     <!-- Cụm 2: Khiên Phòng Thủ (AI Làm Mờ & Thu Gọn) -->
     <div style="font-size: 11px; font-weight: 700; color: #f87171; text-transform: uppercase; margin: 14px 0 8px 0; padding-top: 12px; border-top: 1.5px solid rgba(255, 255, 255, 0.1); letter-spacing: 0.05em;">🛡️ Khiên Phòng Thủ & Cai Nghiện</div>
 
@@ -374,6 +416,18 @@
     <div class="stat-card">
       <div class="stat-num" id="monkCounter" style="color: #38bdf8;">0</div>
       <div class="stat-lbl">🧘 Monk Media</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="wholesomeCounter" style="color: #34d399;">0</div>
+      <div class="stat-lbl">🌿 Wholesome</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="doomCounter" style="color: #fb923c;">0</div>
+      <div class="stat-lbl">⚠️ Doom</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="fomoCounter" style="color: #fde047;">0</div>
+      <div class="stat-lbl">⚡ FOMO</div>
     </div>
   </div>
 

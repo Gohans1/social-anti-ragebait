@@ -3,6 +3,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const filterMotivationalToggle = document.getElementById('filterMotivationalToggle');
   const filterMemeToggle = document.getElementById('filterMemeToggle');
   const filterDeepDiveToggle = document.getElementById('filterDeepDiveToggle');
+  const filterWholesomeToggle = document.getElementById('filterWholesomeToggle');
+  const filterDoomToggle = document.getElementById('filterDoomToggle');
+  const filterFomoToggle = document.getElementById('filterFomoToggle');
   const monkModeToggle = document.getElementById('monkModeToggle');
   const blockReelsToggle = document.getElementById('blockReelsToggle');
   const autoBlurRageToggle = document.getElementById('autoBlurRageToggle');
@@ -18,6 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const rageCounter = document.getElementById('rageCounter');
   const scamCounter = document.getElementById('scamCounter');
   const monkCounter = document.getElementById('monkCounter');
+  const wholesomeCounter = document.getElementById('wholesomeCounter');
+  const doomCounter = document.getElementById('doomCounter');
+  const fomoCounter = document.getElementById('fomoCounter');
   const resetStats = document.getElementById('resetStats');
 
   // Load saved settings
@@ -26,6 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
       'filterMotivationalEnabled',
       'filterMemeEnabled',
       'filterDeepDiveEnabled',
+      'filterWholesomeEnabled',
+      'filterDoomEnabled',
+      'filterFomoEnabled',
       'monkModeEnabled',
       'blockReelsEnabled',
       'autoBlurRageEnabled',
@@ -39,6 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
       'blockedRageCount',
       'blockedScamCount',
       'monkModeBlockedCount',
+      'wholesomeCount',
+      'doomCount',
+      'fomoCount',
     ],
     (res) => {
       if (typeof res.filterMotivationalEnabled === 'boolean' && filterMotivationalToggle) {
@@ -49,6 +61,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (typeof res.filterDeepDiveEnabled === 'boolean' && filterDeepDiveToggle) {
         filterDeepDiveToggle.checked = res.filterDeepDiveEnabled;
+      }
+      if (typeof res.filterWholesomeEnabled === 'boolean' && filterWholesomeToggle) {
+        filterWholesomeToggle.checked = res.filterWholesomeEnabled;
+      }
+      if (typeof res.filterDoomEnabled === 'boolean' && filterDoomToggle) {
+        filterDoomToggle.checked = res.filterDoomEnabled;
+      }
+      if (typeof res.filterFomoEnabled === 'boolean' && filterFomoToggle) {
+        filterFomoToggle.checked = res.filterFomoEnabled;
       }
       if (typeof res.monkModeEnabled === 'boolean') {
         monkModeToggle.checked = res.monkModeEnabled;
@@ -91,6 +112,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof res.monkModeBlockedCount === 'number' && monkCounter) {
         monkCounter.textContent = res.monkModeBlockedCount;
       }
+      if (typeof res.wholesomeCount === 'number' && wholesomeCounter) {
+        wholesomeCounter.textContent = res.wholesomeCount;
+      }
+      if (typeof res.doomCount === 'number' && doomCounter) {
+        doomCounter.textContent = res.doomCount;
+      }
+      if (typeof res.fomoCount === 'number' && fomoCounter) {
+        fomoCounter.textContent = res.fomoCount;
+      }
     }
   );
 
@@ -99,6 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
       filterMotivationalEnabled: filterMotivationalToggle ? filterMotivationalToggle.checked : true,
       filterMemeEnabled: filterMemeToggle ? filterMemeToggle.checked : true,
       filterDeepDiveEnabled: filterDeepDiveToggle ? filterDeepDiveToggle.checked : true,
+      filterWholesomeEnabled: filterWholesomeToggle ? filterWholesomeToggle.checked : true,
+      filterDoomEnabled: filterDoomToggle ? filterDoomToggle.checked : true,
+      filterFomoEnabled: filterFomoToggle ? filterFomoToggle.checked : true,
       monkModeEnabled: monkModeToggle.checked,
       blockReelsEnabled: blockReelsToggle.checked,
       autoBlurRageEnabled: autoBlurRageToggle.checked,
@@ -126,6 +159,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filterMotivationalToggle) filterMotivationalToggle.addEventListener('change', saveAndNotify);
   if (filterMemeToggle) filterMemeToggle.addEventListener('change', saveAndNotify);
   if (filterDeepDiveToggle) filterDeepDiveToggle.addEventListener('change', saveAndNotify);
+  if (filterWholesomeToggle) filterWholesomeToggle.addEventListener('change', saveAndNotify);
+  if (filterDoomToggle) filterDoomToggle.addEventListener('change', saveAndNotify);
+  if (filterFomoToggle) filterFomoToggle.addEventListener('change', saveAndNotify);
   monkModeToggle.addEventListener('change', saveAndNotify);
   blockReelsToggle.addEventListener('change', saveAndNotify);
   autoBlurRageToggle.addEventListener('change', saveAndNotify);
@@ -148,6 +184,9 @@ document.addEventListener('DOMContentLoaded', () => {
       blockedRageCount: 0,
       blockedScamCount: 0,
       cleanedSeedingCount: 0,
+      wholesomeCount: 0,
+      doomCount: 0,
+      fomoCount: 0,
     });
     if (motivationalCounter) motivationalCounter.textContent = '0';
     if (memeCounter) memeCounter.textContent = '0';
@@ -155,6 +194,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (rageCounter) rageCounter.textContent = '0';
     if (scamCounter) scamCounter.textContent = '0';
     if (monkCounter) monkCounter.textContent = '0';
+    if (wholesomeCounter) wholesomeCounter.textContent = '0';
+    if (doomCounter) doomCounter.textContent = '0';
+    if (fomoCounter) fomoCounter.textContent = '0';
 
     chrome.tabs.query({}, (tabs) => {
       if (tabs) {
@@ -184,6 +226,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (changes.monkModeBlockedCount && monkCounter) {
         monkCounter.textContent = changes.monkModeBlockedCount.newValue || 0;
+      }
+      if (changes.wholesomeCount && wholesomeCounter) {
+        wholesomeCounter.textContent = changes.wholesomeCount.newValue || 0;
+      }
+      if (changes.doomCount && doomCounter) {
+        doomCounter.textContent = changes.doomCount.newValue || 0;
+      }
+      if (changes.fomoCount && fomoCounter) {
+        fomoCounter.textContent = changes.fomoCount.newValue || 0;
       }
     });
   }

@@ -10,6 +10,9 @@
     filterMotivationalEnabled: true,
     filterMemeEnabled: true,
     filterDeepDiveEnabled: true,
+    filterWholesomeEnabled: true,
+    filterDoomEnabled: true,
+    filterFomoEnabled: true,
     monkModeEnabled: true,       // Hardcore Monk Mode: Block all photos/videos with women & goon-bait
     blockReelsEnabled: true,     // Block Reels pop-ups & short videos on Facebook
     autoBlurRageEnabled: true,
@@ -26,6 +29,9 @@
   let motivationalCount = 0;
   let memeCount = 0;
   let deepDiveCount = 0;
+  let wholesomeCount = 0;
+  let doomCount = 0;
+  let fomoCount = 0;
 
   function getPlatform() {
     const host = window.location.hostname.toLowerCase();
@@ -83,6 +89,9 @@
         'filterMotivationalEnabled',
         'filterMemeEnabled',
         'filterDeepDiveEnabled',
+        'filterWholesomeEnabled',
+        'filterDoomEnabled',
+        'filterFomoEnabled',
         'monkModeEnabled',
         'blockReelsEnabled',
         'autoBlurRageEnabled',
@@ -97,11 +106,17 @@
         'motivationalCount',
         'memeCount',
         'deepDiveCount',
+        'wholesomeCount',
+        'doomCount',
+        'fomoCount',
       ],
       (res) => {
         if (typeof res.filterMotivationalEnabled === 'boolean') config.filterMotivationalEnabled = res.filterMotivationalEnabled;
         if (typeof res.filterMemeEnabled === 'boolean') config.filterMemeEnabled = res.filterMemeEnabled;
         if (typeof res.filterDeepDiveEnabled === 'boolean') config.filterDeepDiveEnabled = res.filterDeepDiveEnabled;
+        if (typeof res.filterWholesomeEnabled === 'boolean') config.filterWholesomeEnabled = res.filterWholesomeEnabled;
+        if (typeof res.filterDoomEnabled === 'boolean') config.filterDoomEnabled = res.filterDoomEnabled;
+        if (typeof res.filterFomoEnabled === 'boolean') config.filterFomoEnabled = res.filterFomoEnabled;
         if (typeof res.monkModeEnabled === 'boolean') config.monkModeEnabled = res.monkModeEnabled;
         if (typeof res.blockReelsEnabled === 'boolean') config.blockReelsEnabled = res.blockReelsEnabled;
         if (typeof res.autoBlurRageEnabled === 'boolean') config.autoBlurRageEnabled = res.autoBlurRageEnabled;
@@ -119,6 +134,9 @@
         if (typeof res.motivationalCount === 'number') motivationalCount = res.motivationalCount;
         if (typeof res.memeCount === 'number') memeCount = res.memeCount;
         if (typeof res.deepDiveCount === 'number') deepDiveCount = res.deepDiveCount;
+        if (typeof res.wholesomeCount === 'number') wholesomeCount = res.wholesomeCount;
+        if (typeof res.doomCount === 'number') doomCount = res.doomCount;
+        if (typeof res.fomoCount === 'number') fomoCount = res.fomoCount;
 
         updatePill();
         applyStateToDOM();
@@ -129,6 +147,9 @@
       'filterMotivationalEnabled',
       'filterMemeEnabled',
       'filterDeepDiveEnabled',
+      'filterWholesomeEnabled',
+      'filterDoomEnabled',
+      'filterFomoEnabled',
       'autoBlurRageEnabled',
       'blockScamsEnabled',
       'collapseSeedingEnabled',
@@ -147,6 +168,9 @@
         if (typeof request.config.filterMotivationalEnabled === 'boolean') config.filterMotivationalEnabled = request.config.filterMotivationalEnabled;
         if (typeof request.config.filterMemeEnabled === 'boolean') config.filterMemeEnabled = request.config.filterMemeEnabled;
         if (typeof request.config.filterDeepDiveEnabled === 'boolean') config.filterDeepDiveEnabled = request.config.filterDeepDiveEnabled;
+        if (typeof request.config.filterWholesomeEnabled === 'boolean') config.filterWholesomeEnabled = request.config.filterWholesomeEnabled;
+        if (typeof request.config.filterDoomEnabled === 'boolean') config.filterDoomEnabled = request.config.filterDoomEnabled;
+        if (typeof request.config.filterFomoEnabled === 'boolean') config.filterFomoEnabled = request.config.filterFomoEnabled;
         config.monkModeEnabled = request.config.monkModeEnabled;
         if (typeof request.config.blockReelsEnabled === 'boolean') config.blockReelsEnabled = request.config.blockReelsEnabled;
         config.autoBlurRageEnabled = request.config.autoBlurRageEnabled;
@@ -166,6 +190,9 @@
         motivationalCount = 0;
         memeCount = 0;
         deepDiveCount = 0;
+        wholesomeCount = 0;
+        doomCount = 0;
+        fomoCount = 0;
         monkModeBlockedCount = 0;
         blockedRageCount = 0;
         blockedScamCount = 0;
@@ -186,6 +213,9 @@
           'filterMotivationalEnabled',
           'filterMemeEnabled',
           'filterDeepDiveEnabled',
+          'filterWholesomeEnabled',
+          'filterDoomEnabled',
+          'filterFomoEnabled',
           'monkModeEnabled',
           'blockReelsEnabled',
           'autoBlurRageEnabled',
@@ -206,6 +236,9 @@
         if (changes.motivationalCount) motivationalCount = changes.motivationalCount.newValue || 0;
         if (changes.memeCount) memeCount = changes.memeCount.newValue || 0;
         if (changes.deepDiveCount) deepDiveCount = changes.deepDiveCount.newValue || 0;
+        if (changes.wholesomeCount) wholesomeCount = changes.wholesomeCount.newValue || 0;
+        if (changes.doomCount) doomCount = changes.doomCount.newValue || 0;
+        if (changes.fomoCount) fomoCount = changes.fomoCount.newValue || 0;
         if (changes.monkModeBlockedCount) monkModeBlockedCount = changes.monkModeBlockedCount.newValue || 0;
         if (changes.blockedRageCount) blockedRageCount = changes.blockedRageCount.newValue || 0;
         if (changes.blockedScamCount) blockedScamCount = changes.blockedScamCount.newValue || 0;
@@ -258,6 +291,39 @@
         color: '#818cf8',
       },
     },
+    'wholesome / positive': {
+      configKey: 'filterWholesomeEnabled',
+      instruction: 'uplifting, heartwarming, kind, peaceful, constructive positive stories, wholesome moments.',
+      badge: {
+        text: '🌿 Wholesome / Tích cực',
+        desc: 'Uplifting, heartwarming, and constructive positive content (Ấm áp, tích cực)',
+        bg: 'rgba(16, 185, 129, 0.18)',
+        border: '#10b981',
+        color: '#34d399',
+      },
+    },
+    'fearmongering / doom': {
+      configKey: 'filterDoomEnabled',
+      instruction: 'alarming, sensationalized bad news, apocalyptic anxiety, catastrophic predictions, fearmongering.',
+      badge: {
+        text: '⚠️ Doom / Gieo rắc sợ hãi',
+        desc: 'Sensationalized bad news, existential threat, or doom anxiety (Gieo rắc sợ hãi / bi quan)',
+        bg: 'rgba(249, 115, 22, 0.18)',
+        border: '#f97316',
+        color: '#fb923c',
+      },
+    },
+    'fomo / hype': {
+      configKey: 'filterFomoEnabled',
+      instruction: 'exaggerated financial hype, crypto shill, urgency to buy, get-rich-quick, fear of missing out.',
+      badge: {
+        text: '⚡ FOMO / Hype',
+        desc: 'Sensationalized hype, crypto shill, or fear of missing out (Thổi phồng, lùa gà fomo)',
+        bg: 'rgba(234, 179, 8, 0.18)',
+        border: '#eab308',
+        color: '#fde047',
+      },
+    },
     'rage bait / toxic / hostile / dismissive negativity': {
       configKey: 'autoBlurRageEnabled',
       instruction: 'provocative content designed to incite outrage, anger, toxic drama, hostile or dismissive negativity, cynicism, or insults.',
@@ -279,6 +345,9 @@
     'self-improvement / motivational': TAXONOMY_CATALOG['self-improvement / motivational'].badge,
     'meme / humor / satire': TAXONOMY_CATALOG['meme / humor / satire'].badge,
     'deep dive / technical breakdown / industry insider': TAXONOMY_CATALOG['deep dive / technical breakdown / industry insider'].badge,
+    'wholesome / positive': TAXONOMY_CATALOG['wholesome / positive'].badge,
+    'fearmongering / doom': TAXONOMY_CATALOG['fearmongering / doom'].badge,
+    'fomo / hype': TAXONOMY_CATALOG['fomo / hype'].badge,
     'other / casual discussion': {
       text: '💬 Thảo luận / Khác',
       desc: 'Everyday casual talk or general post (Thảo luận bình thường)',
@@ -367,6 +436,15 @@
     }
     if (config.filterDeepDiveEnabled !== false) {
       parts.push(`🔬 Deep Dive: <span style="color:#818cf8">${deepDiveCount}</span>`);
+    }
+    if (config.filterWholesomeEnabled !== false && wholesomeCount > 0) {
+      parts.push(`🌿 Wholesome: <span style="color:#34d399">${wholesomeCount}</span>`);
+    }
+    if (config.filterDoomEnabled !== false && doomCount > 0) {
+      parts.push(`⚠️ Doom: <span style="color:#fb923c">${doomCount}</span>`);
+    }
+    if (config.filterFomoEnabled !== false && fomoCount > 0) {
+      parts.push(`⚡ FOMO: <span style="color:#fde047">${fomoCount}</span>`);
     }
     pill.innerHTML = parts.join(' | ') + ` <span class="x-jev-pill-close" title="Ẩn thanh trạng thái nổi này (bật lại trong popup)">✕</span>`;
     const closeBtn = pill.querySelector('.x-jev-pill-close');
@@ -864,6 +942,21 @@
           deepDiveCount++;
           if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
             chrome.storage.local.set({ deepDiveCount });
+          }
+        } else if (label === 'wholesome / positive') {
+          wholesomeCount++;
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ wholesomeCount });
+          }
+        } else if (label === 'fearmongering / doom') {
+          doomCount++;
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ doomCount });
+          }
+        } else if (label === 'fomo / hype') {
+          fomoCount++;
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ fomoCount });
           }
         }
         updatePill();

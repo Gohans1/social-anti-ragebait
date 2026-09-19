@@ -144,6 +144,9 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
       'self-improvement / motivational': { configKey: 'filterMotivationalEnabled', instruction: 'motivational...' },
       'meme / humor / satire': { configKey: 'filterMemeEnabled', instruction: 'meme...' },
       'deep dive / technical breakdown / industry insider': { configKey: 'filterDeepDiveEnabled', instruction: 'deep dive...' },
+      'wholesome / positive': { configKey: 'filterWholesomeEnabled', instruction: 'wholesome...' },
+      'fearmongering / doom': { configKey: 'filterDoomEnabled', instruction: 'doom...' },
+      'fomo / hype': { configKey: 'filterFomoEnabled', instruction: 'fomo...' },
       'rage bait / toxic / hostile / dismissive negativity': { configKey: 'autoBlurRageEnabled', instruction: 'rage...' },
       'scam / fraudulent scheme': { configKey: 'blockScamsEnabled', instruction: 'scam...' },
       'bot seeding / affiliate spam / fake review': { configKey: 'collapseSeedingEnabled', instruction: 'seeding...' },
@@ -174,40 +177,69 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
       };
     }
 
-    // All on
+    // All on: 9 categories + 1 catch-all = 10 labels
     const allOn = getActiveTaxonomy({
       filterMotivationalEnabled: true,
       filterMemeEnabled: true,
       filterDeepDiveEnabled: true,
+      filterWholesomeEnabled: true,
+      filterDoomEnabled: true,
+      filterFomoEnabled: true,
       autoBlurRageEnabled: true,
       blockScamsEnabled: true,
       collapseSeedingEnabled: true,
     });
-    expect(allOn.labels.length).toBe(7);
+    expect(allOn.labels.length).toBe(10);
     expect(allOn.labels).toContain('rage bait / toxic / hostile / dismissive negativity');
+    expect(allOn.labels).toContain('wholesome / positive');
+    expect(allOn.labels).toContain('fearmongering / doom');
+    expect(allOn.labels).toContain('fomo / hype');
 
     // Rage bait turned OFF
     const rageOff = getActiveTaxonomy({
       filterMotivationalEnabled: true,
       filterMemeEnabled: true,
       filterDeepDiveEnabled: true,
+      filterWholesomeEnabled: true,
+      filterDoomEnabled: true,
+      filterFomoEnabled: true,
       autoBlurRageEnabled: false,
       blockScamsEnabled: true,
       collapseSeedingEnabled: true,
     });
-    expect(rageOff.labels.length).toBe(6);
+    expect(rageOff.labels.length).toBe(9);
     expect(rageOff.labels).not.toContain('rage bait / toxic / hostile / dismissive negativity');
+
+    // Wholesome, doom, fomo turned OFF
+    const wholesomeDoomFomoOff = getActiveTaxonomy({
+      filterMotivationalEnabled: true,
+      filterMemeEnabled: true,
+      filterDeepDiveEnabled: true,
+      filterWholesomeEnabled: false,
+      filterDoomEnabled: false,
+      filterFomoEnabled: false,
+      autoBlurRageEnabled: true,
+      blockScamsEnabled: true,
+      collapseSeedingEnabled: true,
+    });
+    expect(wholesomeDoomFomoOff.labels.length).toBe(7);
+    expect(wholesomeDoomFomoOff.labels).not.toContain('wholesome / positive');
+    expect(wholesomeDoomFomoOff.labels).not.toContain('fearmongering / doom');
+    expect(wholesomeDoomFomoOff.labels).not.toContain('fomo / hype');
 
     // Meme turned OFF
     const memeOff = getActiveTaxonomy({
       filterMotivationalEnabled: true,
       filterMemeEnabled: false,
       filterDeepDiveEnabled: true,
+      filterWholesomeEnabled: true,
+      filterDoomEnabled: true,
+      filterFomoEnabled: true,
       autoBlurRageEnabled: true,
       blockScamsEnabled: true,
       collapseSeedingEnabled: true,
     });
-    expect(memeOff.labels.length).toBe(6);
+    expect(memeOff.labels.length).toBe(9);
     expect(memeOff.labels).not.toContain('meme / humor / satire');
 
     // All OFF
@@ -215,6 +247,9 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
       filterMotivationalEnabled: false,
       filterMemeEnabled: false,
       filterDeepDiveEnabled: false,
+      filterWholesomeEnabled: false,
+      filterDoomEnabled: false,
+      filterFomoEnabled: false,
       autoBlurRageEnabled: false,
       blockScamsEnabled: false,
       collapseSeedingEnabled: false,
@@ -227,6 +262,9 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
       'self-improvement / motivational': { configKey: 'filterMotivationalEnabled', instruction: 'personal growth...' },
       'meme / humor / satire': { configKey: 'filterMemeEnabled', instruction: 'lighthearted jokes...' },
       'deep dive / technical breakdown / industry insider': { configKey: 'filterDeepDiveEnabled', instruction: 'in-depth...' },
+      'wholesome / positive': { configKey: 'filterWholesomeEnabled', instruction: 'uplifting...' },
+      'fearmongering / doom': { configKey: 'filterDoomEnabled', instruction: 'alarming...' },
+      'fomo / hype': { configKey: 'filterFomoEnabled', instruction: 'exaggerated...' },
       'rage bait / toxic / hostile / dismissive negativity': { configKey: 'autoBlurRageEnabled', instruction: 'provocative...' },
       'scam / fraudulent scheme': { configKey: 'blockScamsEnabled', instruction: 'online fraud...' },
       'bot seeding / affiliate spam / fake review': { configKey: 'collapseSeedingEnabled', instruction: 'commercial...' },
@@ -257,19 +295,23 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
       };
     }
 
-    // Only motivational and meme enabled
+    // Only motivational, wholesome, and meme enabled
     const partial = getActiveTaxonomy({
       filterMotivationalEnabled: true,
       filterMemeEnabled: true,
       filterDeepDiveEnabled: false,
+      filterWholesomeEnabled: true,
+      filterDoomEnabled: false,
+      filterFomoEnabled: false,
       autoBlurRageEnabled: false,
       blockScamsEnabled: false,
       collapseSeedingEnabled: false,
     });
     expect(partial.instructions).toContain('1. "self-improvement / motivational"');
     expect(partial.instructions).toContain('2. "meme / humor / satire"');
-    expect(partial.instructions).toContain('3. "other / casual discussion"');
-    expect(partial.instructions).not.toContain('4.');
+    expect(partial.instructions).toContain('3. "wholesome / positive"');
+    expect(partial.instructions).toContain('4. "other / casual discussion"');
+    expect(partial.instructions).not.toContain('5.');
     expect(partial.instructions).not.toContain('7.');
   });
 
@@ -278,6 +320,9 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
       'filterMotivationalEnabled',
       'filterMemeEnabled',
       'filterDeepDiveEnabled',
+      'filterWholesomeEnabled',
+      'filterDoomEnabled',
+      'filterFomoEnabled',
       'autoBlurRageEnabled',
       'blockScamsEnabled',
       'collapseSeedingEnabled',
@@ -285,6 +330,9 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
     ];
 
     expect(TAXONOMY_KEYS.includes('filterMotivationalEnabled')).toBe(true);
+    expect(TAXONOMY_KEYS.includes('filterWholesomeEnabled')).toBe(true);
+    expect(TAXONOMY_KEYS.includes('filterDoomEnabled')).toBe(true);
+    expect(TAXONOMY_KEYS.includes('filterFomoEnabled')).toBe(true);
     expect(TAXONOMY_KEYS.includes('autoBlurRageEnabled')).toBe(true);
     expect(TAXONOMY_KEYS.includes('hideFloatingPill')).toBe(false);
     expect(TAXONOMY_KEYS.includes('blockReelsEnabled')).toBe(false);

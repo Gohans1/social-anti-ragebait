@@ -35,6 +35,9 @@
     filterMotivationalEnabled: true,
     filterMemeEnabled: true,
     filterDeepDiveEnabled: true,
+    filterWholesomeEnabled: true,
+    filterDoomEnabled: true,
+    filterFomoEnabled: true,
     monkModeEnabled: true,
     blockReelsEnabled: true,
     autoBlurRageEnabled: true,
@@ -50,6 +53,9 @@
   let motivationalCount = 0;
   let memeCount = 0;
   let deepDiveCount = 0;
+  let wholesomeCount = 0;
+  let doomCount = 0;
+  let fomoCount = 0;
 
   function getPlatform() {
     const host = window.location.hostname.toLowerCase();
@@ -465,6 +471,39 @@
         color: '#818cf8',
       },
     },
+    'wholesome / positive': {
+      configKey: 'filterWholesomeEnabled',
+      instruction: 'uplifting, heartwarming, kind, peaceful, constructive positive stories, wholesome moments.',
+      badge: {
+        text: '🌿 Wholesome / Tích cực',
+        desc: 'Uplifting, heartwarming, and constructive positive content (Ấm áp, tích cực)',
+        bg: 'rgba(16, 185, 129, 0.18)',
+        border: '#10b981',
+        color: '#34d399',
+      },
+    },
+    'fearmongering / doom': {
+      configKey: 'filterDoomEnabled',
+      instruction: 'alarming, sensationalized bad news, apocalyptic anxiety, catastrophic predictions, fearmongering.',
+      badge: {
+        text: '⚠️ Doom / Gieo rắc sợ hãi',
+        desc: 'Sensationalized bad news, existential threat, or doom anxiety (Gieo rắc sợ hãi / bi quan)',
+        bg: 'rgba(249, 115, 22, 0.18)',
+        border: '#f97316',
+        color: '#fb923c',
+      },
+    },
+    'fomo / hype': {
+      configKey: 'filterFomoEnabled',
+      instruction: 'exaggerated financial hype, crypto shill, urgency to buy, get-rich-quick, fear of missing out.',
+      badge: {
+        text: '⚡ FOMO / Hype',
+        desc: 'Sensationalized hype, crypto shill, or fear of missing out (Thổi phồng, lùa gà fomo)',
+        bg: 'rgba(234, 179, 8, 0.18)',
+        border: '#eab308',
+        color: '#fde047',
+      },
+    },
     'rage bait / toxic / hostile / dismissive negativity': {
       configKey: 'autoBlurRageEnabled',
       instruction: 'provocative content designed to incite outrage, anger, toxic drama, hostile or dismissive negativity, cynicism, or insults.',
@@ -486,6 +525,9 @@
     'self-improvement / motivational': TAXONOMY_CATALOG['self-improvement / motivational'].badge,
     'meme / humor / satire': TAXONOMY_CATALOG['meme / humor / satire'].badge,
     'deep dive / technical breakdown / industry insider': TAXONOMY_CATALOG['deep dive / technical breakdown / industry insider'].badge,
+    'wholesome / positive': TAXONOMY_CATALOG['wholesome / positive'].badge,
+    'fearmongering / doom': TAXONOMY_CATALOG['fearmongering / doom'].badge,
+    'fomo / hype': TAXONOMY_CATALOG['fomo / hype'].badge,
     'other / casual discussion': {
       text: '💬 Thảo luận / Khác',
       desc: 'Everyday casual talk or general post (Thảo luận bình thường)',
@@ -578,6 +620,15 @@
     }
     if (CONFIG.filterDeepDiveEnabled !== false) {
       parts.push(`🔬 Deep Dive: <span style="color:#818cf8">${deepDiveCount}</span>`);
+    }
+    if (CONFIG.filterWholesomeEnabled !== false && wholesomeCount > 0) {
+      parts.push(`🌿 Wholesome: <span style="color:#34d399">${wholesomeCount}</span>`);
+    }
+    if (CONFIG.filterDoomEnabled !== false && doomCount > 0) {
+      parts.push(`⚠️ Doom: <span style="color:#fb923c">${doomCount}</span>`);
+    }
+    if (CONFIG.filterFomoEnabled !== false && fomoCount > 0) {
+      parts.push(`⚡ FOMO: <span style="color:#fde047">${fomoCount}</span>`);
     }
     pill.innerHTML = parts.join(' | ') + ` <span class="x-jev-pill-close" title="Ẩn thanh trạng thái này">✕</span>`;
     const closeBtn = pill.querySelector('.x-jev-pill-close');
@@ -888,6 +939,9 @@
         if (label === 'self-improvement / motivational') motivationalCount++;
         else if (label === 'meme / humor / satire') memeCount++;
         else if (label === 'deep dive / technical breakdown / industry insider') deepDiveCount++;
+        else if (label === 'wholesome / positive') wholesomeCount++;
+        else if (label === 'fearmongering / doom') doomCount++;
+        else if (label === 'fomo / hype') fomoCount++;
         updatePill();
       }
 
