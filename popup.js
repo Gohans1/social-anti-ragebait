@@ -89,6 +89,10 @@ document.addEventListener('DOMContentLoaded', () => {
       '*://*.facebook.com/*',
       '*://facebook.com/*',
       '*://*.fb.com/*',
+      '*://*.instagram.com/*',
+      '*://instagram.com/*',
+      '*://*.youtube.com/*',
+      '*://youtube.com/*',
     ];
 
     chrome.tabs.query({ url: targetUrlPatterns }, (tabs) => {

@@ -1,6 +1,6 @@
-# 🛡️ Social Shield: Anti-Ragebait, Scam, Seeding & Monk Mode
+# 🛡️ Social Shield: Anti-Rage, Scam, Universal Reels & Monk Mode
 
-> Tiện ích mở rộng AI bảo vệ người dùng mạng xã hội toàn diện: **Làm mờ bài viết kích động/Rage-bait**, **chặn bẫy lừa đảo/lùa gà tài chính**, **lọc Goon-bait / Tu tập (Monk Mode)**, và **tự động thu gọn comment seeding/bot clone** trên **Threads (`threads.com` & `threads.net`)**, **Facebook**, và **𝕏 (Twitter)** — hỗ trợ tiếng Việt và tiếng Anh mượt mà bằng mô hình **Jev Zero-Shot AI** ([classifier.dev](https://classifier.dev)).
+> Tiện ích mở rộng AI bảo vệ người dùng mạng xã hội toàn diện: **Làm mờ bài viết kích động/Rage-bait**, **chặn bẫy lừa đảo/lùa gà tài chính**, **chặn triệt để Reels & Shorts (Instagram Reels, YouTube Shorts, Facebook Reels)**, **lọc Goon-bait / Tu tập (Monk Mode)**, và **tự động thu gọn comment seeding/bot clone** trên **Instagram**, **YouTube**, **Facebook**, **Threads**, và **𝕏 (Twitter)** — hỗ trợ tiếng Việt và tiếng Anh mượt mà bằng mô hình **Jev Zero-Shot AI** ([classifier.dev](https://classifier.dev)).
 
 ---
 
@@ -12,11 +12,11 @@
 * 🛑 **Lớp 2: Chặn Bẫy Lừa Đảo (Anti-Scam & Financial Fraud)**:
   - Phát hiện các bài viết tuyển CTV xem TikTok/gõ văn bản lừa cọc, kéo nhóm Telegram/Zalo crypto cam kết lãi khủng, app vay nặng lãi, mạo danh ngân hàng.
   - Làm mờ bài viết và hiển thị dấu hiệu cảnh báo chi tiết.
-* 🧘 **Lớp 3: Chế độ Tu Tập & Chặn Pop-up Reels (Monk Mode & Facebook Reels Shield)**:
-  - Tự động quét và làm mờ mọi hình ảnh, video có phụ nữ / khoe thân / goonbait / thirst-traps nhằm duy trì sự tập trung tối đa, cai nghiện dopamine độc hại.
-  - **Chặn triệt để Pop-up Reels trên Facebook**: Tự động phát hiện hộp thoại Pop-up Reels (`role="dialog"`, `/reel/`, `data-pagelet="Tahoe"`, mini-player) và khay "Reels & Video ngắn" trên Bảng tin. Tự động **tạm dừng (pause)** và **tắt tiếng (mute)** video ngay lập tức, hiển thị màn hình bảo vệ tập trung kèm nút `[▶ Xem video]` và `[✕ Đóng pop-up]`.
-  - Sử dụng kết hợp **0ms Meta AI Vision Alt-Tags** (trên Threads & Facebook) và **Jev Zero-Shot AI** để phát hiện tức thì.
-  - Bảo vệ avatar tài khoản (không làm mờ ảnh đại diện người đăng), kèm nút *"Xem ảnh"* để chủ động bật khi cần.
+* 🧘 **Lớp 3: Chế độ Tu Tập & Chặn Full Reels/Shorts (Monk Mode & Universal Shorts Shield)**:
+  - **📸 Chặn triệt để Instagram Reels**: Chặn mọi Reels trên Instagram ở bất kỳ đâu: tab Reels riêng (`/reels/`), hộp thoại Pop-up Reel (`role="dialog"`), bài viết Reel trên Bảng tin (Feed), và lưới khám phá (Explore). Tự động tạm dừng (`pause`), tắt tiếng (`mute`) và phủ màn hình Monk Mode kèm nút `[▶ Xem Reel]` và `[✕ Đóng pop-up]`.
+  - **▶️ Chặn triệt để YouTube Shorts**: Chặn trình phát YouTube Shorts (`/shorts/...`), tự động tạm dừng video, che mờ và hiện nút `[🏠 Về Trang chủ]`. Đồng thời tự động thu gọn khay "Shorts" trên trang chủ và tìm kiếm YouTube.
+  - **📘 Chặn triệt để Facebook Reels**: Chặn hộp thoại Pop-up Reels, mini-player nổi và khay "Reels và video ngắn" trên Bảng tin.
+  - Tự động quét và làm mờ ảnh/video có phụ nữ / khoe thân / goonbait / thirst-traps nhằm duy trì sự tập trung tối đa, cai nghiện dopamine độc hại.
 * 🧹 **Lớp 4: Dọn Sạch Comment Seeding (Seeding & Bot Purger)**:
   - Tự động thu gọn các bình luận clone khen dạo, tung hứng mồi chài "check ib", seeding link affiliate bẩn thành 1 thanh mỏng thanh lịch: `[🧹 Đã thu gọn bình luận nghi vấn Seeding / Clone] (Xem nội dung ▾)`.
 * ⚡ **Bộ nhớ đệm tức thời (Instant Cache 0ms)**:

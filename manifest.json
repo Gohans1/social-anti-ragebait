@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Social Shield: Anti-Rage, Scam, Reels & Monk Mode",
-  "version": "2.2.0",
-  "description": "All-in-one AI shield: auto-blur rage-bait, block financial scams, block Facebook Reels popups/monk mode, and collapse bot seeding on Threads, Facebook, and X using Jev",
+  "name": "Social Shield: Anti-Rage, Scam, Universal Reels & Monk Mode",
+  "version": "2.3.0",
+  "description": "All-in-one AI shield: auto-blur rage-bait, scams, and block short videos (Instagram Reels, YouTube Shorts, Facebook Reels) & Monk Mode across all social platforms",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -35,7 +35,11 @@
     "*://twitter.com/*",
     "*://*.facebook.com/*",
     "*://facebook.com/*",
-    "*://*.fb.com/*"
+    "*://*.fb.com/*",
+    "*://*.instagram.com/*",
+    "*://instagram.com/*",
+    "*://*.youtube.com/*",
+    "*://youtube.com/*"
   ],
   "content_scripts": [
     {
@@ -50,7 +54,11 @@
         "*://twitter.com/*",
         "*://*.facebook.com/*",
         "*://facebook.com/*",
-        "*://*.fb.com/*"
+        "*://*.fb.com/*",
+        "*://*.instagram.com/*",
+        "*://instagram.com/*",
+        "*://*.youtube.com/*",
+        "*://youtube.com/*"
       ],
       "js": ["content.js"],
       "css": ["content.css"],

@@ -23,6 +23,8 @@
     const host = window.location.hostname.toLowerCase();
     if (host.includes('threads.net') || host.includes('threads.com')) return 'threads';
     if (host.includes('facebook.com') || host.includes('fb.com')) return 'facebook';
+    if (host.includes('instagram.com')) return 'instagram';
+    if (host.includes('youtube.com')) return 'youtube';
     return 'x';
   }
 
@@ -866,6 +868,328 @@
     }
   }
 
+  // --- INSTAGRAM REELS SCANNER ---
+  function scanInstagramReels() {
+    if (getPlatform() !== 'instagram') return;
+    if (!config.monkModeEnabled && !config.blockReelsEnabled) return;
+
+    // 1. Direct Reels Page (`instagram.com/reels/` or `instagram.com/reel/...`)
+    if (window.location.pathname.includes('/reel')) {
+      const mainEl = document.querySelector('main[role="main"]') || document.body;
+      const videos = mainEl.querySelectorAll('video');
+      if (videos.length > 0) {
+        mainEl.setAttribute('data-monk-reels-blocked', 'true');
+        if (!mainEl.hasAttribute('data-monk-reels-counted')) {
+          mainEl.setAttribute('data-monk-reels-counted', 'true');
+          monkModeBlockedCount++;
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ monkModeBlockedCount });
+          }
+          updatePill();
+        }
+
+        if (!mainEl.classList.contains('monk-revealed')) {
+          videos.forEach((vid) => {
+            try { vid.pause(); vid.muted = true; } catch (e) {}
+            if (!vid.dataset.monkHooked) {
+              vid.dataset.monkHooked = 'true';
+              vid.addEventListener('play', () => {
+                if (!mainEl.classList.contains('monk-revealed')) {
+                  try { vid.pause(); vid.muted = true; } catch (e) {}
+                }
+              });
+            }
+          });
+        }
+
+        if (!mainEl.querySelector('.x-monk-reels-overlay')) {
+          const overlay = document.createElement('div');
+          overlay.className = 'x-monk-reels-overlay';
+          overlay.innerHTML = `
+            <div class="x-monk-reels-card">
+              <div class="x-monk-reels-icon">🧘</div>
+              <div class="x-monk-reels-title">Monk Mode: Đã chặn Instagram Reel</div>
+              <div class="x-monk-reels-desc">Thước phim ngắn đã được tạm dừng và làm mờ để bảo vệ sự tập trung tuyệt đối.</div>
+              <div class="x-monk-reels-actions">
+                <button class="x-monk-btn-reveal">▶ Xem Reel</button>
+                <button class="x-monk-btn-home">🏠 Về Trang chủ</button>
+              </div>
+            </div>
+          `;
+          const revealBtn = overlay.querySelector('.x-monk-btn-reveal');
+          revealBtn.onclick = (e) => {
+            e.preventDefault();
+            mainEl.classList.add('monk-revealed');
+            videos.forEach((v) => { try { v.muted = false; v.play(); } catch (err) {} });
+          };
+          const homeBtn = overlay.querySelector('.x-monk-btn-home');
+          homeBtn.onclick = (e) => {
+            e.preventDefault();
+            window.location.href = 'https://www.instagram.com/';
+          };
+          const wrapper = mainEl.querySelector('div:has(> video)') || videos[0]?.parentElement || mainEl;
+          wrapper.style.position = 'relative';
+          wrapper.appendChild(overlay);
+        }
+      }
+    }
+
+    // 2. Modal Dialogs (`role="dialog"` containing reel link or video)
+    const dialogs = document.querySelectorAll('div[role="dialog"]');
+    dialogs.forEach((dialog) => {
+      const hasReel = dialog.querySelector('a[href*="/reel/"], a[href*="/reels/"]') ||
+                      window.location.pathname.includes('/reel') ||
+                      dialog.querySelector('video');
+      const videos = dialog.querySelectorAll('video');
+      if (hasReel && videos.length > 0) {
+        if (!dialog.hasAttribute('data-monk-reels-blocked')) {
+          dialog.setAttribute('data-monk-reels-blocked', 'true');
+          monkModeBlockedCount++;
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ monkModeBlockedCount });
+          }
+          updatePill();
+        }
+
+        if (!dialog.classList.contains('monk-revealed')) {
+          videos.forEach((vid) => {
+            try { vid.pause(); vid.muted = true; } catch (e) {}
+            if (!vid.dataset.monkHooked) {
+              vid.dataset.monkHooked = 'true';
+              vid.addEventListener('play', () => {
+                if (!dialog.classList.contains('monk-revealed')) {
+                  try { vid.pause(); vid.muted = true; } catch (e) {}
+                }
+              });
+            }
+          });
+        }
+
+        if (!dialog.querySelector('.x-monk-reels-overlay')) {
+          const overlay = document.createElement('div');
+          overlay.className = 'x-monk-reels-overlay';
+          overlay.innerHTML = `
+            <div class="x-monk-reels-card">
+              <div class="x-monk-reels-icon">🧘</div>
+              <div class="x-monk-reels-title">Monk Mode: Đã chặn Pop-up Reel Instagram</div>
+              <div class="x-monk-reels-desc">Thước phim ngắn đã được tạm dừng và làm mờ để bảo vệ sự tập trung.</div>
+              <div class="x-monk-reels-actions">
+                <button class="x-monk-btn-reveal">▶ Xem Reel</button>
+                <button class="x-monk-btn-close">✕ Đóng pop-up</button>
+              </div>
+            </div>
+          `;
+
+          const floatingReblur = document.createElement('button');
+          floatingReblur.className = 'x-monk-re-blur-floating';
+          floatingReblur.innerHTML = `<span>🧘</span><span>Ẩn lại Reel</span>`;
+          floatingReblur.onclick = (e) => {
+            e.preventDefault();
+            dialog.classList.remove('monk-revealed');
+            videos.forEach((v) => { try { v.pause(); v.muted = true; } catch (err) {} });
+          };
+
+          const revealBtn = overlay.querySelector('.x-monk-btn-reveal');
+          revealBtn.onclick = (e) => {
+            e.preventDefault();
+            dialog.classList.add('monk-revealed');
+            videos.forEach((v) => { try { v.muted = false; v.play(); } catch (err) {} });
+          };
+
+          const closeBtn = overlay.querySelector('.x-monk-btn-close');
+          closeBtn.onclick = (e) => {
+            e.preventDefault();
+            const closeSvg = dialog.querySelector('svg[aria-label*="Close" i], svg[aria-label*="Đóng" i]');
+            if (closeSvg && closeSvg.closest('button, div[role="button"]')) {
+              closeSvg.closest('button, div[role="button"]').click();
+            } else {
+              const esc = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true });
+              document.dispatchEvent(esc);
+              window.dispatchEvent(esc);
+            }
+          };
+
+          const wrapper = dialog.querySelector('div:has(> video)') || videos[0]?.parentElement || dialog;
+          wrapper.style.position = 'relative';
+          wrapper.appendChild(overlay);
+          wrapper.appendChild(floatingReblur);
+        }
+      }
+    });
+
+    // 3. In-Feed Reels / Clips (`article:has(video)` with reel link or clip)
+    document.querySelectorAll('article:not([data-monk-reels-handled])').forEach((article) => {
+      const hasReel = article.querySelector('a[href*="/reel/"], a[href*="/reels/"]');
+      const videos = article.querySelectorAll('video');
+      if (hasReel && videos.length > 0) {
+        article.setAttribute('data-monk-reels-handled', 'true');
+        article.setAttribute('data-monk-reels-blocked', 'true');
+        monkModeBlockedCount++;
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ monkModeBlockedCount });
+        }
+        updatePill();
+
+        videos.forEach((vid) => {
+          try { vid.pause(); vid.muted = true; } catch (e) {}
+        });
+
+        if (!article.querySelector('.x-monk-warning-box')) {
+          const box = document.createElement('div');
+          box.className = 'x-monk-warning-box';
+          box.innerHTML = `
+            <div class="x-monk-warning-text">
+              <span>🧘</span>
+              <div>
+                <b>Monk Mode: Đã chặn Instagram Reel trên Bảng tin.</b>
+                <div style="font-size:10.5px;opacity:0.85;margin-top:1px;">Bảo vệ sự tập trung, chống nghiện lướt clip ngắn.</div>
+              </div>
+            </div>
+          `;
+          const btn = document.createElement('button');
+          btn.className = 'x-monk-reveal-btn';
+          btn.textContent = 'Xem Reel';
+          btn.onclick = (e) => {
+            e.preventDefault();
+            const isRev = article.classList.toggle('monk-revealed');
+            btn.textContent = isRev ? 'Ẩn lại' : 'Xem Reel';
+            videos.forEach((v) => { try { if (isRev) { v.muted = false; v.play(); } else { v.muted = true; v.pause(); } } catch (err) {} });
+          };
+          box.appendChild(btn);
+          const firstVid = videos[0];
+          if (firstVid && firstVid.parentElement) {
+            firstVid.parentElement.insertBefore(box, firstVid);
+          } else {
+            article.prepend(box);
+          }
+        }
+      }
+    });
+
+    // 4. Explore Grid Items (`a[href*="/reel/"]`)
+    document.querySelectorAll('a[href*="/reel/"]:not([data-monk-explore-handled])').forEach((link) => {
+      link.setAttribute('data-monk-explore-handled', 'true');
+      const img = link.querySelector('img');
+      const vid = link.querySelector('video');
+      if (img) img.style.filter = 'blur(20px) grayscale(80%)';
+      if (vid) {
+        vid.style.filter = 'blur(20px) grayscale(80%)';
+        try { vid.pause(); vid.muted = true; } catch (e) {}
+      }
+    });
+  }
+
+  // --- YOUTUBE SHORTS SCANNER ---
+  function scanYouTubeShorts() {
+    if (getPlatform() !== 'youtube') return;
+    if (!config.monkModeEnabled && !config.blockReelsEnabled) return;
+
+    // 1. Direct / Standalone YouTube Shorts (`youtube.com/shorts/...`)
+    if (window.location.pathname.startsWith('/shorts')) {
+      const shortsContainer = document.querySelector('ytd-shorts, #shorts-container, ytd-reel-video-renderer[is-active]');
+      const videos = document.querySelectorAll('ytd-shorts video, #shorts-player video, ytd-reel-video-renderer video');
+
+      if (videos.length > 0) {
+        videos.forEach((vid) => {
+          try { vid.pause(); vid.muted = true; } catch (e) {}
+          if (!vid.dataset.monkHooked) {
+            vid.dataset.monkHooked = 'true';
+            vid.addEventListener('play', () => {
+              const parent = vid.closest('ytd-reel-video-renderer') || shortsContainer;
+              if (!parent || !parent.classList.contains('monk-revealed')) {
+                try { vid.pause(); vid.muted = true; } catch (e) {}
+              }
+            });
+          }
+        });
+      }
+
+      if (shortsContainer && !shortsContainer.hasAttribute('data-monk-reels-blocked')) {
+        shortsContainer.setAttribute('data-monk-reels-blocked', 'true');
+        monkModeBlockedCount++;
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ monkModeBlockedCount });
+        }
+        updatePill();
+
+        if (!shortsContainer.querySelector('.x-monk-reels-overlay')) {
+          const overlay = document.createElement('div');
+          overlay.className = 'x-monk-reels-overlay';
+          overlay.style.position = 'fixed';
+          overlay.innerHTML = `
+            <div class="x-monk-reels-card">
+              <div class="x-monk-reels-icon">🧘</div>
+              <div class="x-monk-reels-title">Monk Mode: Đã chặn YouTube Shorts</div>
+              <div class="x-monk-reels-desc">Video ngắn đã được tạm dừng và làm mờ để bảo vệ sự tập trung tuyệt đối.</div>
+              <div class="x-monk-reels-actions">
+                <button class="x-monk-btn-reveal">▶ Xem Shorts</button>
+                <button class="x-monk-btn-home">🏠 Về Trang chủ</button>
+              </div>
+            </div>
+          `;
+
+          const revealBtn = overlay.querySelector('.x-monk-btn-reveal');
+          revealBtn.onclick = (e) => {
+            e.preventDefault();
+            shortsContainer.classList.add('monk-revealed');
+            videos.forEach((v) => { try { v.muted = false; v.play(); } catch (err) {} });
+          };
+
+          const homeBtn = overlay.querySelector('.x-monk-btn-home');
+          homeBtn.onclick = (e) => {
+            e.preventDefault();
+            window.location.href = 'https://www.youtube.com/';
+          };
+
+          shortsContainer.appendChild(overlay);
+        }
+      }
+    }
+
+    // 2. Feed Shorts Shelves (`ytd-rich-shelf-renderer[is-shorts]`, `ytd-reel-shelf-renderer`)
+    const shelves = document.querySelectorAll(
+      'ytd-rich-shelf-renderer[is-shorts]:not([data-monk-tray-handled]), ytd-reel-shelf-renderer:not([data-monk-tray-handled]), ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]):not([data-monk-tray-handled])'
+    );
+
+    shelves.forEach((shelf) => {
+      shelf.setAttribute('data-monk-tray-handled', 'true');
+      shelf.setAttribute('data-monk-tray-blocked', 'true');
+      monkModeBlockedCount++;
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ monkModeBlockedCount });
+      }
+      updatePill();
+
+      shelf.querySelectorAll('video').forEach((v) => {
+        try { v.pause(); v.muted = true; } catch (e) {}
+      });
+
+      if (!shelf.querySelector('.x-monk-tray-banner')) {
+        const banner = document.createElement('div');
+        banner.className = 'x-monk-tray-banner';
+        banner.innerHTML = `
+          <div class="x-monk-tray-content">
+            <span>🧘</span>
+            <div>
+              <b>Monk Mode: Đã ẩn khu vực YouTube Shorts trên Bảng tin</b>
+              <div style="font-size:11px;opacity:0.85;margin-top:1px;">Duy trì sự tập trung, chống nghiện lướt video ngắn.</div>
+            </div>
+          </div>
+          <button class="x-monk-tray-toggle">Xem Shorts</button>
+        `;
+
+        const toggleBtn = banner.querySelector('.x-monk-tray-toggle');
+        toggleBtn.onclick = (e) => {
+          e.preventDefault();
+          const isRevealed = shelf.classList.toggle('monk-revealed');
+          toggleBtn.textContent = isRevealed ? 'Ẩn lại' : 'Xem Shorts';
+        };
+
+        shelf.prepend(banner);
+      }
+    });
+  }
+
   // Scanner for Posts & Comments
   function scanFeed() {
     const platform = getPlatform();
@@ -960,6 +1284,10 @@
           }
         }
       });
+    } else if (platform === 'instagram') {
+      scanInstagramReels();
+    } else if (platform === 'youtube') {
+      scanYouTubeShorts();
     } else if (platform === 'x') {
       document.querySelectorAll('article[data-testid="tweet"]:not([data-jev-scanned])').forEach((post) => {
         checkAndApplyMonkMode(post, post.innerText || '');
@@ -997,13 +1325,25 @@
       });
     }
 
-    // Safety interval for Facebook Reels & SPAs
-    if (getPlatform() === 'facebook') {
+    // Safety interval for Video/Reels/Shorts on Facebook, Instagram, YouTube
+    if (['facebook', 'instagram', 'youtube'].includes(getPlatform())) {
       setInterval(() => {
         if (config.monkModeEnabled || config.blockReelsEnabled) {
-          scanFacebookReels();
+          if (getPlatform() === 'facebook') scanFacebookReels();
+          if (getPlatform() === 'instagram') scanInstagramReels();
+          if (getPlatform() === 'youtube') scanYouTubeShorts();
         }
-      }, 500);
+      }, 400);
+    }
+
+    window.addEventListener('popstate', () => {
+      if (getPlatform() === 'facebook') scanFacebookReels();
+      if (getPlatform() === 'instagram') scanInstagramReels();
+      if (getPlatform() === 'youtube') scanYouTubeShorts();
+    });
+
+    if (getPlatform() === 'youtube') {
+      window.addEventListener('yt-navigate-finish', () => scanYouTubeShorts());
     }
   }
 

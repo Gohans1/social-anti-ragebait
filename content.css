@@ -245,6 +245,35 @@
   transform: scale(1.03) !important;
 }
 
+.x-monk-btn-home {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+.x-monk-btn-home:hover {
+  background: rgba(255, 255, 255, 0.22) !important;
+  transform: scale(1.03) !important;
+}
+
+/* YouTube Shorts & Instagram Reels Blurs */
+ytd-shorts[data-monk-reels-blocked="true"]:not(.monk-revealed) video,
+#shorts-container[data-monk-reels-blocked="true"]:not(.monk-revealed) video,
+ytd-reel-video-renderer[data-monk-reels-blocked="true"]:not(.monk-revealed) video,
+ytd-rich-shelf-renderer[is-shorts][data-monk-tray-blocked="true"]:not(.monk-revealed) #contents,
+ytd-reel-shelf-renderer[data-monk-tray-blocked="true"]:not(.monk-revealed) #contents,
+main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
+  filter: blur(36px) grayscale(80%) !important;
+  opacity: 0.05 !important;
+  pointer-events: none !important;
+  transition: filter 0.25s ease, opacity 0.25s ease !important;
+}
+
 /* Floating re-blur toggle button when video revealed */
 .x-monk-re-blur-floating {
   position: absolute !important;
