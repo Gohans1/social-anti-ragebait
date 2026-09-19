@@ -20,6 +20,9 @@
   let blockedRageCount = 0;
   let blockedScamCount = 0;
   let cleanedSeedingCount = 0;
+  let motivationalCount = 0;
+  let memeCount = 0;
+  let deepDiveCount = 0;
 
   function getPlatform() {
     const host = window.location.hostname.toLowerCase();
@@ -69,6 +72,9 @@
         'blockedRageCount',
         'blockedScamCount',
         'cleanedSeedingCount',
+        'motivationalCount',
+        'memeCount',
+        'deepDiveCount',
       ],
       (res) => {
         if (typeof res.monkModeEnabled === 'boolean') config.monkModeEnabled = res.monkModeEnabled;
@@ -85,6 +91,9 @@
         if (typeof res.blockedRageCount === 'number') blockedRageCount = res.blockedRageCount;
         if (typeof res.blockedScamCount === 'number') blockedScamCount = res.blockedScamCount;
         if (typeof res.cleanedSeedingCount === 'number') cleanedSeedingCount = res.cleanedSeedingCount;
+        if (typeof res.motivationalCount === 'number') motivationalCount = res.motivationalCount;
+        if (typeof res.memeCount === 'number') memeCount = res.memeCount;
+        if (typeof res.deepDiveCount === 'number') deepDiveCount = res.deepDiveCount;
 
         updatePill();
         applyStateToDOM();
@@ -108,80 +117,44 @@
   }
 
   const LABELS = [
-    'scam / fraudulent scheme',
-    'goon baiting / thirst trap / seductive woman media',
-    'rage bait / toxic / hostile / dismissive negativity',
-    'bot seeding / affiliate spam / fake review',
-    'fearmongering / doom',
-    'fomo / hype',
-    'wholesome / positive',
-    'informative / educational',
-    'casual discussion / personal',
+    'self-improvement / motivational',
+    'meme / humor / satire',
+    'deep dive / technical breakdown / industry insider',
+    'other / casual discussion',
   ];
 
   const INSTRUCTIONS =
-    'Classify content into: online scam/trap, goon baiting/thirst trap, rage-bait/toxic drama/hostile or dismissive negativity/rude insult (such as vô bổ, rác, xàm, nhảm, cút, vớ vẩn, toxic), bot seeding, fearmongering, fomo, wholesome, informative, or casual constructive discussion in Vietnamese or English.';
+    'Classify social media content in Vietnamese or English into exactly one category: ' +
+    '1. "self-improvement / motivational": personal growth, discipline, fitness, productivity lessons, inspiring mindsets, self-help, stoicism. ' +
+    '2. "meme / humor / satire": lighthearted jokes, funny memes, sarcastic humor, parody, troll posts. ' +
+    '3. "deep dive / technical breakdown / industry insider": in-depth technical threads, architectural teardowns, insider industry analysis, comprehensive teardowns of complex problems. ' +
+    '4. "other / casual discussion": everyday personal chatter, news, generic talk, or any content that does not fit the other three categories.';
 
   const BADGE_MAP = {
-    'scam / fraudulent scheme': {
-      text: '🛑 Lừa đảo / Bẫy tài chính',
-      desc: 'Online fraud, fake remote job, crypto Ponzi, or financial trap',
-      bg: 'rgba(220, 38, 38, 0.2)',
-      border: '#dc2626',
-      color: '#f87171',
+    'self-improvement / motivational': {
+      text: '🌱 Động lực / Mindset',
+      desc: 'Personal growth, productivity, and constructive mindset (Phát triển bản thân, động lực)',
+      bg: 'rgba(245, 158, 11, 0.18)',
+      border: '#f59e0b',
+      color: '#fbbf24',
     },
-    'goon baiting / thirst trap / seductive woman media': {
-      text: '🔞 Thirst Trap / Goon-bait',
-      desc: 'Suggestive content, thirst trap, or onlyfans funnel',
-      bg: 'rgba(236, 72, 153, 0.2)',
+    'meme / humor / satire': {
+      text: '🎭 Meme / Giải trí',
+      desc: 'Humor, memes, satire, and playful wit (Hài hước, ảnh chế, troll vui)',
+      bg: 'rgba(236, 72, 153, 0.18)',
       border: '#ec4899',
       color: '#f472b6',
     },
-    'rage bait / toxic / hostile / dismissive negativity': {
-      text: '🚨 Rage Bait / Toxic',
-      desc: 'Toxic, hostile, dismissive or engineered to provoke outrage (Gây war / công kích / vô bổ)',
-      bg: 'rgba(239, 68, 68, 0.18)',
-      border: '#ef4444',
-      color: '#f87171',
+    'deep dive / technical breakdown / industry insider': {
+      text: '🔬 Mổ xẻ / Deep Dive',
+      desc: 'Detailed domain teardown, insider analysis, or technical deep dive (Phân tích chuyên sâu)',
+      bg: 'rgba(99, 102, 241, 0.2)',
+      border: '#6366f1',
+      color: '#818cf8',
     },
-    'bot seeding / affiliate spam / fake review': {
-      text: '🧹 Seeding / Clone',
-      desc: 'Bot farming, fake praise, affiliate trap, or clone seeding',
-      bg: 'rgba(168, 85, 247, 0.18)',
-      border: '#a855f7',
-      color: '#c084fc',
-    },
-    'fearmongering / doom': {
-      text: '⚠️ Doom / Fear',
-      desc: 'Fearmongering / inducing anxiety (Gieo rắc sợ hãi / hoang mang)',
-      bg: 'rgba(249, 115, 22, 0.18)',
-      border: '#f97316',
-      color: '#fb923c',
-    },
-    'fomo / hype': {
-      text: '⚡ FOMO / Hype',
-      desc: 'Sensationalized hype / fear of missing out (Thổi phồng giật gân)',
-      bg: 'rgba(234, 179, 8, 0.18)',
-      border: '#eab308',
-      color: '#fde047',
-    },
-    'wholesome / positive': {
-      text: '🌿 Wholesome',
-      desc: 'Uplifting, entertaining, and positive (Tích cực, giải trí)',
-      bg: 'rgba(16, 185, 129, 0.18)',
-      border: '#10b981',
-      color: '#34d399',
-    },
-    'informative / educational': {
-      text: '💡 Informative',
-      desc: 'Objective news / insightful knowledge (Thông tin, kiến thức)',
-      bg: 'rgba(6, 182, 212, 0.18)',
-      border: '#06b6d4',
-      color: '#22d3ee',
-    },
-    'casual discussion / personal': {
-      text: '💬 Discussion / Casual',
-      desc: 'Personal thoughts / standard conversation (Thảo luận bình thường)',
+    'other / casual discussion': {
+      text: '💬 Thảo luận / Khác',
+      desc: 'Everyday casual talk or general post (Thảo luận bình thường)',
       bg: 'rgba(100, 116, 139, 0.15)',
       border: '#64748b',
       color: '#94a3b8',
@@ -224,7 +197,7 @@
     }
     initPill();
     const pName = getPlatform().toUpperCase();
-    pill.innerHTML = `🛡️ ${pName}: <span style="color:#4ade80">ON</span> | 👁️ Quét: <span style="color:#a5f3fc">${scannedCount}</span> | 🧘 Monk: <span style="color:#38bdf8">${monkModeBlockedCount}</span> | 🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span> | 🛑 Scam: <span style="color:#fb923c">${blockedScamCount}</span> | 🧹 Seed: <span style="color:#c084fc">${cleanedSeedingCount}</span> <span class="x-jev-pill-close" title="Ẩn thanh trạng thái nổi này (bật lại trong popup)">✕</span>`;
+    pill.innerHTML = `🛡️ ${pName}: <span style="color:#4ade80">ON</span> | 👁️ Quét: <span style="color:#a5f3fc">${scannedCount}</span> | 🌱 Động lực: <span style="color:#fbbf24">${motivationalCount}</span> | 🎭 Meme: <span style="color:#f472b6">${memeCount}</span> | 🔬 Deep Dive: <span style="color:#818cf8">${deepDiveCount}</span> <span class="x-jev-pill-close" title="Ẩn thanh trạng thái nổi này (bật lại trong popup)">✕</span>`;
     const closeBtn = pill.querySelector('.x-jev-pill-close');
     if (closeBtn) {
       closeBtn.onclick = (e) => {
@@ -664,14 +637,31 @@
       return;
     }
 
-    // --- PRIORITY 5: INFORMATIVE / WHOLESOME / CASUAL / DOOM / FOMO BADGE ---
-    const isActivity = window.location.pathname.includes('/activity');
-    if (label === 'casual discussion / personal' && isActivity) {
-      return; // Never show casual discussion badges in Activity / Notifications
+    // --- PRIORITY 5: CURATED CATEGORY BADGES ---
+    if (label === 'other / casual discussion') {
+      return; // Do not clutter feed with badges on regular casual posts
     }
 
-    const meta = BADGE_MAP[label] || BADGE_MAP['casual discussion / personal'];
-    if (!postEl.querySelector('.x-jev-badge')) {
+    const meta = BADGE_MAP[label];
+    if (meta && !postEl.querySelector('.x-jev-badge')) {
+      if (label === 'self-improvement / motivational') {
+        motivationalCount++;
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ motivationalCount });
+        }
+      } else if (label === 'meme / humor / satire') {
+        memeCount++;
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ memeCount });
+        }
+      } else if (label === 'deep dive / technical breakdown / industry insider') {
+        deepDiveCount++;
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ deepDiveCount });
+        }
+      }
+      updatePill();
+
       const badge = document.createElement('div');
       badge.className = 'x-jev-badge';
       badge.style.backgroundColor = meta.bg;

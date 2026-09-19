@@ -9,10 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const thresholdRange = document.getElementById('thresholdRange');
   const thresholdVal = document.getElementById('thresholdVal');
 
+  const motivationalCounter = document.getElementById('motivationalCounter');
+  const memeCounter = document.getElementById('memeCounter');
+  const deepDiveCounter = document.getElementById('deepDiveCounter');
   const monkCounter = document.getElementById('monkCounter');
-  const rageCounter = document.getElementById('rageCounter');
-  const scamCounter = document.getElementById('scamCounter');
-  const seedingCounter = document.getElementById('seedingCounter');
   const resetStats = document.getElementById('resetStats');
 
   // Load saved settings
@@ -25,10 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
       'collapseSeedingEnabled',
       'hideFloatingPill',
       'confidenceThreshold',
+      'motivationalCount',
+      'memeCount',
+      'deepDiveCount',
       'monkModeBlockedCount',
-      'blockedRageCount',
-      'blockedScamCount',
-      'cleanedSeedingCount',
     ],
     (res) => {
       if (typeof res.monkModeEnabled === 'boolean') {
@@ -54,17 +54,17 @@ document.addEventListener('DOMContentLoaded', () => {
         thresholdVal.textContent = `${thresholdRange.value}%`;
       }
 
-      if (typeof res.monkModeBlockedCount === 'number') {
+      if (typeof res.motivationalCount === 'number' && motivationalCounter) {
+        motivationalCounter.textContent = res.motivationalCount;
+      }
+      if (typeof res.memeCount === 'number' && memeCounter) {
+        memeCounter.textContent = res.memeCount;
+      }
+      if (typeof res.deepDiveCount === 'number' && deepDiveCounter) {
+        deepDiveCounter.textContent = res.deepDiveCount;
+      }
+      if (typeof res.monkModeBlockedCount === 'number' && monkCounter) {
         monkCounter.textContent = res.monkModeBlockedCount;
-      }
-      if (typeof res.blockedRageCount === 'number') {
-        rageCounter.textContent = res.blockedRageCount;
-      }
-      if (typeof res.blockedScamCount === 'number') {
-        scamCounter.textContent = res.blockedScamCount;
-      }
-      if (typeof res.cleanedSeedingCount === 'number') {
-        seedingCounter.textContent = res.cleanedSeedingCount;
       }
     }
   );
@@ -129,14 +129,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   resetStats.addEventListener('click', () => {
     chrome.storage.local.set({
+      motivationalCount: 0,
+      memeCount: 0,
+      deepDiveCount: 0,
       monkModeBlockedCount: 0,
       blockedRageCount: 0,
       blockedScamCount: 0,
       cleanedSeedingCount: 0,
     });
-    monkCounter.textContent = '0';
-    rageCounter.textContent = '0';
-    scamCounter.textContent = '0';
-    seedingCounter.textContent = '0';
+    if (motivationalCounter) motivationalCounter.textContent = '0';
+    if (memeCounter) memeCounter.textContent = '0';
+    if (deepDiveCounter) deepDiveCounter.textContent = '0';
+    if (monkCounter) monkCounter.textContent = '0';
   });
 });
