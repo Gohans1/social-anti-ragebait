@@ -99,4 +99,44 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
     expect(data.results[2].label).toBe("deep dive / technical breakdown / industry insider");
     expect(data.results[3].label).toBe("other / casual discussion");
   });
+
+  test("Strict threshold check respects user config without bypassing", () => {
+    function meetsThreshold(confidence, threshold) {
+      return confidence >= threshold;
+    }
+
+    const userThreshold = 0.50;
+    // Score is 0.40, confidence is 0.40 -> should FAIL threshold
+    expect(meetsThreshold(0.40, userThreshold)).toBe(false);
+    // Score is 0.50, confidence is 0.50 -> should PASS threshold
+    expect(meetsThreshold(0.50, userThreshold)).toBe(true);
+    // Score is 0.35, confidence is 0.35 -> should FAIL threshold
+    expect(meetsThreshold(0.35, userThreshold)).toBe(false);
+  });
+
+  test("Counter deduplication avoids inflation on same text", () => {
+    const countedTexts = new Set();
+    let counter = 0;
+
+    function countText(text) {
+      if (!countedTexts.has(text)) {
+        countedTexts.add(text);
+        counter++;
+        return true;
+      }
+      return false;
+    }
+
+    expect(countText("Tweet 1")).toBe(true);
+    expect(counter).toBe(1);
+
+    // Same tweet encountered again on scroll or DOM rerender
+    expect(countText("Tweet 1")).toBe(false);
+    expect(counter).toBe(1);
+
+    // New tweet
+    expect(countText("Tweet 2")).toBe(true);
+    expect(counter).toBe(2);
+  });
 });
+

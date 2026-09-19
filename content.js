@@ -57,6 +57,22 @@
     } catch (e) {}
   }
 
+  const COUNTED_KEY = `social_guardian_counted_v1_${getPlatform()}`;
+  const countedTexts = new Set();
+  try {
+    const rawCounted = sessionStorage.getItem(COUNTED_KEY);
+    if (rawCounted) {
+      JSON.parse(rawCounted).forEach((t) => countedTexts.add(t));
+    }
+  } catch (e) {}
+
+  function saveCountedToStorage() {
+    try {
+      const arr = Array.from(countedTexts).slice(-500);
+      sessionStorage.setItem(COUNTED_KEY, JSON.stringify(arr));
+    } catch (e) {}
+  }
+
   // Load saved settings from Chrome Storage
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     chrome.storage.local.get(
@@ -84,7 +100,7 @@
         if (typeof res.collapseSeedingEnabled === 'boolean') config.collapseSeedingEnabled = res.collapseSeedingEnabled;
         if (typeof res.hideFloatingPill === 'boolean') config.hideFloatingPill = res.hideFloatingPill;
         if (typeof res.confidenceThreshold === 'number') {
-          config.confidenceThreshold = res.confidenceThreshold > 0.45 ? 0.30 : res.confidenceThreshold;
+          config.confidenceThreshold = res.confidenceThreshold;
         }
 
         if (typeof res.monkModeBlockedCount === 'number') monkModeBlockedCount = res.monkModeBlockedCount;
@@ -120,6 +136,8 @@
         blockedRageCount = 0;
         blockedScamCount = 0;
         cleanedSeedingCount = 0;
+        countedTexts.clear();
+        saveCountedToStorage();
         updatePill();
         sendResponse({ status: 'ok' });
       }
@@ -132,6 +150,11 @@
         if (changes.memeCount) memeCount = changes.memeCount.newValue || 0;
         if (changes.deepDiveCount) deepDiveCount = changes.deepDiveCount.newValue || 0;
         if (changes.monkModeBlockedCount) monkModeBlockedCount = changes.monkModeBlockedCount.newValue || 0;
+        if (changes.blockedRageCount) blockedRageCount = changes.blockedRageCount.newValue || 0;
+        if (changes.blockedScamCount) blockedScamCount = changes.blockedScamCount.newValue || 0;
+        if (changes.cleanedSeedingCount) cleanedSeedingCount = changes.cleanedSeedingCount.newValue || 0;
+        if (changes.confidenceThreshold) config.confidenceThreshold = changes.confidenceThreshold.newValue;
+        if (changes.hideFloatingPill) config.hideFloatingPill = changes.hideFloatingPill.newValue;
         updatePill();
       });
     }
@@ -498,8 +521,7 @@
 
     const label = res.label;
     const confidence = res.confidence || 0;
-    const topScore = (res.scores && res.scores[label]) || confidence;
-    const meetsThreshold = confidence >= config.confidenceThreshold || topScore >= 0.35;
+    const meetsThreshold = confidence >= config.confidenceThreshold;
     const parentContainer = textEl.parentElement;
 
     console.log(`[Social Shield 🔍] "${item.text.slice(0, 35)}..." => ${label} (conf: ${Math.round(confidence * 100)}%, score: ${Math.round(topScore * 100)}%)`);
@@ -666,7 +688,9 @@
 
     const meta = BADGE_MAP[label];
     if (meta && meetsThreshold && !postEl.querySelector('.x-jev-badge')) {
-      if (!postEl.hasAttribute('data-jev-counted')) {
+      if (!countedTexts.has(item.text)) {
+        countedTexts.add(item.text);
+        saveCountedToStorage();
         postEl.setAttribute('data-jev-counted', 'true');
         if (label === 'self-improvement / motivational') {
           motivationalCount++;
@@ -705,6 +729,7 @@
       parentContainer.insertBefore(badge, textEl);
       postEl.setAttribute('data-jev-handled', 'true');
     }
+    postEl.setAttribute('data-jev-handled', 'true');
   }
 
   async function flushQueue() {

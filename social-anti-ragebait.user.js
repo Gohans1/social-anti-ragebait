@@ -423,6 +423,22 @@
     } catch (e) {}
   }
 
+  const COUNTED_KEY = `social_shield_userjs_counted_v1_${getPlatform()}`;
+  const countedTexts = new Set();
+  try {
+    const rawCounted = sessionStorage.getItem(COUNTED_KEY);
+    if (rawCounted) {
+      JSON.parse(rawCounted).forEach((t) => countedTexts.add(t));
+    }
+  } catch (e) {}
+
+  function saveCountedToStorage() {
+    try {
+      const arr = Array.from(countedTexts).slice(-500);
+      sessionStorage.setItem(COUNTED_KEY, JSON.stringify(arr));
+    } catch (e) {}
+  }
+
   const LABELS = [
     'self-improvement / motivational',
     'meme / humor / satire',
@@ -792,7 +808,9 @@
 
     const meta = BADGE_MAP[label];
     if (meta && confidence >= CONFIG.confidenceThreshold && !postEl.querySelector('.x-jev-badge')) {
-      if (!postEl.hasAttribute('data-jev-counted')) {
+      if (!countedTexts.has(item.text)) {
+        countedTexts.add(item.text);
+        saveCountedToStorage();
         postEl.setAttribute('data-jev-counted', 'true');
         if (label === 'self-improvement / motivational') motivationalCount++;
         else if (label === 'meme / humor / satire') memeCount++;
@@ -818,6 +836,7 @@
       parentContainer.insertBefore(badge, textEl);
       postEl.setAttribute('data-jev-handled', 'true');
     }
+    postEl.setAttribute('data-jev-handled', 'true');
   }
 
   async function flushQueue() {
