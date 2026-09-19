@@ -524,7 +524,7 @@
     const meetsThreshold = confidence >= config.confidenceThreshold;
     const parentContainer = textEl.parentElement;
 
-    console.log(`[Social Shield 🔍] "${item.text.slice(0, 35)}..." => ${label} (conf: ${Math.round(confidence * 100)}%, score: ${Math.round(topScore * 100)}%)`);
+    console.log(`[Social Shield 🔍] "${item.text.slice(0, 35)}..." => ${label} (conf: ${Math.round(confidence * 100)}%)`);
 
     // --- PRIORITY 1: SCAM / FRAUDULENT SCHEME ---
     if (label === 'scam / fraudulent scheme' && meetsThreshold) {
@@ -545,7 +545,7 @@
       if (!postEl.querySelector('.x-jev-scam-box')) {
         const box = document.createElement('div');
         box.className = 'x-jev-scam-box';
-        const pct = Math.round(Math.max(confidence, topScore) * 100);
+        const pct = Math.round(confidence * 100);
         box.innerHTML = `
           <div class="x-jev-scam-text">
             <span>🛑</span>
@@ -612,7 +612,7 @@
       if (!postEl.querySelector('.x-jev-warning-box')) {
         const warningBox = document.createElement('div');
         warningBox.className = 'x-jev-warning-box';
-        const pct = Math.round(Math.max(confidence, topScore) * 100);
+        const pct = Math.round(confidence * 100);
         warningBox.innerHTML = `
           <span class="x-jev-warning-text">🛡️ <b>Rage / Toxic Warning (${pct}%):</b> Bài viết / bình luận tiêu cực, công kích, vô bổ đã bị làm mờ.</span>
         `;
@@ -727,7 +727,6 @@
       badge.appendChild(textSpan);
       badge.appendChild(confSpan);
       parentContainer.insertBefore(badge, textEl);
-      postEl.setAttribute('data-jev-handled', 'true');
     }
     postEl.setAttribute('data-jev-handled', 'true');
   }

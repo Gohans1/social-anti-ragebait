@@ -150,4 +150,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  if (chrome.storage && chrome.storage.onChanged) {
+    chrome.storage.onChanged.addListener((changes) => {
+      if (changes.motivationalCount && motivationalCounter) {
+        motivationalCounter.textContent = changes.motivationalCount.newValue || 0;
+      }
+      if (changes.memeCount && memeCounter) {
+        memeCounter.textContent = changes.memeCount.newValue || 0;
+      }
+      if (changes.deepDiveCount && deepDiveCounter) {
+        deepDiveCounter.textContent = changes.deepDiveCount.newValue || 0;
+      }
+      if (changes.monkModeBlockedCount && monkCounter) {
+        monkCounter.textContent = changes.monkModeBlockedCount.newValue || 0;
+      }
+    });
+  }
 });

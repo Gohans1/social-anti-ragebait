@@ -8,7 +8,7 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('[Social Anti-Ragebait] Extension installed / updated.');
   // Set default confidence threshold in storage if not already set
   chrome.storage.local.get(['confidenceThreshold'], (res) => {
-    if (typeof res.confidenceThreshold !== 'number' || res.confidenceThreshold > 0.45) {
+    if (typeof res.confidenceThreshold !== 'number') {
       chrome.storage.local.set({ confidenceThreshold: 0.30 });
     }
   });
