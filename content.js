@@ -34,7 +34,7 @@
     /(\b(woman|women|girl|girls|female|lady|ladies|bikini|cleavage|swimwear|selfie|thirst\s*trap|goon|gooning|onlyfans|fansly)\b|phụ nữ|con gái|cô gái|gái xinh|nữ sinh|hot girl|mặc hở|khoe thân|áo tắm|nội y|gái|mlem)/i;
 
   // Fast synchronous session cache (0ms instant response on reload)
-  const CACHE_KEY = `social_guardian_cache_v3_${getPlatform()}`;
+  const CACHE_KEY = `social_guardian_cache_v4_${getPlatform()}`;
   const textCache = new Map();
   try {
     const raw = sessionStorage.getItem(CACHE_KEY);
@@ -443,6 +443,15 @@
     }
   }
 
+  function isProfileOnlyLink(el) {
+    if (!el) return false;
+    const a = el.closest('a[href*="/@"]');
+    if (!a) return false;
+    const href = a.getAttribute('href') || '';
+    // If href contains /post/ or /t/, it links to post content, NOT a user profile link!
+    return !href.includes('/post/') && !href.includes('/t/');
+  }
+
   // Unified Rendering Logic
   function renderClassification(item, res) {
     const { postEl, textEl } = item;
@@ -535,8 +544,13 @@
       postEl.querySelectorAll('.x-jev-badge').forEach((b) => b.remove());
 
       textEl.setAttribute('data-jev-blur-item', 'true');
+      postEl.querySelectorAll('span[dir="auto"], div[dir="auto"]').forEach((span) => {
+        if (!span.closest('button') && !span.closest('time') && !isProfileOnlyLink(span)) {
+          span.setAttribute('data-jev-blur-item', 'true');
+        }
+      });
       postEl.querySelectorAll('img, video').forEach((m) => {
-        if (!m.closest('a[href*="/@"]')) m.setAttribute('data-jev-blur-item', 'true');
+        if (!isProfileOnlyLink(m)) m.setAttribute('data-jev-blur-item', 'true');
       });
 
       if (!postEl.querySelector('.x-jev-warning-box')) {
@@ -611,6 +625,11 @@
     }
 
     // --- PRIORITY 5: INFORMATIVE / WHOLESOME / CASUAL / DOOM / FOMO BADGE ---
+    const isActivity = window.location.pathname.includes('/activity');
+    if (label === 'casual discussion / personal' && isActivity) {
+      return; // Never show casual discussion badges in Activity / Notifications
+    }
+
     const meta = BADGE_MAP[label] || BADGE_MAP['casual discussion / personal'];
     if (!postEl.querySelector('.x-jev-badge')) {
       const badge = document.createElement('div');
@@ -1240,36 +1259,41 @@
         checkAndApplyMonkMode(post, post.innerText || '');
 
         const textEls = post.querySelectorAll('span[dir="auto"], div[dir="auto"]');
-        let longestTextEl = null;
-        let maxLen = 0;
+        const candidateEls = [];
 
         textEls.forEach((el) => {
-          if (el.closest('button') || el.closest('time') || el.closest('a[href*="/@"]') || el.classList.contains('x-jev-badge')) return;
+          if (el.closest('button') || el.closest('time') || isProfileOnlyLink(el) || el.classList.contains('x-jev-badge')) return;
           let t = el.innerText.trim();
           t = t.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
           if (t.length < 2) return;
           if (/^\d+(\.\d+)?(k|m|b)?\s*(likes?|replies?|views?|lượt thích|câu trả lời|bình luận|chia sẻ)?$/i.test(t)) return;
           if (/^(\d+\s*(s|m|h|d|w|y|giây|phút|giờ|ngày|tuần|tháng|năm)|just now|vừa xong)$/i.test(t)) return;
           if (/^(translate|xem bản dịch|reply|trả lời|like|thích|share|chia sẻ|follow|theo dõi|following|đang theo dõi|edited|đã chỉnh sửa)$/i.test(t)) return;
+          if (/^@?[\w\.]+(\s+and\s+\d+\s+others)?(\s+\d+[smhdw])?$/i.test(t)) return;
 
-          if (el.children.length > 3) return;
+          if (el.children.length > 5) return;
 
-          if (t.length > maxLen) {
-            maxLen = t.length;
-            longestTextEl = el;
-          }
+          candidateEls.push({ el, text: t });
         });
 
-        if (longestTextEl && maxLen >= 2) {
+        if (candidateEls.length > 0) {
+          // On Activity notifications with quoted text + reply: the incoming reply is the LAST element!
+          // On regular posts: pick the longest text candidate.
+          let targetItem = candidateEls[candidateEls.length - 1];
+          if (!window.location.pathname.includes('/activity')) {
+            candidateEls.forEach((item) => {
+              if (item.text.length > targetItem.text.length) targetItem = item;
+            });
+          }
+
           post.setAttribute('data-jev-scanned', 'true');
           scannedCount++;
           updatePill();
-          let cleanText = longestTextEl.innerText.trim();
-          cleanText = cleanText.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
+          const cleanText = targetItem.text;
           if (textCache.has(cleanText)) {
-            renderClassification({ postEl: post, text: cleanText, textEl: longestTextEl }, textCache.get(cleanText));
+            renderClassification({ postEl: post, text: cleanText, textEl: targetItem.el }, textCache.get(cleanText));
           } else {
-            queue.push({ postEl: post, text: cleanText, textEl: longestTextEl });
+            queue.push({ postEl: post, text: cleanText, textEl: targetItem.el });
           }
         }
       });

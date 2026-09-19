@@ -343,7 +343,7 @@
     document.head.appendChild(s);
   }
 
-  const CACHE_KEY = `social_shield_userjs_cache_v3_${getPlatform()}`;
+  const CACHE_KEY = `social_shield_userjs_cache_v4_${getPlatform()}`;
   const textCache = new Map();
   try {
     const raw = sessionStorage.getItem(CACHE_KEY);
@@ -511,6 +511,15 @@
     });
   }
 
+  function isProfileOnlyLink(el) {
+    if (!el) return false;
+    const a = el.closest('a[href*="/@"]');
+    if (!a) return false;
+    const href = a.getAttribute('href') || '';
+    // If href contains /post/ or /t/, it links to post content, NOT a user profile link!
+    return !href.includes('/post/') && !href.includes('/t/');
+  }
+
   function renderClassification(item, res) {
     const { postEl, textEl } = item;
     if (!textEl || !textEl.parentElement) return;
@@ -580,8 +589,13 @@
       postEl.querySelectorAll('.x-jev-badge').forEach((b) => b.remove());
 
       textEl.setAttribute('data-jev-blur-item', 'true');
+      postEl.querySelectorAll('span[dir="auto"], div[dir="auto"]').forEach((span) => {
+        if (!span.closest('button') && !span.closest('time') && !isProfileOnlyLink(span)) {
+          span.setAttribute('data-jev-blur-item', 'true');
+        }
+      });
       postEl.querySelectorAll('img, video').forEach((m) => {
-        if (!m.closest('a[href*="/@"]')) m.setAttribute('data-jev-blur-item', 'true');
+        if (!isProfileOnlyLink(m)) m.setAttribute('data-jev-blur-item', 'true');
       });
 
       if (!postEl.querySelector('.x-jev-warning-box')) {
@@ -1198,32 +1212,37 @@
         checkAndApplyMonkMode(cont, cont.innerText || '');
 
         const textEls = cont.querySelectorAll('span[dir="auto"], div[dir="auto"]');
-        let bestEl = null;
-        let maxLen = 0;
+        const candidateEls = [];
+
         textEls.forEach((el) => {
-          if (el.closest('button') || el.closest('time') || el.closest('a[href*="/@"]') || el.classList.contains('x-jev-badge')) return;
+          if (el.closest('button') || el.closest('time') || isProfileOnlyLink(el) || el.classList.contains('x-jev-badge')) return;
           let t = el.innerText.trim();
           t = t.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
           if (t.length < 2) return;
           if (/^\d+(\.\d+)?(k|m|b)?\s*(likes?|replies?|views?|lượt thích|câu trả lời|bình luận|chia sẻ)?$/i.test(t)) return;
           if (/^(\d+\s*(s|m|h|d|w|y|giây|phút|giờ|ngày|tuần|tháng|năm)|just now|vừa xong)$/i.test(t)) return;
           if (/^(translate|xem bản dịch|reply|trả lời|like|thích|share|chia sẻ|follow|theo dõi|following|đang theo dõi|edited|đã chỉnh sửa)$/i.test(t)) return;
+          if (/^@?[\w\.]+(\s+and\s+\d+\s+others)?(\s+\d+[smhdw])?$/i.test(t)) return;
 
-          if (el.children.length > 3) return;
+          if (el.children.length > 5) return;
 
-          if (t.length > maxLen) {
-            maxLen = t.length;
-            bestEl = el;
-          }
+          candidateEls.push({ el, text: t });
         });
-        if (bestEl && maxLen >= 2) {
+
+        if (candidateEls.length > 0) {
+          let targetItem = candidateEls[candidateEls.length - 1];
+          if (!window.location.pathname.includes('/activity')) {
+            candidateEls.forEach((item) => {
+              if (item.text.length > targetItem.text.length) targetItem = item;
+            });
+          }
+
           cont.setAttribute('data-jev-scanned', 'true');
-          let cleanText = bestEl.innerText.trim();
-          cleanText = cleanText.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
+          const cleanText = targetItem.text;
           if (textCache.has(cleanText)) {
-            renderClassification({ postEl: cont, text: cleanText, textEl: bestEl }, textCache.get(cleanText));
+            renderClassification({ postEl: cont, text: cleanText, textEl: targetItem.el }, textCache.get(cleanText));
           } else {
-            queue.push({ postEl: cont, text: cleanText, textEl: bestEl });
+            queue.push({ postEl: cont, text: cleanText, textEl: targetItem.el });
           }
         }
       });
