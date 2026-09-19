@@ -86,6 +86,22 @@
     } catch (e) {}
   }
 
+  const REVEALED_KEY = `social_guardian_revealed_v1_${getPlatform()}`;
+  const revealedTexts = new Set();
+  try {
+    const rawRevealed = sessionStorage.getItem(REVEALED_KEY);
+    if (rawRevealed) {
+      JSON.parse(rawRevealed).forEach((t) => revealedTexts.add(t));
+    }
+  } catch (e) {}
+
+  function saveRevealedToStorage() {
+    try {
+      const arr = Array.from(revealedTexts).slice(-500);
+      sessionStorage.setItem(REVEALED_KEY, JSON.stringify(arr));
+    } catch (e) {}
+  }
+
   // Load saved settings from Chrome Storage
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     chrome.storage.local.get(
@@ -221,6 +237,8 @@
         cleanedSeedingCount = 0;
         countedTexts.clear();
         saveCountedToStorage();
+        revealedTexts.clear();
+        saveRevealedToStorage();
         updatePill();
         sendResponse({ status: 'ok' });
       }
@@ -833,17 +851,30 @@
     return !href.includes('/post/') && !href.includes('/t/');
   }
 
-  function syncRevealState(targetEl, isRevealed) {
-    targetEl.classList.toggle('x-jev-revealed', isRevealed);
+  function syncRevealState(targetEl, isRevealed, text) {
+    if (text) {
+      if (isRevealed) revealedTexts.add(text);
+      else revealedTexts.delete(text);
+      saveRevealedToStorage();
+    }
+
+    const apply = (el) => {
+      el.classList.toggle('x-jev-revealed', isRevealed);
+      if (isRevealed) el.setAttribute('data-jev-revealed', 'true');
+      else el.removeAttribute('data-jev-revealed');
+    };
+
+    apply(targetEl);
+
     let p = targetEl.parentElement;
     while (p && p !== document.body) {
-      if (p.hasAttribute('data-jev-rage') || p.hasAttribute('data-jev-scam')) {
-        p.classList.toggle('x-jev-revealed', isRevealed);
+      if (p.hasAttribute('data-jev-rage') || p.hasAttribute('data-jev-scam') || p.hasAttribute('data-jev-scanned')) {
+        apply(p);
       }
       p = p.parentElement;
     }
-    targetEl.querySelectorAll('[data-jev-rage="true"], [data-jev-scam="true"]').forEach((child) => {
-      child.classList.toggle('x-jev-revealed', isRevealed);
+    targetEl.querySelectorAll('[data-jev-rage="true"], [data-jev-scam="true"], [data-jev-scanned="true"]').forEach((child) => {
+      apply(child);
     });
   }
 
@@ -912,8 +943,8 @@
         btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const isRevealed = !postEl.classList.contains('x-jev-revealed');
-          syncRevealState(postEl, isRevealed);
+          const isRevealed = !postEl.classList.contains('x-jev-revealed') && !postEl.hasAttribute('data-jev-revealed');
+          syncRevealState(postEl, isRevealed, item.text);
           btn.textContent = isRevealed ? 'Ẩn lại' : 'Xem bài viết';
         };
 
@@ -921,10 +952,20 @@
         parentContainer.insertBefore(box, textEl);
       }
 
-      if (config.blockScamsEnabled) {
+      const isScamRevealedByUser = revealedTexts.has(item.text);
+      if (isScamRevealedByUser) {
+        postEl.classList.add('x-jev-revealed');
+        postEl.setAttribute('data-jev-revealed', 'true');
+        const scamBtn = postEl.querySelector('.x-jev-scam-box .x-jev-reveal-btn');
+        if (scamBtn) scamBtn.textContent = 'Ẩn lại';
+      } else if (config.blockScamsEnabled) {
         postEl.classList.remove('x-jev-revealed');
+        postEl.removeAttribute('data-jev-revealed');
+        const scamBtn = postEl.querySelector('.x-jev-scam-box .x-jev-reveal-btn');
+        if (scamBtn) scamBtn.textContent = 'Xem bài viết';
       } else {
         postEl.classList.add('x-jev-revealed');
+        postEl.setAttribute('data-jev-revealed', 'true');
       }
       return;
     }
@@ -973,8 +1014,8 @@
         revealBtn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const isRevealed = !postEl.classList.contains('x-jev-revealed');
-          syncRevealState(postEl, isRevealed);
+          const isRevealed = !postEl.classList.contains('x-jev-revealed') && !postEl.hasAttribute('data-jev-revealed');
+          syncRevealState(postEl, isRevealed, item.text);
           revealBtn.textContent = isRevealed ? 'Re-blur' : 'Reveal post';
         };
 
@@ -982,10 +1023,20 @@
         parentContainer.insertBefore(warningBox, textEl);
       }
 
-      if (config.autoBlurRageEnabled) {
+      const isRageRevealedByUser = revealedTexts.has(item.text);
+      if (isRageRevealedByUser) {
+        postEl.classList.add('x-jev-revealed');
+        postEl.setAttribute('data-jev-revealed', 'true');
+        const rBtn = postEl.querySelector('.x-jev-warning-box .x-jev-reveal-btn');
+        if (rBtn) rBtn.textContent = 'Re-blur';
+      } else if (config.autoBlurRageEnabled) {
         postEl.classList.remove('x-jev-revealed');
+        postEl.removeAttribute('data-jev-revealed');
+        const rBtn = postEl.querySelector('.x-jev-warning-box .x-jev-reveal-btn');
+        if (rBtn) rBtn.textContent = 'Reveal post';
       } else {
         postEl.classList.add('x-jev-revealed');
+        postEl.setAttribute('data-jev-revealed', 'true');
       }
       return;
     }

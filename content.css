@@ -61,8 +61,8 @@
 }
 
 /* --- Blur Targets for Rage Bait & Scams --- */
-[data-jev-rage="true"]:not(.x-jev-revealed) [data-jev-blur-item="true"],
-[data-jev-scam="true"]:not(.x-jev-revealed) [data-jev-blur-item="true"],
+[data-jev-rage="true"]:not(.x-jev-revealed):not([data-jev-revealed="true"]) [data-jev-blur-item="true"],
+[data-jev-scam="true"]:not(.x-jev-revealed):not([data-jev-revealed="true"]) [data-jev-blur-item="true"],
 .x-jev-blurred-content {
   filter: blur(14px) !important;
   opacity: 0.15 !important;
@@ -72,6 +72,10 @@
 }
 
 /* Restored clean state when user clicks 'Reveal post' */
+[data-jev-revealed="true"] [data-jev-blur-item="true"],
+[data-jev-revealed="true"][data-jev-blur-item="true"],
+[data-jev-rage="true"][data-jev-revealed="true"] [data-jev-blur-item="true"],
+[data-jev-scam="true"][data-jev-revealed="true"] [data-jev-blur-item="true"],
 [data-jev-rage="true"].x-jev-revealed [data-jev-blur-item="true"],
 [data-jev-scam="true"].x-jev-revealed [data-jev-blur-item="true"],
 .x-jev-revealed [data-jev-blur-item="true"],
