@@ -41,8 +41,8 @@
 }
 
 /* --- Blur Targets for Rage Bait & Scams --- */
-[data-jev-rage="true"]:not(.x-jev-revealed) [data-jev-blur-item="true"],
-[data-jev-scam="true"]:not(.x-jev-revealed) [data-jev-blur-item="true"],
+[data-jev-rage="true"]:not(.x-jev-revealed):not([data-jev-revealed="true"]) [data-jev-blur-item="true"],
+[data-jev-scam="true"]:not(.x-jev-revealed):not([data-jev-revealed="true"]) [data-jev-blur-item="true"],
 .x-jev-blurred-content {
   filter: blur(14px) !important;
   opacity: 0.15 !important;
@@ -51,19 +51,49 @@
   transition: filter 0.2s ease, opacity 0.2s ease !important;
 }
 
-/* Restored clean state when user clicks 'Reveal post' */
+/* Restored clean state when user clicks 'Reveal post' or disables blur */
+.x-jev-revealed,
+.x-jev-revealed[data-jev-blur-item="true"],
 .x-jev-revealed [data-jev-blur-item="true"],
+.x-jev-revealed.x-jev-blurred-content,
 .x-jev-revealed .x-jev-blurred-content,
-.x-jev-unblurred {
+.x-jev-unblurred,
+[data-jev-revealed="true"],
+[data-jev-revealed="true"][data-jev-blur-item="true"],
+[data-jev-revealed="true"] [data-jev-blur-item="true"],
+[data-jev-revealed="true"] span,
+[data-jev-revealed="true"] div,
+[data-jev-revealed="true"] img,
+[data-jev-revealed="true"] video {
   filter: none !important;
   opacity: 1 !important;
   user-select: auto !important;
   pointer-events: auto !important;
 }
 
+/* Global Unblur overrides when user disables blur in settings */
+body.x-jev-no-rage-blur [data-jev-blur-item="true"],
+body.x-jev-no-rage-blur [data-jev-rage="true"],
+body.x-jev-no-rage-blur [data-jev-rage="true"] [data-jev-blur-item="true"],
+body.x-jev-no-rage-blur [data-jev-rage="true"] span,
+body.x-jev-no-rage-blur [data-jev-rage="true"] div,
+body.x-jev-disable-all-blur [data-jev-blur-item="true"],
+body.x-jev-disable-all-blur [data-jev-rage="true"] *,
+body.x-jev-disable-all-blur .x-jev-blurred-content {
+  filter: none !important;
+  opacity: 1 !important;
+  user-select: auto !important;
+  pointer-events: auto !important;
+}
+
+body.x-jev-no-rage-blur .x-jev-warning-box,
+body.x-jev-disable-all-blur .x-jev-warning-box {
+  display: none !important;
+}
+
 /* --- Monk Mode: Hardcore Anti-Goonbait & Women Media Blocker --- */
-[data-monk-blocked="true"]:not(.monk-revealed) img:not([alt*="avatar"]):not([alt*="profile"]):not([src*="profile_images"]),
-[data-monk-blocked="true"]:not(.monk-revealed) video,
+[data-monk-blocked="true"]:not(.monk-revealed):not([data-monk-revealed="true"]) img:not([alt*="avatar"]):not([alt*="profile"]):not([src*="profile_images"]),
+[data-monk-blocked="true"]:not(.monk-revealed):not([data-monk-revealed="true"]) video,
 .monk-blur-media {
   filter: blur(28px) grayscale(60%) !important;
   opacity: 0.1 !important;
@@ -72,13 +102,27 @@
   transition: filter 0.25s ease, opacity 0.25s ease !important;
 }
 
+.monk-revealed,
 .monk-revealed img,
 .monk-revealed video,
-.monk-revealed .monk-blur-media {
+.monk-revealed .monk-blur-media,
+[data-monk-revealed="true"],
+[data-monk-revealed="true"] img,
+[data-monk-revealed="true"] video,
+body.x-jev-no-monk-blur [data-monk-blocked="true"] img,
+body.x-jev-no-monk-blur [data-monk-blocked="true"] video,
+body.x-jev-no-monk-blur .monk-blur-media,
+body.x-jev-disable-all-blur [data-monk-blocked="true"] img,
+body.x-jev-disable-all-blur [data-monk-blocked="true"] video {
   filter: none !important;
   opacity: 1 !important;
   user-select: auto !important;
   pointer-events: auto !important;
+}
+
+body.x-jev-no-monk-blur .x-monk-warning-box,
+body.x-jev-disable-all-blur .x-monk-warning-box {
+  display: none !important;
 }
 
 .x-monk-warning-box {
@@ -512,6 +556,7 @@ main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
 }
 
+body.x-jev-hide-pill .x-jev-floating-pill,
 .x-jev-floating-pill.x-jev-pill-hidden,
 .x-jev-floating-pill[data-hidden="true"],
 .x-jev-pill-hidden {
@@ -531,19 +576,24 @@ main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  margin-left: 6px !important;
-  padding: 1px 5px !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
+  margin-left: 8px !important;
+  padding: 2px 8px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
   color: #94a3b8 !important;
   cursor: pointer !important;
   border-radius: 9999px !important;
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
   transition: all 0.15s ease !important;
+  user-select: none !important;
+  z-index: 1000000 !important;
+  pointer-events: auto !important;
 }
 
 .x-jev-pill-close:hover {
   color: #ffffff !important;
   background: #ef4444 !important;
-  transform: scale(1.1) !important;
+  transform: scale(1.15) !important;
 }

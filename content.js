@@ -449,8 +449,52 @@
   // Unified Floating Status Pill UI
   const pill = document.createElement('div');
   pill.className = 'x-jev-floating-pill';
+  const pillStats = document.createElement('span');
+  pillStats.className = 'x-jev-pill-stats';
+  const pillClose = document.createElement('span');
+  pillClose.className = 'x-jev-pill-close';
+  pillClose.title = 'Ẩn thanh trạng thái nổi này (bật lại trong popup)';
+  pillClose.textContent = '✕';
+  pill.appendChild(pillStats);
+  pill.appendChild(pillClose);
+
+  // Capture phase listeners so React / framework can NEVER swallow close click
+  document.addEventListener(
+    'pointerdown',
+    (e) => {
+      if (e.target && e.target.closest && e.target.closest('.x-jev-pill-close')) {
+        e.preventDefault();
+        e.stopPropagation();
+        config.hideFloatingPill = true;
+        initPill();
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ hideFloatingPill: true });
+        }
+      }
+    },
+    true
+  );
+
+  document.addEventListener(
+    'click',
+    (e) => {
+      if (e.target && e.target.closest && e.target.closest('.x-jev-pill-close')) {
+        e.preventDefault();
+        e.stopPropagation();
+        config.hideFloatingPill = true;
+        initPill();
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ hideFloatingPill: true });
+        }
+      }
+    },
+    true
+  );
 
   function initPill() {
+    if (document.body) {
+      document.body.classList.toggle('x-jev-hide-pill', !!config.hideFloatingPill);
+    }
     if (config.hideFloatingPill) {
       pill.setAttribute('data-hidden', 'true');
       pill.classList.add('x-jev-pill-hidden');
@@ -511,19 +555,7 @@
     if (hasActiveCustom && customCount > 0) {
       parts.push(`🏷️ Custom: <span style="color:#c084fc">${customCount}</span>`);
     }
-    pill.innerHTML = parts.join(' | ') + ` <span class="x-jev-pill-close" title="Ẩn thanh trạng thái nổi này (bật lại trong popup)">✕</span>`;
-    const closeBtn = pill.querySelector('.x-jev-pill-close');
-    if (closeBtn) {
-      closeBtn.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        config.hideFloatingPill = true;
-        initPill();
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-          chrome.storage.local.set({ hideFloatingPill: true });
-        }
-      };
-    }
+    pillStats.innerHTML = parts.join(' | ');
   }
 
   updatePill();
@@ -555,6 +587,15 @@
   }
 
   function applyStateToDOM() {
+    if (document.body) {
+      document.body.classList.toggle('x-jev-no-rage-blur', !config.autoBlurRageEnabled);
+      document.body.classList.toggle('x-jev-no-monk-blur', !config.monkModeEnabled);
+      document.body.classList.toggle('x-jev-no-scam-blur', !config.blockScamsEnabled);
+      document.body.classList.toggle('x-jev-hide-pill', !!config.hideFloatingPill);
+      const disableAll = !config.autoBlurRageEnabled && !config.monkModeEnabled && !config.blockScamsEnabled;
+      document.body.classList.toggle('x-jev-disable-all-blur', disableAll);
+    }
+
     // 0. Facebook Reels & Video Popups State
     document.querySelectorAll('[data-monk-reels-blocked="true"]').forEach((dialog) => {
       const overlay = dialog.querySelector('.x-monk-reels-overlay');
@@ -585,10 +626,19 @@
     document.querySelectorAll('[data-monk-blocked="true"]').forEach((post) => {
       const box = post.querySelector('.x-monk-warning-box');
       if (config.monkModeEnabled) {
-        post.classList.remove('monk-revealed');
-        if (box) box.style.display = 'flex';
+        if (!post.hasAttribute('data-user-revealed')) {
+          post.classList.remove('monk-revealed');
+          post.removeAttribute('data-monk-revealed');
+          if (box) box.style.display = 'flex';
+        }
       } else {
         post.classList.add('monk-revealed');
+        post.setAttribute('data-monk-revealed', 'true');
+        post.querySelectorAll('img, video, .monk-blur-media').forEach((m) => {
+          m.style.setProperty('filter', 'none', 'important');
+          m.style.setProperty('opacity', '1', 'important');
+          m.style.setProperty('pointer-events', 'auto', 'important');
+        });
         if (box) box.style.display = 'none';
       }
     });
@@ -597,10 +647,20 @@
     document.querySelectorAll('[data-jev-rage="true"]').forEach((post) => {
       const warning = post.querySelector('.x-jev-warning-box');
       if (config.autoBlurRageEnabled) {
-        post.classList.remove('x-jev-revealed');
-        if (warning) warning.style.display = 'flex';
+        if (!post.hasAttribute('data-user-revealed')) {
+          post.classList.remove('x-jev-revealed');
+          post.removeAttribute('data-jev-revealed');
+          if (warning) warning.style.display = 'flex';
+        }
       } else {
         post.classList.add('x-jev-revealed');
+        post.setAttribute('data-jev-revealed', 'true');
+        post.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
+          el.style.setProperty('filter', 'none', 'important');
+          el.style.setProperty('opacity', '1', 'important');
+          el.style.setProperty('pointer-events', 'auto', 'important');
+          el.style.setProperty('user-select', 'auto', 'important');
+        });
         if (warning) warning.style.display = 'none';
       }
     });
@@ -609,10 +669,19 @@
     document.querySelectorAll('[data-jev-scam="true"]').forEach((post) => {
       const scamBox = post.querySelector('.x-jev-scam-box');
       if (config.blockScamsEnabled) {
-        post.classList.remove('x-jev-revealed');
-        if (scamBox) scamBox.style.display = 'flex';
+        if (!post.hasAttribute('data-user-revealed')) {
+          post.classList.remove('x-jev-revealed');
+          post.removeAttribute('data-jev-revealed');
+          if (scamBox) scamBox.style.display = 'flex';
+        }
       } else {
         post.classList.add('x-jev-revealed');
+        post.setAttribute('data-jev-revealed', 'true');
+        post.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
+          el.style.setProperty('filter', 'none', 'important');
+          el.style.setProperty('opacity', '1', 'important');
+          el.style.setProperty('pointer-events', 'auto', 'important');
+        });
         if (scamBox) scamBox.style.display = 'none';
       }
     });
@@ -735,7 +804,25 @@
           e.preventDefault();
           e.stopPropagation();
           const isRevealed = postEl.classList.toggle('monk-revealed');
-          btn.textContent = isRevealed ? 'Ẩn lại' : 'Xem ảnh';
+          if (isRevealed) {
+            postEl.setAttribute('data-monk-revealed', 'true');
+            postEl.setAttribute('data-user-revealed', 'true');
+            postEl.querySelectorAll('img, video, .monk-blur-media').forEach((m) => {
+              m.style.setProperty('filter', 'none', 'important');
+              m.style.setProperty('opacity', '1', 'important');
+              m.style.setProperty('pointer-events', 'auto', 'important');
+            });
+            btn.textContent = 'Ẩn lại';
+          } else {
+            postEl.removeAttribute('data-monk-revealed');
+            postEl.removeAttribute('data-user-revealed');
+            postEl.querySelectorAll('img, video, .monk-blur-media').forEach((m) => {
+              m.style.removeProperty('filter');
+              m.style.removeProperty('opacity');
+              m.style.removeProperty('pointer-events');
+            });
+            btn.textContent = 'Xem ảnh';
+          }
         };
 
         box.appendChild(btn);
@@ -884,7 +971,25 @@
           e.preventDefault();
           e.stopPropagation();
           const isRevealed = postEl.classList.toggle('x-jev-revealed');
-          btn.textContent = isRevealed ? 'Ẩn lại' : 'Xem bài viết';
+          if (isRevealed) {
+            postEl.setAttribute('data-jev-revealed', 'true');
+            postEl.setAttribute('data-user-revealed', 'true');
+            postEl.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
+              el.style.setProperty('filter', 'none', 'important');
+              el.style.setProperty('opacity', '1', 'important');
+              el.style.setProperty('pointer-events', 'auto', 'important');
+            });
+            btn.textContent = 'Ẩn lại';
+          } else {
+            postEl.removeAttribute('data-jev-revealed');
+            postEl.removeAttribute('data-user-revealed');
+            postEl.querySelectorAll('[data-jev-blur-item="true"]').forEach((el) => {
+              el.style.removeProperty('filter');
+              el.style.removeProperty('opacity');
+              el.style.removeProperty('pointer-events');
+            });
+            btn.textContent = 'Xem bài viết';
+          }
         };
 
         box.appendChild(btn);
@@ -895,6 +1000,12 @@
         postEl.classList.remove('x-jev-revealed');
       } else {
         postEl.classList.add('x-jev-revealed');
+        postEl.setAttribute('data-jev-revealed', 'true');
+        postEl.querySelectorAll('[data-jev-blur-item="true"]').forEach((el) => {
+          el.style.setProperty('filter', 'none', 'important');
+          el.style.setProperty('opacity', '1', 'important');
+          el.style.setProperty('pointer-events', 'auto', 'important');
+        });
       }
       return;
     }
@@ -938,7 +1049,25 @@
           e.preventDefault();
           e.stopPropagation();
           const isRevealed = postEl.classList.toggle('x-jev-revealed');
-          revealBtn.textContent = isRevealed ? 'Re-blur' : 'Reveal post';
+          if (isRevealed) {
+            postEl.setAttribute('data-jev-revealed', 'true');
+            postEl.setAttribute('data-user-revealed', 'true');
+            postEl.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
+              el.style.setProperty('filter', 'none', 'important');
+              el.style.setProperty('opacity', '1', 'important');
+              el.style.setProperty('pointer-events', 'auto', 'important');
+            });
+            revealBtn.textContent = 'Re-blur';
+          } else {
+            postEl.removeAttribute('data-jev-revealed');
+            postEl.removeAttribute('data-user-revealed');
+            postEl.querySelectorAll('[data-jev-blur-item="true"]').forEach((el) => {
+              el.style.removeProperty('filter');
+              el.style.removeProperty('opacity');
+              el.style.removeProperty('pointer-events');
+            });
+            revealBtn.textContent = 'Reveal post';
+          }
         };
 
         warningBox.appendChild(revealBtn);
@@ -949,6 +1078,12 @@
         postEl.classList.remove('x-jev-revealed');
       } else {
         postEl.classList.add('x-jev-revealed');
+        postEl.setAttribute('data-jev-revealed', 'true');
+        postEl.querySelectorAll('[data-jev-blur-item="true"]').forEach((el) => {
+          el.style.setProperty('filter', 'none', 'important');
+          el.style.setProperty('opacity', '1', 'important');
+          el.style.setProperty('pointer-events', 'auto', 'important');
+        });
       }
       return;
     }

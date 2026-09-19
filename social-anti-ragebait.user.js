@@ -109,20 +109,35 @@
       opacity: 0.85 !important;
       font-weight: 500 !important;
     }
-    [data-monk-blocked="true"]:not(.monk-revealed) img:not([alt*="avatar"]):not([alt*="profile"]):not([src*="profile_images"]),
-    [data-monk-blocked="true"]:not(.monk-revealed) video {
+    [data-monk-blocked="true"]:not(.monk-revealed):not([data-monk-revealed="true"]) img:not([alt*="avatar"]):not([alt*="profile"]):not([src*="profile_images"]),
+    [data-monk-blocked="true"]:not(.monk-revealed):not([data-monk-revealed="true"]) video,
+    .monk-blur-media {
       filter: blur(28px) grayscale(60%) !important;
       opacity: 0.1 !important;
       user-select: none !important;
       pointer-events: none !important;
       transition: filter 0.25s ease, opacity 0.25s ease !important;
     }
+    .monk-revealed,
     .monk-revealed img,
-    .monk-revealed video {
+    .monk-revealed video,
+    .monk-revealed .monk-blur-media,
+    [data-monk-revealed="true"],
+    [data-monk-revealed="true"] img,
+    [data-monk-revealed="true"] video,
+    body.x-jev-no-monk-blur [data-monk-blocked="true"] img,
+    body.x-jev-no-monk-blur [data-monk-blocked="true"] video,
+    body.x-jev-no-monk-blur .monk-blur-media,
+    body.x-jev-disable-all-blur [data-monk-blocked="true"] img,
+    body.x-jev-disable-all-blur [data-monk-blocked="true"] video {
       filter: none !important;
       opacity: 1 !important;
       user-select: auto !important;
       pointer-events: auto !important;
+    }
+    body.x-jev-no-monk-blur .x-monk-warning-box,
+    body.x-jev-disable-all-blur .x-monk-warning-box {
+      display: none !important;
     }
     .x-monk-warning-box {
       background: rgba(15, 23, 42, 0.9) !important;
@@ -300,19 +315,51 @@
       cursor: pointer !important;
       flex-shrink: 0 !important;
     }
-    [data-jev-rage="true"]:not(.x-jev-revealed) [data-jev-blur-item="true"],
-    [data-jev-scam="true"]:not(.x-jev-revealed) [data-jev-blur-item="true"],
+    [data-jev-rage="true"]:not(.x-jev-revealed):not([data-jev-revealed="true"]) [data-jev-blur-item="true"],
+    [data-jev-scam="true"]:not(.x-jev-revealed):not([data-jev-revealed="true"]) [data-jev-blur-item="true"],
     .x-jev-blurred-content {
       filter: blur(14px) !important;
       opacity: 0.15 !important;
       user-select: none !important;
       pointer-events: none !important;
     }
-    .x-jev-revealed [data-jev-blur-item="true"] {
+    .x-jev-revealed,
+    .x-jev-revealed[data-jev-blur-item="true"],
+    .x-jev-revealed [data-jev-blur-item="true"],
+    [data-jev-revealed="true"],
+    [data-jev-revealed="true"][data-jev-blur-item="true"],
+    [data-jev-revealed="true"] [data-jev-blur-item="true"],
+    [data-jev-revealed="true"] span,
+    [data-jev-revealed="true"] div,
+    [data-jev-revealed="true"] img,
+    [data-jev-revealed="true"] video {
       filter: none !important;
       opacity: 1 !important;
       user-select: auto !important;
       pointer-events: auto !important;
+    }
+    /* Global Unblur overrides when user disables blur in settings */
+    body.x-jev-no-rage-blur [data-jev-blur-item="true"],
+    body.x-jev-no-rage-blur [data-jev-rage="true"],
+    body.x-jev-no-rage-blur [data-jev-rage="true"] [data-jev-blur-item="true"],
+    body.x-jev-no-rage-blur [data-jev-rage="true"] span,
+    body.x-jev-no-rage-blur [data-jev-rage="true"] div,
+    body.x-jev-no-scam-blur [data-jev-scam="true"],
+    body.x-jev-no-scam-blur [data-jev-scam="true"] [data-jev-blur-item="true"],
+    body.x-jev-disable-all-blur [data-jev-blur-item="true"],
+    body.x-jev-disable-all-blur [data-jev-rage="true"] *,
+    body.x-jev-disable-all-blur [data-jev-scam="true"] *,
+    body.x-jev-disable-all-blur .x-jev-blurred-content {
+      filter: none !important;
+      opacity: 1 !important;
+      user-select: auto !important;
+      pointer-events: auto !important;
+    }
+    body.x-jev-no-rage-blur .x-jev-warning-box,
+    body.x-jev-no-scam-blur .x-jev-scam-box,
+    body.x-jev-disable-all-blur .x-jev-warning-box,
+    body.x-jev-disable-all-blur .x-jev-scam-box {
+      display: none !important;
     }
     .x-jev-warning-box {
       background: rgba(239, 68, 68, 0.16) !important;
@@ -385,6 +432,7 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
       border: 1px solid rgba(255,255,255,0.12) !important;
     }
+    body.x-jev-hide-pill .x-jev-floating-pill,
     .x-jev-floating-pill.x-jev-pill-hidden,
     .x-jev-floating-pill[data-hidden="true"],
     .x-jev-pill-hidden {
@@ -397,18 +445,24 @@
       display: inline-flex !important;
       align-items: center !important;
       justify-content: center !important;
-      margin-left: 6px !important;
-      padding: 1px 5px !important;
-      font-size: 11px !important;
-      font-weight: 700 !important;
+      margin-left: 8px !important;
+      padding: 2px 8px !important;
+      min-width: 18px !important;
+      min-height: 18px !important;
+      font-size: 13px !important;
+      font-weight: 800 !important;
       color: #94a3b8 !important;
       cursor: pointer !important;
       border-radius: 9999px !important;
-      background: rgba(255, 255, 255, 0.08) !important;
+      background: rgba(255, 255, 255, 0.12) !important;
+      user-select: none !important;
+      z-index: 1000000 !important;
+      pointer-events: auto !important;
     }
     .x-jev-pill-close:hover {
       color: #ffffff !important;
       background: #ef4444 !important;
+      transform: scale(1.15) !important;
     }
   `;
 
@@ -604,8 +658,36 @@
   const pill = document.createElement('div');
   pill.className = 'x-jev-floating-pill';
 
+  // Separate stats container from close button to preserve close button DOM & event listeners
+  const pillStats = document.createElement('span');
+  pillStats.className = 'x-jev-pill-stats';
+  pill.appendChild(pillStats);
+
+  const pillClose = document.createElement('span');
+  pillClose.className = 'x-jev-pill-close';
+  pillClose.title = 'Ẩn thanh trạng thái này';
+  pillClose.textContent = '✕';
+  pill.appendChild(pillClose);
+
+  // Fast capture phase listener on document ensures clicks/taps on close button are never swallowed
+  const handlePillClose = (e) => {
+    const target = e.target;
+    if (target && (target.classList?.contains('x-jev-pill-close') || target.closest?.('.x-jev-pill-close'))) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      hideFloatingPill = true;
+      document.body?.classList.add('x-jev-hide-pill');
+      try { localStorage.setItem('social_shield_hide_pill', 'true'); } catch (err) {}
+      initPill();
+    }
+  };
+  document.addEventListener('pointerdown', handlePillClose, { capture: true, passive: false });
+  document.addEventListener('click', handlePillClose, { capture: true, passive: false });
+
   function initPill() {
     if (hideFloatingPill) {
+      document.body?.classList.add('x-jev-hide-pill');
       pill.setAttribute('data-hidden', 'true');
       pill.classList.add('x-jev-pill-hidden');
       pill.style.setProperty('display', 'none', 'important');
@@ -618,6 +700,7 @@
       return;
     }
 
+    document.body?.classList.remove('x-jev-hide-pill');
     pill.removeAttribute('data-hidden');
     pill.classList.remove('x-jev-pill-hidden');
     pill.style.removeProperty('display');
@@ -665,17 +748,7 @@
     if (hasActiveCustom && customCount > 0) {
       parts.push(`🏷️ Custom: <span style="color:#c084fc">${customCount}</span>`);
     }
-    pill.innerHTML = parts.join(' | ') + ` <span class="x-jev-pill-close" title="Ẩn thanh trạng thái này">✕</span>`;
-    const closeBtn = pill.querySelector('.x-jev-pill-close');
-    if (closeBtn) {
-      closeBtn.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        hideFloatingPill = true;
-        try { localStorage.setItem('social_shield_hide_pill', 'true'); } catch (err) {}
-        initPill();
-      };
-    }
+    pillStats.innerHTML = parts.join(' | ');
   }
 
   updatePill();
@@ -687,6 +760,7 @@
     CONFIG.blockScamsEnabled = !allOn;
     CONFIG.collapseSeedingEnabled = !allOn;
     updatePill();
+    applyStateToDOM();
     scanFeed();
   });
 
@@ -694,6 +768,107 @@
     initPill();
   } else {
     document.addEventListener('DOMContentLoaded', initPill);
+  }
+
+  function applyStateToDOM() {
+    if (document.body) {
+      document.body.classList.toggle('x-jev-no-rage-blur', !CONFIG.autoBlurRageEnabled);
+      document.body.classList.toggle('x-jev-no-monk-blur', !CONFIG.monkModeEnabled);
+      document.body.classList.toggle('x-jev-no-scam-blur', !CONFIG.blockScamsEnabled);
+      document.body.classList.toggle('x-jev-hide-pill', !!hideFloatingPill);
+      const disableAll = !CONFIG.autoBlurRageEnabled && !CONFIG.monkModeEnabled && !CONFIG.blockScamsEnabled;
+      document.body.classList.toggle('x-jev-disable-all-blur', disableAll);
+    }
+
+    // 0. Facebook Reels & Video Popups State
+    document.querySelectorAll('[data-monk-reels-blocked="true"]').forEach((dialog) => {
+      const overlay = dialog.querySelector('.x-monk-reels-overlay');
+      if (CONFIG.monkModeEnabled || CONFIG.blockReelsEnabled) {
+        if (!dialog.classList.contains('monk-revealed')) {
+          if (overlay) overlay.style.display = 'flex';
+          dialog.querySelectorAll('video').forEach((v) => { try { v.pause(); v.muted = true; } catch (e) {} });
+        }
+      } else {
+        dialog.classList.add('monk-revealed');
+        if (overlay) overlay.style.display = 'none';
+      }
+    });
+
+    document.querySelectorAll('[data-monk-tray-blocked="true"]').forEach((tray) => {
+      const banner = tray.querySelector('.x-monk-tray-banner');
+      if (CONFIG.monkModeEnabled || CONFIG.blockReelsEnabled) {
+        if (!tray.classList.contains('monk-revealed')) {
+          if (banner) banner.style.display = 'flex';
+        }
+      } else {
+        tray.classList.add('monk-revealed');
+        if (banner) banner.style.display = 'none';
+      }
+    });
+
+    // 1. Monk Mode State
+    document.querySelectorAll('[data-monk-blocked="true"]').forEach((post) => {
+      const box = post.querySelector('.x-monk-warning-box');
+      if (CONFIG.monkModeEnabled) {
+        if (!post.hasAttribute('data-user-revealed')) {
+          post.classList.remove('monk-revealed');
+          post.removeAttribute('data-monk-revealed');
+          if (box) box.style.display = 'flex';
+        }
+      } else {
+        post.classList.add('monk-revealed');
+        post.setAttribute('data-monk-revealed', 'true');
+        post.querySelectorAll('img, video, .monk-blur-media').forEach((m) => {
+          m.style.setProperty('filter', 'none', 'important');
+          m.style.setProperty('opacity', '1', 'important');
+          m.style.setProperty('pointer-events', 'auto', 'important');
+        });
+        if (box) box.style.display = 'none';
+      }
+    });
+
+    // 2. Rage Bait state
+    document.querySelectorAll('[data-jev-rage="true"]').forEach((post) => {
+      const warning = post.querySelector('.x-jev-warning-box');
+      if (CONFIG.autoBlurRageEnabled) {
+        if (!post.hasAttribute('data-user-revealed')) {
+          post.classList.remove('x-jev-revealed');
+          post.removeAttribute('data-jev-revealed');
+          if (warning) warning.style.display = 'flex';
+        }
+      } else {
+        post.classList.add('x-jev-revealed');
+        post.setAttribute('data-jev-revealed', 'true');
+        post.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
+          el.style.setProperty('filter', 'none', 'important');
+          el.style.setProperty('opacity', '1', 'important');
+          el.style.setProperty('pointer-events', 'auto', 'important');
+          el.style.setProperty('user-select', 'auto', 'important');
+        });
+        if (warning) warning.style.display = 'none';
+      }
+    });
+
+    // 3. Scam state
+    document.querySelectorAll('[data-jev-scam="true"]').forEach((post) => {
+      const scamBox = post.querySelector('.x-jev-scam-box');
+      if (CONFIG.blockScamsEnabled) {
+        if (!post.hasAttribute('data-user-revealed')) {
+          post.classList.remove('x-jev-revealed');
+          post.removeAttribute('data-jev-revealed');
+          if (scamBox) scamBox.style.display = 'flex';
+        }
+      } else {
+        post.classList.add('x-jev-revealed');
+        post.setAttribute('data-jev-revealed', 'true');
+        post.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
+          el.style.setProperty('filter', 'none', 'important');
+          el.style.setProperty('opacity', '1', 'important');
+          el.style.setProperty('pointer-events', 'auto', 'important');
+        });
+        if (scamBox) scamBox.style.display = 'none';
+      }
+    });
   }
 
   function checkAndApplyMonkMode(postEl, text) {
@@ -745,7 +920,25 @@
           e.preventDefault();
           e.stopPropagation();
           const isRevealed = postEl.classList.toggle('monk-revealed');
-          btn.textContent = isRevealed ? 'Ẩn lại' : 'Xem ảnh';
+          if (isRevealed) {
+            postEl.setAttribute('data-monk-revealed', 'true');
+            postEl.setAttribute('data-user-revealed', 'true');
+            postEl.querySelectorAll('img, video, .monk-blur-media').forEach((m) => {
+              m.style.setProperty('filter', 'none', 'important');
+              m.style.setProperty('opacity', '1', 'important');
+              m.style.setProperty('pointer-events', 'auto', 'important');
+            });
+            btn.textContent = 'Ẩn lại';
+          } else {
+            postEl.removeAttribute('data-monk-revealed');
+            postEl.removeAttribute('data-user-revealed');
+            postEl.querySelectorAll('img, video, .monk-blur-media').forEach((m) => {
+              m.style.removeProperty('filter');
+              m.style.removeProperty('opacity');
+              m.style.removeProperty('pointer-events');
+            });
+            btn.textContent = 'Xem ảnh';
+          }
         };
         box.appendChild(btn);
 
@@ -860,7 +1053,25 @@
           e.preventDefault();
           e.stopPropagation();
           const isRevealed = postEl.classList.toggle('x-jev-revealed');
-          btn.textContent = isRevealed ? 'Ẩn lại' : 'Xem bài viết';
+          if (isRevealed) {
+            postEl.setAttribute('data-jev-revealed', 'true');
+            postEl.setAttribute('data-user-revealed', 'true');
+            postEl.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
+              el.style.setProperty('filter', 'none', 'important');
+              el.style.setProperty('opacity', '1', 'important');
+              el.style.setProperty('pointer-events', 'auto', 'important');
+            });
+            btn.textContent = 'Ẩn lại';
+          } else {
+            postEl.removeAttribute('data-jev-revealed');
+            postEl.removeAttribute('data-user-revealed');
+            postEl.querySelectorAll('[data-jev-blur-item="true"]').forEach((el) => {
+              el.style.removeProperty('filter');
+              el.style.removeProperty('opacity');
+              el.style.removeProperty('pointer-events');
+            });
+            btn.textContent = 'Xem bài viết';
+          }
         };
         box.appendChild(btn);
         parentContainer.insertBefore(box, textEl);
@@ -912,7 +1123,25 @@
           e.preventDefault();
           e.stopPropagation();
           const isRevealed = postEl.classList.toggle('x-jev-revealed');
-          btn.textContent = isRevealed ? 'Ẩn lại' : 'Hiện nội dung';
+          if (isRevealed) {
+            postEl.setAttribute('data-jev-revealed', 'true');
+            postEl.setAttribute('data-user-revealed', 'true');
+            postEl.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
+              el.style.setProperty('filter', 'none', 'important');
+              el.style.setProperty('opacity', '1', 'important');
+              el.style.setProperty('pointer-events', 'auto', 'important');
+            });
+            btn.textContent = 'Ẩn lại';
+          } else {
+            postEl.removeAttribute('data-jev-revealed');
+            postEl.removeAttribute('data-user-revealed');
+            postEl.querySelectorAll('[data-jev-blur-item="true"]').forEach((el) => {
+              el.style.removeProperty('filter');
+              el.style.removeProperty('opacity');
+              el.style.removeProperty('pointer-events');
+            });
+            btn.textContent = 'Hiện nội dung';
+          }
         };
 
         warning.appendChild(btn);
