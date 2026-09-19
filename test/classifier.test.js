@@ -222,6 +222,75 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
     expect(allOff.labels.length).toBe(0);
   });
 
+  test("Dynamic taxonomy formats contiguous instruction numbering without gaps", () => {
+    const TAXONOMY_CATALOG = {
+      'self-improvement / motivational': { configKey: 'filterMotivationalEnabled', instruction: 'personal growth...' },
+      'meme / humor / satire': { configKey: 'filterMemeEnabled', instruction: 'lighthearted jokes...' },
+      'deep dive / technical breakdown / industry insider': { configKey: 'filterDeepDiveEnabled', instruction: 'in-depth...' },
+      'rage bait / toxic / hostile / dismissive negativity': { configKey: 'autoBlurRageEnabled', instruction: 'provocative...' },
+      'scam / fraudulent scheme': { configKey: 'blockScamsEnabled', instruction: 'online fraud...' },
+      'bot seeding / affiliate spam / fake review': { configKey: 'collapseSeedingEnabled', instruction: 'commercial...' },
+    };
+    const CATCH_ALL_LABEL = 'other / casual discussion';
+    const CATCH_ALL_INSTRUCTION = 'everyday personal chatter...';
+
+    function getActiveTaxonomy(cfg = {}) {
+      const activeLabels = [];
+      const instructionsList = [];
+
+      Object.entries(TAXONOMY_CATALOG).forEach(([label, def]) => {
+        if (cfg && cfg[def.configKey] !== false) {
+          activeLabels.push(label);
+          instructionsList.push(`"${label}": ${def.instruction}`);
+        }
+      });
+
+      if (activeLabels.length === 0) return { labels: [], instructions: '' };
+
+      activeLabels.push(CATCH_ALL_LABEL);
+      instructionsList.push(`"${CATCH_ALL_LABEL}": ${CATCH_ALL_INSTRUCTION}`);
+
+      const formattedInstructions = instructionsList.map((item, idx) => `${idx + 1}. ${item}`).join(' ');
+      return {
+        labels: activeLabels,
+        instructions: 'Classify social media content: ' + formattedInstructions,
+      };
+    }
+
+    // Only motivational and meme enabled
+    const partial = getActiveTaxonomy({
+      filterMotivationalEnabled: true,
+      filterMemeEnabled: true,
+      filterDeepDiveEnabled: false,
+      autoBlurRageEnabled: false,
+      blockScamsEnabled: false,
+      collapseSeedingEnabled: false,
+    });
+    expect(partial.instructions).toContain('1. "self-improvement / motivational"');
+    expect(partial.instructions).toContain('2. "meme / humor / satire"');
+    expect(partial.instructions).toContain('3. "other / casual discussion"');
+    expect(partial.instructions).not.toContain('4.');
+    expect(partial.instructions).not.toContain('7.');
+  });
+
+  test("Targeted cache keys isolate taxonomy changes from UI settings", () => {
+    const TAXONOMY_KEYS = [
+      'filterMotivationalEnabled',
+      'filterMemeEnabled',
+      'filterDeepDiveEnabled',
+      'autoBlurRageEnabled',
+      'blockScamsEnabled',
+      'collapseSeedingEnabled',
+      'confidenceThreshold',
+    ];
+
+    expect(TAXONOMY_KEYS.includes('filterMotivationalEnabled')).toBe(true);
+    expect(TAXONOMY_KEYS.includes('autoBlurRageEnabled')).toBe(true);
+    expect(TAXONOMY_KEYS.includes('hideFloatingPill')).toBe(false);
+    expect(TAXONOMY_KEYS.includes('blockReelsEnabled')).toBe(false);
+    expect(TAXONOMY_KEYS.includes('monkModeEnabled')).toBe(false);
+  });
+
   test("Live API proof: disabling a category makes Jev AI blind to it", async () => {
     const toxicPost = "Bọn này toàn lũ ngu dốt thất bại ăn bám xã hội biến đi cho rảnh mắt";
 

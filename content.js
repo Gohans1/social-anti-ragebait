@@ -125,8 +125,25 @@
       }
     );
 
+    const TAXONOMY_KEYS = [
+      'filterMotivationalEnabled',
+      'filterMemeEnabled',
+      'filterDeepDiveEnabled',
+      'autoBlurRageEnabled',
+      'blockScamsEnabled',
+      'collapseSeedingEnabled',
+      'confidenceThreshold',
+    ];
+
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.type === 'UPDATE_CONFIG') {
+        let taxonomyChanged = false;
+        TAXONOMY_KEYS.forEach((key) => {
+          if (request.config[key] !== undefined && request.config[key] !== config[key]) {
+            taxonomyChanged = true;
+          }
+        });
+
         if (typeof request.config.filterMotivationalEnabled === 'boolean') config.filterMotivationalEnabled = request.config.filterMotivationalEnabled;
         if (typeof request.config.filterMemeEnabled === 'boolean') config.filterMemeEnabled = request.config.filterMemeEnabled;
         if (typeof request.config.filterDeepDiveEnabled === 'boolean') config.filterDeepDiveEnabled = request.config.filterDeepDiveEnabled;
@@ -137,8 +154,11 @@
         config.collapseSeedingEnabled = request.config.collapseSeedingEnabled;
         if (typeof request.config.hideFloatingPill === 'boolean') config.hideFloatingPill = request.config.hideFloatingPill;
         config.confidenceThreshold = request.config.confidenceThreshold;
-        textCache.clear();
-        saveCacheToStorage();
+
+        if (taxonomyChanged) {
+          textCache.clear();
+          saveCacheToStorage();
+        }
         updatePill();
         applyStateToDOM();
         sendResponse({ status: 'ok' });
@@ -161,6 +181,7 @@
       chrome.storage.onChanged.addListener((changes, area) => {
         if (area !== 'local') return;
         let configChanged = false;
+        let taxonomyChanged = false;
         [
           'filterMotivationalEnabled',
           'filterMemeEnabled',
@@ -174,6 +195,9 @@
           'hideFloatingPill',
         ].forEach((key) => {
           if (changes[key]) {
+            if (TAXONOMY_KEYS.includes(key) && changes[key].newValue !== config[key]) {
+              taxonomyChanged = true;
+            }
             config[key] = changes[key].newValue;
             configChanged = true;
           }
@@ -187,9 +211,11 @@
         if (changes.blockedScamCount) blockedScamCount = changes.blockedScamCount.newValue || 0;
         if (changes.cleanedSeedingCount) cleanedSeedingCount = changes.cleanedSeedingCount.newValue || 0;
 
-        if (configChanged) {
+        if (taxonomyChanged) {
           textCache.clear();
           saveCacheToStorage();
+        }
+        if (configChanged) {
           applyStateToDOM();
         }
 
@@ -201,7 +227,7 @@
   const TAXONOMY_CATALOG = {
     'self-improvement / motivational': {
       configKey: 'filterMotivationalEnabled',
-      instruction: '1. "self-improvement / motivational": personal growth, discipline, fitness, productivity lessons, inspiring mindsets, self-help, stoicism.',
+      instruction: 'personal growth, discipline, fitness, productivity lessons, inspiring mindsets, self-help, stoicism.',
       badge: {
         text: '🌱 Động lực / Mindset',
         desc: 'Personal growth, productivity, and constructive mindset (Phát triển bản thân, động lực)',
@@ -212,7 +238,7 @@
     },
     'meme / humor / satire': {
       configKey: 'filterMemeEnabled',
-      instruction: '2. "meme / humor / satire": lighthearted jokes, funny memes, sarcastic humor, parody, troll posts.',
+      instruction: 'lighthearted jokes, funny memes, sarcastic humor, parody, troll posts.',
       badge: {
         text: '🎭 Meme / Giải trí',
         desc: 'Humor, memes, satire, and playful wit (Hài hước, ảnh chế, troll vui)',
@@ -223,7 +249,7 @@
     },
     'deep dive / technical breakdown / industry insider': {
       configKey: 'filterDeepDiveEnabled',
-      instruction: '3. "deep dive / technical breakdown / industry insider": in-depth technical threads, architectural teardowns, insider industry analysis, comprehensive teardowns of complex problems.',
+      instruction: 'in-depth technical threads, architectural teardowns, insider industry analysis, comprehensive teardowns of complex problems.',
       badge: {
         text: '🔬 Mổ xẻ / Deep Dive',
         desc: 'Detailed domain teardown, insider analysis, or technical deep dive (Phân tích chuyên sâu)',
@@ -234,20 +260,20 @@
     },
     'rage bait / toxic / hostile / dismissive negativity': {
       configKey: 'autoBlurRageEnabled',
-      instruction: '4. "rage bait / toxic / hostile / dismissive negativity": provocative content designed to incite outrage, anger, toxic drama, hostile or dismissive negativity, cynicism, or insults.',
+      instruction: 'provocative content designed to incite outrage, anger, toxic drama, hostile or dismissive negativity, cynicism, or insults.',
     },
     'scam / fraudulent scheme': {
       configKey: 'blockScamsEnabled',
-      instruction: '5. "scam / fraudulent scheme": online fraud, deceptive financial schemes, crypto Ponzi, fake high-yield investment, or fake remote job scams.',
+      instruction: 'online fraud, deceptive financial schemes, crypto Ponzi, fake high-yield investment, or fake remote job scams.',
     },
     'bot seeding / affiliate spam / fake review': {
       configKey: 'collapseSeedingEnabled',
-      instruction: '6. "bot seeding / affiliate spam / fake review": commercial astroturfing, bot farming, fake praise, affiliate link spam, or deceptive promotional clone comments.',
+      instruction: 'commercial astroturfing, bot farming, fake praise, affiliate link spam, or deceptive promotional clone comments.',
     },
   };
 
   const CATCH_ALL_LABEL = 'other / casual discussion';
-  const CATCH_ALL_INSTRUCTION = '7. "other / casual discussion": everyday personal chatter, news, generic talk, or any content that does not fit the other categories.';
+  const CATCH_ALL_INSTRUCTION = 'everyday personal chatter, news, generic talk, or any content that does not fit the other categories.';
 
   const BADGE_MAP = {
     'self-improvement / motivational': TAXONOMY_CATALOG['self-improvement / motivational'].badge,
@@ -262,14 +288,14 @@
     },
   };
 
-  function getActiveTaxonomy(cfg) {
+  function getActiveTaxonomy(cfg = {}) {
     const activeLabels = [];
     const instructionsList = [];
 
     Object.entries(TAXONOMY_CATALOG).forEach(([label, def]) => {
-      if (cfg[def.configKey] !== false) {
+      if (cfg && cfg[def.configKey] !== false) {
         activeLabels.push(label);
-        instructionsList.push(def.instruction);
+        instructionsList.push(`"${label}": ${def.instruction}`);
       }
     });
 
@@ -278,13 +304,15 @@
     }
 
     activeLabels.push(CATCH_ALL_LABEL);
-    instructionsList.push(CATCH_ALL_INSTRUCTION);
+    instructionsList.push(`"${CATCH_ALL_LABEL}": ${CATCH_ALL_INSTRUCTION}`);
+
+    const formattedInstructions = instructionsList.map((item, idx) => `${idx + 1}. ${item}`).join(' ');
 
     return {
       labels: activeLabels,
       instructions:
         'Classify social media content in Vietnamese or English into exactly one category: ' +
-        instructionsList.join(' '),
+        formattedInstructions,
     };
   }
 
@@ -458,6 +486,28 @@
         if (content) content.classList.remove('x-jev-collapsed-body');
       }
     });
+
+    // 5. Curated Badges State (Motivational, Meme, Deep Dive)
+    document.querySelectorAll('.x-jev-badge').forEach((badge) => {
+      const cat = badge.getAttribute('data-jev-badge-category');
+      const def = TAXONOMY_CATALOG[cat];
+      if (def && config[def.configKey] === false) {
+        badge.style.display = 'none';
+      } else {
+        badge.style.display = 'inline-flex';
+      }
+    });
+
+    // 6. Restore bypassed posts if taxonomy is enabled
+    const activeTaxonomy = getActiveTaxonomy(config);
+    if (activeTaxonomy.labels && activeTaxonomy.labels.length > 1) {
+      document.querySelectorAll('[data-jev-bypassed="true"]').forEach((post) => {
+        post.removeAttribute('data-jev-bypassed');
+        post.removeAttribute('data-jev-scanned');
+        post.removeAttribute('data-jev-cmt-scanned');
+        post.removeAttribute('data-jev-handled');
+      });
+    }
   }
 
   // --- HARDCORE MONK MODE: CLIENT-SIDE INSTANT MEDIA SCANNER ---
@@ -686,14 +736,7 @@
       return;
     }
 
-    // --- PRIORITY 2: GOON BAITING / THIRST TRAP VIA JEV ---
-    if (label === 'goon baiting / thirst trap / seductive woman media' && meetsThreshold) {
-      checkAndApplyMonkMode(postEl, item.text);
-      postEl.setAttribute('data-jev-handled', 'true');
-      return;
-    }
-
-    // --- PRIORITY 3: RAGE BAIT / TOXIC / DISMISSIVE NEGATIVITY ---
+    // --- PRIORITY 2: RAGE BAIT / TOXIC / DISMISSIVE NEGATIVITY ---
     if (label === 'rage bait / toxic / hostile / dismissive negativity' && meetsThreshold) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-rage', 'true');
@@ -821,10 +864,16 @@
 
       const badge = document.createElement('div');
       badge.className = 'x-jev-badge';
+      badge.setAttribute('data-jev-badge-category', label);
       badge.style.backgroundColor = meta.bg;
       badge.style.borderColor = meta.border;
       badge.style.color = meta.color;
       badge.title = `${meta.desc} (Confidence: ${Math.round(confidence * 100)}%)`;
+
+      const def = TAXONOMY_CATALOG[label];
+      if (def && config[def.configKey] === false) {
+        badge.style.display = 'none';
+      }
 
       const textSpan = document.createElement('span');
       textSpan.textContent = meta.text;
@@ -844,13 +893,10 @@
 
     const taxonomy = getActiveTaxonomy(config);
     if (!taxonomy.labels || taxonomy.labels.length <= 1) {
-      const currentBatch = queue.splice(0, 15);
-      currentBatch.forEach((item) => {
-        item.postEl.setAttribute('data-jev-handled', 'true');
+      const allBypassed = queue.splice(0);
+      allBypassed.forEach((item) => {
+        item.postEl.setAttribute('data-jev-bypassed', 'true');
       });
-      if (queue.length > 0) {
-        debounceTimer = setTimeout(flushQueue, 80);
-      }
       return;
     }
 

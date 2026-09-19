@@ -110,26 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     chrome.storage.local.set(config);
 
-    // Broadcast config to all active tabs on Threads, Facebook, X
-    const targetUrlPatterns = [
-      '*://*.threads.net/*',
-      '*://threads.net/*',
-      '*://*.threads.com/*',
-      '*://threads.com/*',
-      '*://*.x.com/*',
-      '*://x.com/*',
-      '*://*.twitter.com/*',
-      '*://twitter.com/*',
-      '*://*.facebook.com/*',
-      '*://facebook.com/*',
-      '*://*.fb.com/*',
-      '*://*.instagram.com/*',
-      '*://instagram.com/*',
-      '*://*.youtube.com/*',
-      '*://youtube.com/*',
-    ];
-
-    // Broadcast config to all tabs
+    // Broadcast config to all active tabs
     chrome.tabs.query({}, (tabs) => {
       if (tabs) {
         tabs.forEach((tab) => {

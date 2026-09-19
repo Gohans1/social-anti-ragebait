@@ -431,7 +431,7 @@
   const TAXONOMY_CATALOG = {
     'self-improvement / motivational': {
       configKey: 'filterMotivationalEnabled',
-      instruction: '1. "self-improvement / motivational": personal growth, discipline, fitness, productivity lessons, inspiring mindsets, self-help, stoicism.',
+      instruction: 'personal growth, discipline, fitness, productivity lessons, inspiring mindsets, self-help, stoicism.',
       badge: {
         text: '🌱 Động lực / Mindset',
         desc: 'Personal growth, productivity, and constructive mindset (Phát triển bản thân, động lực)',
@@ -442,7 +442,7 @@
     },
     'meme / humor / satire': {
       configKey: 'filterMemeEnabled',
-      instruction: '2. "meme / humor / satire": lighthearted jokes, funny memes, sarcastic humor, parody, troll posts.',
+      instruction: 'lighthearted jokes, funny memes, sarcastic humor, parody, troll posts.',
       badge: {
         text: '🎭 Meme / Giải trí',
         desc: 'Humor, memes, satire, and playful wit (Hài hước, ảnh chế, troll vui)',
@@ -453,7 +453,7 @@
     },
     'deep dive / technical breakdown / industry insider': {
       configKey: 'filterDeepDiveEnabled',
-      instruction: '3. "deep dive / technical breakdown / industry insider": in-depth technical threads, architectural teardowns, insider industry analysis, comprehensive teardowns of complex problems.',
+      instruction: 'in-depth technical threads, architectural teardowns, insider industry analysis, comprehensive teardowns of complex problems.',
       badge: {
         text: '🔬 Mổ xẻ / Deep Dive',
         desc: 'Detailed domain teardown, insider analysis, or technical deep dive (Phân tích chuyên sâu)',
@@ -464,20 +464,20 @@
     },
     'rage bait / toxic / hostile / dismissive negativity': {
       configKey: 'autoBlurRageEnabled',
-      instruction: '4. "rage bait / toxic / hostile / dismissive negativity": provocative content designed to incite outrage, anger, toxic drama, hostile or dismissive negativity, cynicism, or insults.',
+      instruction: 'provocative content designed to incite outrage, anger, toxic drama, hostile or dismissive negativity, cynicism, or insults.',
     },
     'scam / fraudulent scheme': {
       configKey: 'blockScamsEnabled',
-      instruction: '5. "scam / fraudulent scheme": online fraud, deceptive financial schemes, crypto Ponzi, fake high-yield investment, or fake remote job scams.',
+      instruction: 'online fraud, deceptive financial schemes, crypto Ponzi, fake high-yield investment, or fake remote job scams.',
     },
     'bot seeding / affiliate spam / fake review': {
       configKey: 'collapseSeedingEnabled',
-      instruction: '6. "bot seeding / affiliate spam / fake review": commercial astroturfing, bot farming, fake praise, affiliate link spam, or deceptive promotional clone comments.',
+      instruction: 'commercial astroturfing, bot farming, fake praise, affiliate link spam, or deceptive promotional clone comments.',
     },
   };
 
   const CATCH_ALL_LABEL = 'other / casual discussion';
-  const CATCH_ALL_INSTRUCTION = '7. "other / casual discussion": everyday personal chatter, news, generic talk, or any content that does not fit the other categories.';
+  const CATCH_ALL_INSTRUCTION = 'everyday personal chatter, news, generic talk, or any content that does not fit the other categories.';
 
   const BADGE_MAP = {
     'self-improvement / motivational': TAXONOMY_CATALOG['self-improvement / motivational'].badge,
@@ -492,14 +492,14 @@
     },
   };
 
-  function getActiveTaxonomy(cfg) {
+  function getActiveTaxonomy(cfg = {}) {
     const activeLabels = [];
     const instructionsList = [];
 
     Object.entries(TAXONOMY_CATALOG).forEach(([label, def]) => {
-      if (cfg[def.configKey] !== false) {
+      if (cfg && cfg[def.configKey] !== false) {
         activeLabels.push(label);
-        instructionsList.push(def.instruction);
+        instructionsList.push(`"${label}": ${def.instruction}`);
       }
     });
 
@@ -508,13 +508,15 @@
     }
 
     activeLabels.push(CATCH_ALL_LABEL);
-    instructionsList.push(CATCH_ALL_INSTRUCTION);
+    instructionsList.push(`"${CATCH_ALL_LABEL}": ${CATCH_ALL_INSTRUCTION}`);
+
+    const formattedInstructions = instructionsList.map((item, idx) => `${idx + 1}. ${item}`).join(' ');
 
     return {
       labels: activeLabels,
       instructions:
         'Classify social media content in Vietnamese or English into exactly one category: ' +
-        instructionsList.join(' '),
+        formattedInstructions,
     };
   }
 
@@ -776,14 +778,7 @@
       return;
     }
 
-    // 2. GOON BAITING
-    if (label === 'goon baiting / thirst trap / seductive woman media' && confidence >= CONFIG.confidenceThreshold) {
-      checkAndApplyMonkMode(postEl, item.text);
-      postEl.setAttribute('data-jev-handled', 'true');
-      return;
-    }
-
-    // 3. RAGE BAIT / TOXIC NEGATIVITY
+    // 2. RAGE BAIT / TOXIC NEGATIVITY
     if (
       (label === 'rage bait / toxic / hostile / dismissive negativity' || label === 'rage bait / outrage') &&
       confidence >= CONFIG.confidenceThreshold
@@ -802,36 +797,55 @@
           span.setAttribute('data-jev-blur-item', 'true');
         }
       });
-      postEl.querySelectorAll('img, video').forEach((m) => {
+      postEl.querySelectorAll('a').forEach((m) => {
         if (!isProfileOnlyLink(m)) m.setAttribute('data-jev-blur-item', 'true');
       });
 
       if (!postEl.querySelector('.x-jev-warning-box')) {
-        const box = document.createElement('div');
-        box.className = 'x-jev-warning-box';
+        const warning = document.createElement('div');
+        warning.className = 'x-jev-warning-box';
         const pct = Math.round(confidence * 100);
-        box.innerHTML = `<span>🛡️ <b>Rage Bait / Toxic Warning (${pct}%):</b> Bình luận tiêu cực / công kích đã bị làm mờ.</span>`;
+        warning.innerHTML = `
+          <div class="x-jev-warning-text">
+            <span>🛡️</span>
+            <div>
+              <b>Đã che nội dung Toxic / Rage-bait (${pct}%):</b>
+              <div style="font-size:11px;font-weight:400;opacity:0.9;margin-top:2px;">Nội dung có thể gây khó chịu, bực tức hoặc kích động tranh cãi.</div>
+            </div>
+          </div>
+        `;
+
         const btn = document.createElement('button');
         btn.className = 'x-jev-reveal-btn';
-        btn.textContent = 'Reveal post';
+        btn.textContent = 'Hiện nội dung';
         btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
           const isRevealed = postEl.classList.toggle('x-jev-revealed');
-          btn.textContent = isRevealed ? 'Re-blur' : 'Reveal post';
+          btn.textContent = isRevealed ? 'Ẩn lại' : 'Hiện nội dung';
         };
-        box.appendChild(btn);
-        parentContainer.insertBefore(box, textEl);
+
+        warning.appendChild(btn);
+        parentContainer.insertBefore(warning, textEl);
+      }
+
+      if (CONFIG.autoBlurRageEnabled) {
+        postEl.classList.remove('x-jev-revealed');
+      } else {
+        postEl.classList.add('x-jev-revealed');
       }
       return;
     }
 
-    // 4. SEEDING
+    // 3. BOT SEEDING / AFFILIATE SPAM
     if (label === 'bot seeding / affiliate spam / fake review' && confidence >= CONFIG.confidenceThreshold) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-seeding', 'true');
       cleanedSeedingCount++;
       updatePill();
+
+      // Remove any lingering badges
+      postEl.querySelectorAll('.x-jev-badge').forEach((b) => b.remove());
 
       textEl.setAttribute('data-jev-seeding-content', 'true');
       if (!postEl.querySelector('.x-jev-seeding-collapsed')) {
@@ -856,7 +870,7 @@
       return;
     }
 
-    // 5. CURATED CATEGORY BADGES
+    // 4. CURATED CATEGORY BADGES
     if (label === 'other / casual discussion') {
       postEl.setAttribute('data-jev-handled', 'true');
       return;
@@ -875,10 +889,16 @@
 
       const badge = document.createElement('div');
       badge.className = 'x-jev-badge';
+      badge.setAttribute('data-jev-badge-category', label);
       badge.style.backgroundColor = meta.bg;
       badge.style.borderColor = meta.border;
       badge.style.color = meta.color;
       badge.title = `${meta.desc} (Confidence: ${Math.round(confidence * 100)}%)`;
+
+      const def = TAXONOMY_CATALOG[label];
+      if (def && CONFIG[def.configKey] === false) {
+        badge.style.display = 'none';
+      }
 
       const textSpan = document.createElement('span');
       textSpan.textContent = meta.text;
@@ -898,13 +918,10 @@
 
     const taxonomy = getActiveTaxonomy(CONFIG);
     if (!taxonomy.labels || taxonomy.labels.length <= 1) {
-      const currentBatch = queue.splice(0, 15);
-      currentBatch.forEach((item) => {
-        item.postEl.setAttribute('data-jev-handled', 'true');
+      const allBypassed = queue.splice(0);
+      allBypassed.forEach((item) => {
+        item.postEl.setAttribute('data-jev-bypassed', 'true');
       });
-      if (queue.length > 0) {
-        debounceTimer = setTimeout(flushQueue, 80);
-      }
       return;
     }
 
