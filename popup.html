@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Social Anti-Ragebait Settings</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      width: 320px;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 16px;
+      font-size: 13px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .logo {
+      width: 30px;
+      height: 30px;
+      background: #ef4444;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: #fff;
+      font-size: 15px;
+    }
+    .title h1 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+    .title p {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+    .platform-tags {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .platform-tag {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+    .section {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .row:last-child {
+      margin-bottom: 0;
+    }
+    .label {
+      font-weight: 500;
+      color: #e2e8f0;
+    }
+    .sublabel {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    /* Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #334155;
+      transition: .2s;
+      border-radius: 22px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #ef4444;
+    }
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+    /* Range input */
+    .range-wrap {
+      margin-top: 8px;
+    }
+    input[type=range] {
+      width: 100%;
+      accent-color: #ef4444;
+      cursor: pointer;
+    }
+    .range-val {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+    .stats {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      text-align: center;
+      padding: 10px;
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 8px;
+    }
+    .stat-num {
+      font-size: 20px;
+      font-weight: 800;
+      color: #f87171;
+    }
+    .stat-lbl {
+      font-size: 10.5px;
+      color: #cbd5e1;
+      margin-top: 2px;
+    }
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 10px;
+    }
+    .btn-reset {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 11px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .btn-reset:hover {
+      color: #f87171;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">🛡️</div>
+    <div class="title">
+      <h1>Social Anti-Ragebait</h1>
+      <p>X, Threads & Facebook • Jev Model</p>
+    </div>
+  </div>
+
+  <div class="platform-tags">
+    <span class="platform-tag">𝕏 Twitter</span>
+    <span class="platform-tag">🧵 Threads</span>
+    <span class="platform-tag">📘 Facebook</span>
+    <span class="platform-tag">🇻🇳 Tiếng Việt</span>
+  </div>
+
+  <div class="section">
+    <div class="row">
+      <div>
+        <div class="label">Auto-Blur Rage Bait</div>
+        <div class="sublabel">Blur toxic & outrage-inducing posts</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="autoBlurToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="range-wrap">
+      <div class="row" style="margin-bottom: 2px;">
+        <span class="label" style="font-size: 12px;">Sensitivity (Threshold)</span>
+        <span id="thresholdVal" style="font-weight: 700; color: #f87171;">65%</span>
+      </div>
+      <input type="range" id="thresholdRange" min="50" max="90" step="5" value="65">
+      <div class="range-val">
+        <span>50% (Aggressive)</span>
+        <span>90% (Obvious only)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div>
+      <div class="stat-num" id="blockedCounter">0</div>
+      <div class="stat-lbl">Toxic Posts Blocked</div>
+    </div>
+    <div>
+      <div class="stat-num" style="color: #4ade80;">~250ms</div>
+      <div class="stat-lbl">Inference Latency</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Multilingual Zero-shot Model</span>
+    <button class="btn-reset" id="resetStats">Reset counter</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
