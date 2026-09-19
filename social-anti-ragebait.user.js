@@ -555,7 +555,11 @@
         const rawName = typeof c === 'string' ? c : c?.name;
         const enabled = typeof c === 'object' ? c?.enabled !== false : true;
         const name = rawName ? rawName.trim() : '';
-        if (name && enabled && !activeLabels.includes(name)) {
+        const isDuplicate =
+          !name ||
+          name.toLowerCase() === CATCH_ALL_LABEL.toLowerCase() ||
+          activeLabels.some((l) => l.toLowerCase() === name.toLowerCase());
+        if (enabled && !isDuplicate) {
           activeLabels.push(name);
           instructionsList.push(`"${name}": content specifically discussing, focused on, or related to ${name}.`);
         }
@@ -1575,7 +1579,20 @@
     document.querySelectorAll('.x-jev-badge').forEach((badge) => {
       const cat = badge.getAttribute('data-jev-badge-category');
       const def = TAXONOMY_CATALOG[cat];
+      let isHidden = false;
       if (def && CONFIG[def.configKey] === false) {
+        isHidden = true;
+      } else if (Array.isArray(CONFIG.customLabels)) {
+        const customFound = CONFIG.customLabels.find(
+          (c) => (typeof c === 'string' ? c : c?.name)?.toLowerCase() === cat?.toLowerCase()
+        );
+        if (customFound && typeof customFound === 'object' && customFound.enabled === false) {
+          isHidden = true;
+        } else if (!customFound && !def && cat !== 'other / casual discussion') {
+          isHidden = true;
+        }
+      }
+      if (isHidden) {
         badge.classList.add('x-jev-hidden');
         badge.style.setProperty('display', 'none', 'important');
       } else {

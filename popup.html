@@ -175,6 +175,32 @@
       color: #f87171;
       background: rgba(239, 68, 68, 0.15);
     }
+    /* Mini Switch for Custom Chips */
+    .switch-mini {
+      position: relative;
+      display: inline-block;
+      width: 28px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+    .switch-mini input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .switch-mini .slider {
+      border-radius: 16px;
+    }
+    .switch-mini .slider:before {
+      height: 12px;
+      width: 12px;
+      left: 2px;
+      bottom: 2px;
+      border-radius: 50%;
+    }
+    .switch-mini input:checked + .slider:before {
+      transform: translateX(12px);
+    }
     input.monk-toggle:checked + .slider {
       background-color: #0284c7;
     }
@@ -480,6 +506,10 @@
     <div class="stat-card">
       <div class="stat-num" id="fomoCounter" style="color: #fde047;">0</div>
       <div class="stat-lbl">⚡ FOMO</div>
+    </div>
+    <div class="stat-card" style="grid-column: span 3; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px;">
+      <div class="stat-lbl" style="margin: 0; font-size: 11px; color: #c084fc;">🏷️ Nhãn Tự Điền (Custom)</div>
+      <div class="stat-num" id="customCounter" style="color: #c084fc; font-size: 14px;">0</div>
     </div>
   </div>
 

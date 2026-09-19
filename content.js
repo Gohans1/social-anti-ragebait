@@ -395,7 +395,11 @@
         const rawName = typeof c === 'string' ? c : c?.name;
         const enabled = typeof c === 'object' ? c?.enabled !== false : true;
         const name = rawName ? rawName.trim() : '';
-        if (name && enabled && !activeLabels.includes(name)) {
+        const isDuplicate =
+          !name ||
+          name.toLowerCase() === CATCH_ALL_LABEL.toLowerCase() ||
+          activeLabels.some((l) => l.toLowerCase() === name.toLowerCase());
+        if (enabled && !isDuplicate) {
           activeLabels.push(name);
           instructionsList.push(`"${name}": content specifically discussing, focused on, or related to ${name}.`);
         }

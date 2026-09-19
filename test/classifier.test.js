@@ -445,7 +445,11 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
           const rawName = typeof c === 'string' ? c : c?.name;
           const enabled = typeof c === 'object' ? c?.enabled !== false : true;
           const name = rawName ? rawName.trim() : '';
-          if (name && enabled && !activeLabels.includes(name)) {
+          const isDuplicate =
+            !name ||
+            name.toLowerCase() === CATCH_ALL_LABEL.toLowerCase() ||
+            activeLabels.some((l) => l.toLowerCase() === name.toLowerCase());
+          if (enabled && !isDuplicate) {
             activeLabels.push(name);
             instructionsList.push(`"${name}": content specifically discussing, focused on, or related to ${name}.`);
           }
@@ -469,15 +473,19 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
       customLabels: [
         { name: 'anime', enabled: true },
         { name: 'bóng đá', enabled: false }, // disabled
-        { name: 'meme / humor / satire', enabled: true }, // duplicate of catalog label
+        { name: 'Meme / Humor / Satire', enabled: true }, // case-insensitive duplicate of catalog label
+        { name: 'other / casual discussion', enabled: true }, // catch-all duplicate attempt
+        { name: '   ', enabled: true }, // whitespace only
       ],
     });
 
     expect(taxonomy.labels).toContain('meme / humor / satire');
     expect(taxonomy.labels).toContain('anime');
     expect(taxonomy.labels).not.toContain('bóng đá');
-    // Ensure duplicate was not added twice
-    expect(taxonomy.labels.filter(l => l === 'meme / humor / satire').length).toBe(1);
+    // Ensure duplicate was not added twice and case-insensitive match was deduplicated
+    expect(taxonomy.labels.filter(l => l.toLowerCase() === 'meme / humor / satire').length).toBe(1);
+    // Ensure catch-all appears exactly once at the end
+    expect(taxonomy.labels.filter(l => l.toLowerCase() === 'other / casual discussion').length).toBe(1);
     expect(taxonomy.instructions).toContain('"anime": content specifically discussing, focused on, or related to anime.');
   });
 

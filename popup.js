@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const wholesomeCounter = document.getElementById('wholesomeCounter');
   const doomCounter = document.getElementById('doomCounter');
   const fomoCounter = document.getElementById('fomoCounter');
+  const customCounter = document.getElementById('customCounter');
   const resetStats = document.getElementById('resetStats');
 
   const customLabelInput = document.getElementById('customLabelInput');
@@ -61,9 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
       actions.style.gap = '8px';
 
       const switchLabel = document.createElement('label');
-      switchLabel.className = 'switch';
-      switchLabel.style.width = '28px';
-      switchLabel.style.height = '16px';
+      switchLabel.className = 'switch-mini';
 
       const toggleInput = document.createElement('input');
       toggleInput.type = 'checkbox';
@@ -102,8 +101,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function handleAddCustomLabel() {
     if (!customLabelInput) return;
-    const val = customLabelInput.value.trim();
+    let val = customLabelInput.value.trim();
     if (!val) return;
+    val = val.replace(/["\r\n\t]/g, '').trim().slice(0, 40);
+    if (!val || val.toLowerCase() === 'other / casual discussion') {
+      customLabelInput.value = '';
+      return;
+    }
     const exists = customLabels.some((c) => c.name.toLowerCase() === val.toLowerCase());
     if (!exists) {
       customLabels.push({ name: val, enabled: true });
@@ -151,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'wholesomeCount',
       'doomCount',
       'fomoCount',
+      'customCount',
     ],
     (res) => {
       if (Array.isArray(res.customLabels)) {
@@ -225,6 +230,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof res.fomoCount === 'number' && fomoCounter) {
         fomoCounter.textContent = res.fomoCount;
       }
+      if (typeof res.customCount === 'number' && customCounter) {
+        customCounter.textContent = res.customCount;
+      }
     }
   );
 
@@ -292,6 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
       wholesomeCount: 0,
       doomCount: 0,
       fomoCount: 0,
+      customCount: 0,
     });
     if (motivationalCounter) motivationalCounter.textContent = '0';
     if (memeCounter) memeCounter.textContent = '0';
@@ -302,6 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (wholesomeCounter) wholesomeCounter.textContent = '0';
     if (doomCounter) doomCounter.textContent = '0';
     if (fomoCounter) fomoCounter.textContent = '0';
+    if (customCounter) customCounter.textContent = '0';
 
     chrome.tabs.query({}, (tabs) => {
       if (tabs) {
@@ -340,6 +350,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (changes.fomoCount && fomoCounter) {
         fomoCounter.textContent = changes.fomoCount.newValue || 0;
+      }
+      if (changes.customCount && customCounter) {
+        customCounter.textContent = changes.customCount.newValue || 0;
       }
       if (changes.customLabels && Array.isArray(changes.customLabels.newValue)) {
         customLabels = changes.customLabels.newValue;
