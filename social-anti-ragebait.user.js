@@ -45,13 +45,23 @@
     autoBlurRageEnabled: true,
     blockScamsEnabled: true,
     collapseSeedingEnabled: true,
+    focusModeEnabled: false,
+    focusWhitelistTags: ['motivational', 'meme', 'deepdive', 'wholesome'],
   };
+
+  try {
+    const savedFocus = localStorage.getItem('social_shield_focus_mode');
+    if (savedFocus !== null) CONFIG.focusModeEnabled = savedFocus === 'true';
+    const savedTags = localStorage.getItem('social_shield_focus_tags');
+    if (savedTags) CONFIG.focusWhitelistTags = JSON.parse(savedTags);
+  } catch (e) {}
 
   let scannedCount = 0;
   let monkModeBlockedCount = 0;
   let blockedRageCount = 0;
   let blockedScamCount = 0;
   let cleanedSeedingCount = 0;
+  let focusCollapsedCount = 0;
   let motivationalCount = 0;
   let memeCount = 0;
   let deepDiveCount = 0;
@@ -417,6 +427,70 @@
     .x-jev-collapsed-body {
       display: none !important;
     }
+    /* --- Focus Feed Mode: Collapsed Bar for Off-Topic Posts --- */
+    .x-jev-focus-bar {
+      background: rgba(30, 41, 59, 0.5) !important;
+      border: 1px dashed rgba(148, 163, 184, 0.35) !important;
+      border-radius: 8px !important;
+      padding: 6px 12px !important;
+      margin: 4px 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      font-size: 11.5px !important;
+      color: #94a3b8 !important;
+      cursor: pointer !important;
+      user-select: none !important;
+      transition: all 0.15s ease !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    }
+
+    .x-jev-focus-bar:hover {
+      background: rgba(30, 41, 59, 0.8) !important;
+      border-color: rgba(56, 189, 248, 0.6) !important;
+      color: #f1f5f9 !important;
+      transform: translateX(2px) !important;
+    }
+
+    .x-jev-focus-info {
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      font-weight: 500 !important;
+    }
+
+    .x-jev-focus-action {
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      color: #38bdf8 !important;
+      background: rgba(56, 189, 248, 0.15) !important;
+      padding: 2px 8px !important;
+      border-radius: 4px !important;
+      transition: background 0.15s ease !important;
+    }
+
+    .x-jev-focus-bar:hover .x-jev-focus-action {
+      background: rgba(56, 189, 248, 0.25) !important;
+    }
+
+    .x-jev-focus-collapsed-content {
+      display: none !important;
+    }
+
+    .x-jev-focus-expanded .x-jev-focus-collapsed-content {
+      display: block !important;
+    }
+
+    body.x-jev-no-focus .x-jev-focus-bar {
+      display: none !important;
+    }
+
+    body.x-jev-no-focus .x-jev-focus-collapsed-content {
+      display: revert !important;
+    }
+
     .x-jev-floating-pill {
       position: fixed !important;
       bottom: 24px !important;
@@ -720,6 +794,9 @@
       `🛡️ ${pName}: <span style="color:#4ade80">ON</span>`,
       `👁️ Quét: <span style="color:#a5f3fc">${scannedCount}</span>`,
     ];
+    if (CONFIG.focusModeEnabled) {
+      parts.push(`<span class="x-jev-pill-focus-toggle" title="Click để Bật/Tắt Focus Feed Mode" style="cursor:pointer;">🎯 Focus: <span style="color:#38bdf8">${focusCollapsedCount} thu gọn</span></span>`);
+    }
     if (CONFIG.autoBlurRageEnabled) {
       parts.push(`🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span>`);
     }
@@ -754,6 +831,13 @@
   updatePill();
   pill.addEventListener('click', (e) => {
     if (e.target.closest('.x-jev-pill-close')) return;
+    if (e.target.closest('.x-jev-pill-focus-toggle')) {
+      CONFIG.focusModeEnabled = !CONFIG.focusModeEnabled;
+      try { localStorage.setItem('social_shield_focus_mode', CONFIG.focusModeEnabled); } catch (err) {}
+      updatePill();
+      applyStateToDOM();
+      return;
+    }
     const allOn = CONFIG.monkModeEnabled || CONFIG.autoBlurRageEnabled || CONFIG.blockScamsEnabled || CONFIG.collapseSeedingEnabled;
     CONFIG.monkModeEnabled = !allOn;
     CONFIG.autoBlurRageEnabled = !allOn;
@@ -776,6 +860,7 @@
       document.body.classList.toggle('x-jev-no-monk-blur', !CONFIG.monkModeEnabled);
       document.body.classList.toggle('x-jev-no-scam-blur', !CONFIG.blockScamsEnabled);
       document.body.classList.toggle('x-jev-hide-pill', !!hideFloatingPill);
+      document.body.classList.toggle('x-jev-no-focus', !CONFIG.focusModeEnabled);
       const disableAll = !CONFIG.autoBlurRageEnabled && !CONFIG.monkModeEnabled && !CONFIG.blockScamsEnabled;
       document.body.classList.toggle('x-jev-disable-all-blur', disableAll);
     }
@@ -869,6 +954,125 @@
         if (scamBox) scamBox.style.display = 'none';
       }
     });
+
+    // 7. Focus Feed Mode: Re-evaluate state on all classified posts
+    let currentFocusCount = 0;
+    document.querySelectorAll('[data-jev-assigned-label]').forEach((post) => {
+      const assignedLabel = post.getAttribute('data-jev-assigned-label');
+      const matchesFocus = isPostMatchingFocus(assignedLabel);
+      const bar = post.querySelector('.x-jev-focus-bar');
+      const textEl = post.querySelector('[data-jev-tracked-text="true"]') || post.querySelector('span[dir="auto"], div[dir="auto"]');
+
+      if (CONFIG.focusModeEnabled && !matchesFocus) {
+        currentFocusCount++;
+        post.setAttribute('data-jev-focus-offtag', 'true');
+        if (textEl) textEl.classList.add('x-jev-focus-collapsed-content');
+        post.querySelectorAll('img, video, .x-jev-badge, .x-jev-warning-box, .x-jev-scam-box, .x-monk-warning-box, .x-jev-seeding-collapsed').forEach((m) => {
+          if (!m.closest('a[href*="/@"]')) m.classList.add('x-jev-focus-collapsed-content');
+        });
+        if (!bar && textEl) {
+          createFocusBar(post, textEl, assignedLabel);
+        } else if (bar) {
+          bar.style.display = 'flex';
+        }
+      } else {
+        post.removeAttribute('data-jev-focus-offtag');
+        if (textEl) textEl.classList.remove('x-jev-focus-collapsed-content');
+        post.querySelectorAll('.x-jev-focus-collapsed-content').forEach((m) => {
+          m.classList.remove('x-jev-focus-collapsed-content');
+        });
+        if (bar) bar.style.display = 'none';
+        post.classList.remove('x-jev-focus-expanded');
+      }
+    });
+
+    if (CONFIG.focusModeEnabled) {
+      focusCollapsedCount = currentFocusCount;
+    }
+  }
+
+  function getPostTagKey(label) {
+    if (label === 'self-improvement / motivational') return 'motivational';
+    if (label === 'meme / humor / satire') return 'meme';
+    if (label === 'deep dive / technical breakdown / industry insider') return 'deepdive';
+    if (label === 'wholesome / positive') return 'wholesome';
+    if (label === 'fearmongering / doom') return 'doom';
+    if (label === 'fomo / hype') return 'fomo';
+    if (label === 'other / casual discussion') return 'casual';
+    if (Array.isArray(CONFIG.customLabels)) {
+      const isCustom = CONFIG.customLabels.some(
+        (c) => (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase() === label?.trim().toLowerCase()
+      );
+      if (isCustom) return 'custom';
+    }
+    return null;
+  }
+
+  function getDisplayLabelName(label) {
+    if (label === 'self-improvement / motivational') return 'Động lực';
+    if (label === 'meme / humor / satire') return 'Meme';
+    if (label === 'deep dive / technical breakdown / industry insider') return 'Deep Dive';
+    if (label === 'wholesome / positive') return 'Wholesome';
+    if (label === 'fearmongering / doom') return 'Doom';
+    if (label === 'fomo / hype') return 'FOMO';
+    if (label === 'other / casual discussion') return 'Thảo luận';
+    if (label === 'scam / fraudulent scheme') return 'Lừa đảo';
+    if (label === 'rage bait / toxic / hostile / dismissive negativity') return 'Rage Bait';
+    if (label === 'bot seeding / affiliate spam / fake review') return 'Seeding';
+    return label || 'Chủ đề khác';
+  }
+
+  function isPostMatchingFocus(label) {
+    if (!CONFIG.focusModeEnabled) return true;
+    const allowedTags = Array.isArray(CONFIG.focusWhitelistTags) ? CONFIG.focusWhitelistTags : [];
+    if (allowedTags.length === 0) return true;
+
+    const tagKey = getPostTagKey(label);
+    if (!tagKey) return false;
+
+    return allowedTags.includes(tagKey);
+  }
+
+  function createFocusBar(postEl, textEl, label) {
+    if (postEl.querySelector('.x-jev-focus-bar')) return;
+    const parentContainer = textEl.parentElement;
+    if (!parentContainer) return;
+
+    const displayTag = getDisplayLabelName(label);
+    const focusBar = document.createElement('div');
+    focusBar.className = 'x-jev-focus-bar';
+    focusBar.innerHTML = `
+      <div class="x-jev-focus-info">
+        <span>🎯</span>
+        <span>Khác tag Focus: <b style="color:#e2e8f0;">${displayTag}</b></span>
+      </div>
+      <span class="x-jev-focus-action">Xem nội dung ▾</span>
+    `;
+    focusBar.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const isExpanded = postEl.classList.toggle('x-jev-focus-expanded');
+      const actionBtn = focusBar.querySelector('.x-jev-focus-action');
+      if (actionBtn) {
+        actionBtn.textContent = isExpanded ? 'Thu gọn ▴' : 'Xem nội dung ▾';
+      }
+    });
+    parentContainer.insertBefore(focusBar, textEl);
+  }
+
+  function checkAndApplyFocusCollapse(postEl, textEl, label) {
+    postEl.setAttribute('data-jev-assigned-label', label);
+    textEl.setAttribute('data-jev-tracked-text', 'true');
+    if (CONFIG.focusModeEnabled && !isPostMatchingFocus(label)) {
+      postEl.setAttribute('data-jev-focus-offtag', 'true');
+      textEl.classList.add('x-jev-focus-collapsed-content');
+      postEl.querySelectorAll('img, video, .x-jev-badge, .x-jev-warning-box, .x-jev-scam-box, .x-monk-warning-box, .x-jev-seeding-collapsed').forEach((m) => {
+        if (!m.closest('a[href*="/@"]')) m.classList.add('x-jev-focus-collapsed-content');
+      });
+      createFocusBar(postEl, textEl, label);
+      focusCollapsedCount++;
+      updatePill();
+    }
   }
 
   function checkAndApplyMonkMode(postEl, text) {
@@ -1076,6 +1280,7 @@
         box.appendChild(btn);
         parentContainer.insertBefore(box, textEl);
       }
+      checkAndApplyFocusCollapse(postEl, textEl, label);
       return;
     }
 
@@ -1153,6 +1358,7 @@
       } else {
         postEl.classList.add('x-jev-revealed');
       }
+      checkAndApplyFocusCollapse(postEl, textEl, label);
       return;
     }
 
@@ -1186,18 +1392,21 @@
           textEl.classList.add('x-jev-collapsed-body');
         }
       }
+      checkAndApplyFocusCollapse(postEl, textEl, label);
       return;
     }
 
     // 4. CURATED & CUSTOM CATEGORY BADGES
     const isActivity = window.location.pathname.includes('/activity');
     if (label === 'other / casual discussion' && (CONFIG.filterCasualEnabled === false || isActivity)) {
+      checkAndApplyFocusCollapse(postEl, textEl, label);
       postEl.setAttribute('data-jev-handled', 'true');
       return;
     }
 
     const def = TAXONOMY_CATALOG[label];
     if (def && CONFIG[def.configKey] === false) {
+      checkAndApplyFocusCollapse(postEl, textEl, label);
       postEl.setAttribute('data-jev-handled', 'true');
       return;
     }
@@ -1211,6 +1420,7 @@
       if (customFound) {
         const isEnabled = typeof customFound === 'object' ? customFound.enabled !== false : true;
         if (!isEnabled) {
+          checkAndApplyFocusCollapse(postEl, textEl, label);
           postEl.setAttribute('data-jev-handled', 'true');
           return;
         }
@@ -1260,6 +1470,7 @@
       badge.appendChild(confSpan);
       parentContainer.insertBefore(badge, textEl);
     }
+    checkAndApplyFocusCollapse(postEl, textEl, label);
     postEl.setAttribute('data-jev-handled', 'true');
   }
 

@@ -29,9 +29,41 @@ document.addEventListener('DOMContentLoaded', () => {
   const customCounter = document.getElementById('customCounter');
   const resetStats = document.getElementById('resetStats');
 
+  const focusModeToggle = document.getElementById('focusModeToggle');
+  const focusTagSelection = document.getElementById('focusTagSelection');
+  const focusTagMotivational = document.getElementById('focusTagMotivational');
+  const focusTagMeme = document.getElementById('focusTagMeme');
+  const focusTagDeepDive = document.getElementById('focusTagDeepDive');
+  const focusTagWholesome = document.getElementById('focusTagWholesome');
+  const focusTagCasual = document.getElementById('focusTagCasual');
+  const focusTagDoom = document.getElementById('focusTagDoom');
+  const focusTagFomo = document.getElementById('focusTagFomo');
+  const focusTagCustom = document.getElementById('focusTagCustom');
+  const focusCounter = document.getElementById('focusCounter');
+
   const customLabelInput = document.getElementById('customLabelInput');
   const addCustomLabelBtn = document.getElementById('addCustomLabelBtn');
   const customLabelsContainer = document.getElementById('customLabelsContainer');
+
+  function getFocusWhitelistTags() {
+    const tags = [];
+    if (focusTagMotivational && focusTagMotivational.checked) tags.push('motivational');
+    if (focusTagMeme && focusTagMeme.checked) tags.push('meme');
+    if (focusTagDeepDive && focusTagDeepDive.checked) tags.push('deepdive');
+    if (focusTagWholesome && focusTagWholesome.checked) tags.push('wholesome');
+    if (focusTagCasual && focusTagCasual.checked) tags.push('casual');
+    if (focusTagDoom && focusTagDoom.checked) tags.push('doom');
+    if (focusTagFomo && focusTagFomo.checked) tags.push('fomo');
+    if (focusTagCustom && focusTagCustom.checked) tags.push('custom');
+    return tags;
+  }
+
+  function updateFocusUI(enabled) {
+    if (focusTagSelection) {
+      focusTagSelection.style.opacity = enabled ? '1' : '0.4';
+      focusTagSelection.style.pointerEvents = enabled ? 'auto' : 'none';
+    }
+  }
 
   let customLabels = [];
 
@@ -180,6 +212,9 @@ document.addEventListener('DOMContentLoaded', () => {
       'fomoCount',
       'casualCount',
       'customCount',
+      'focusModeEnabled',
+      'focusWhitelistTags',
+      'focusCollapsedCount',
     ],
     (res) => {
       if (Array.isArray(res.customLabels)) {
@@ -188,6 +223,28 @@ document.addEventListener('DOMContentLoaded', () => {
           .filter((c) => c.name);
       }
       renderCustomLabels();
+
+      if (typeof res.focusModeEnabled === 'boolean' && focusModeToggle) {
+        focusModeToggle.checked = res.focusModeEnabled;
+      }
+      updateFocusUI(focusModeToggle ? focusModeToggle.checked : false);
+
+      const savedTags = Array.isArray(res.focusWhitelistTags)
+        ? res.focusWhitelistTags
+        : ['motivational', 'meme', 'deepdive', 'wholesome', 'custom'];
+
+      if (focusTagMotivational) focusTagMotivational.checked = savedTags.includes('motivational');
+      if (focusTagMeme) focusTagMeme.checked = savedTags.includes('meme');
+      if (focusTagDeepDive) focusTagDeepDive.checked = savedTags.includes('deepdive');
+      if (focusTagWholesome) focusTagWholesome.checked = savedTags.includes('wholesome');
+      if (focusTagCasual) focusTagCasual.checked = savedTags.includes('casual');
+      if (focusTagDoom) focusTagDoom.checked = savedTags.includes('doom');
+      if (focusTagFomo) focusTagFomo.checked = savedTags.includes('fomo');
+      if (focusTagCustom) focusTagCustom.checked = savedTags.includes('custom');
+
+      if (typeof res.focusCollapsedCount === 'number' && focusCounter) {
+        focusCounter.textContent = res.focusCollapsedCount;
+      }
       if (typeof res.filterMotivationalEnabled === 'boolean' && filterMotivationalToggle) {
         filterMotivationalToggle.checked = res.filterMotivationalEnabled;
       }
@@ -278,6 +335,8 @@ document.addEventListener('DOMContentLoaded', () => {
       filterFomoEnabled: filterFomoToggle ? filterFomoToggle.checked : true,
       filterCasualEnabled: filterCasualToggle ? filterCasualToggle.checked : true,
       customLabels: customLabels,
+      focusModeEnabled: focusModeToggle ? focusModeToggle.checked : false,
+      focusWhitelistTags: getFocusWhitelistTags(),
       monkModeEnabled: monkModeToggle.checked,
       blockReelsEnabled: blockReelsToggle.checked,
       autoBlurRageEnabled: autoBlurRageToggle.checked,
@@ -286,6 +345,8 @@ document.addEventListener('DOMContentLoaded', () => {
       hideFloatingPill: hideFloatingPillToggle.checked,
       confidenceThreshold: parseInt(thresholdRange.value, 10) / 100,
     };
+
+    updateFocusUI(config.focusModeEnabled);
 
     chrome.storage.local.set(config);
 
@@ -301,6 +362,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  if (focusModeToggle) focusModeToggle.addEventListener('change', saveAndNotify);
+  [
+    focusTagMotivational,
+    focusTagMeme,
+    focusTagDeepDive,
+    focusTagWholesome,
+    focusTagCasual,
+    focusTagDoom,
+    focusTagFomo,
+    focusTagCustom,
+  ].forEach((chk) => {
+    if (chk) chk.addEventListener('change', saveAndNotify);
+  });
 
   if (filterMotivationalToggle) filterMotivationalToggle.addEventListener('change', saveAndNotify);
   if (filterMemeToggle) filterMemeToggle.addEventListener('change', saveAndNotify);
@@ -336,6 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
       fomoCount: 0,
       casualCount: 0,
       customCount: 0,
+      focusCollapsedCount: 0,
     });
     if (motivationalCounter) motivationalCounter.textContent = '0';
     if (memeCounter) memeCounter.textContent = '0';
@@ -348,6 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fomoCounter) fomoCounter.textContent = '0';
     if (casualCounter) casualCounter.textContent = '0';
     if (customCounter) customCounter.textContent = '0';
+    if (focusCounter) focusCounter.textContent = '0';
 
     chrome.tabs.query({}, (tabs) => {
       if (tabs) {
@@ -392,6 +469,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (changes.customCount && customCounter) {
         customCounter.textContent = changes.customCount.newValue || 0;
+      }
+      if (changes.focusCollapsedCount && focusCounter) {
+        focusCounter.textContent = changes.focusCollapsedCount.newValue || 0;
       }
       if (changes.customLabels && Array.isArray(changes.customLabels.newValue)) {
         customLabels = changes.customLabels.newValue
