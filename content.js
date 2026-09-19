@@ -394,10 +394,11 @@
       cfg.customLabels.forEach((c) => {
         const rawName = typeof c === 'string' ? c : c?.name;
         const enabled = typeof c === 'object' ? c?.enabled !== false : true;
-        const name = rawName ? rawName.replace(/["\r\n\t]/g, '').trim().slice(0, 40) : '';
+        const name = rawName ? rawName.replace(/["\r\n\t]/g, '').slice(0, 40).trim() : '';
         const isDuplicate =
           !name ||
           name.toLowerCase() === CATCH_ALL_LABEL.toLowerCase() ||
+          Boolean(TAXONOMY_CATALOG[name.toLowerCase()]) ||
           activeLabels.some((l) => l.toLowerCase() === name.toLowerCase());
         if (enabled && !isDuplicate) {
           activeLabels.push(name);
@@ -484,7 +485,7 @@
     if (config.filterFomoEnabled !== false && fomoCount > 0) {
       parts.push(`⚡ FOMO: <span style="color:#fde047">${fomoCount}</span>`);
     }
-    const hasActiveCustom = Array.isArray(config.customLabels) && config.customLabels.some((c) => (typeof c === 'object' ? c.enabled !== false : true));
+    const hasActiveCustom = Array.isArray(config.customLabels) && config.customLabels.some((c) => (c && typeof c === 'object' ? c.enabled !== false : Boolean(c)));
     if (hasActiveCustom && customCount > 0) {
       parts.push(`🏷️ Custom: <span style="color:#c084fc">${customCount}</span>`);
     }
@@ -616,7 +617,7 @@
         isHidden = true;
       } else if (Array.isArray(config.customLabels)) {
         const customFound = config.customLabels.find(
-          (c) => (typeof c === 'string' ? c : c?.name)?.toLowerCase() === cat?.toLowerCase()
+          (c) => (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase() === cat?.trim().toLowerCase()
         );
         if (customFound && typeof customFound === 'object' && customFound.enabled === false) {
           isHidden = true;
@@ -987,7 +988,7 @@
     let customMeta = null;
     if (Array.isArray(config.customLabels)) {
       const customFound = config.customLabels.find(
-        (c) => (typeof c === 'string' ? c : c?.name)?.toLowerCase() === label.toLowerCase()
+        (c) => (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase() === label?.trim().toLowerCase()
       );
       if (customFound) {
         const isEnabled = typeof customFound === 'object' ? customFound.enabled !== false : true;

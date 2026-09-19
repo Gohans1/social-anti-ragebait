@@ -444,10 +444,11 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
         cfg.customLabels.forEach((c) => {
           const rawName = typeof c === 'string' ? c : c?.name;
           const enabled = typeof c === 'object' ? c?.enabled !== false : true;
-          const name = rawName ? rawName.trim() : '';
+          const name = rawName ? rawName.replace(/["\r\n\t]/g, '').slice(0, 40).trim() : '';
           const isDuplicate =
             !name ||
             name.toLowerCase() === CATCH_ALL_LABEL.toLowerCase() ||
+            Boolean(TAXONOMY_CATALOG[name.toLowerCase()]) ||
             activeLabels.some((l) => l.toLowerCase() === name.toLowerCase());
           if (enabled && !isDuplicate) {
             activeLabels.push(name);
@@ -593,16 +594,23 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(badge.text).toBe('🏷️ anime');
     expect(customCount).toBe(1);
 
-    // 4. Test pill counter visibility logic
+    // 4. Test pill counter visibility logic with null-safety
     function shouldShowCustomOnPill(cfg, count) {
       const hasActiveCustom = Array.isArray(cfg.customLabels) && cfg.customLabels.some(
-        (c) => (typeof c === 'object' ? c.enabled !== false : true)
+        (c) => (c && typeof c === 'object' ? c.enabled !== false : Boolean(c))
       );
       return Boolean(hasActiveCustom && count > 0);
     }
 
     // With active anime and count > 0: shows on pill
     expect(shouldShowCustomOnPill(config, customCount)).toBe(true);
+
+    // Null safety: does not crash when customLabels contains null or undefined
+    const corruptedConfig = {
+      customLabels: [null, { name: 'anime', enabled: true }, undefined],
+    };
+    expect(() => shouldShowCustomOnPill(corruptedConfig, customCount)).not.toThrow();
+    expect(shouldShowCustomOnPill(corruptedConfig, customCount)).toBe(true);
 
     // If user disables anime too (all custom labels disabled): pill hides Custom counter
     const allDisabledConfig = {

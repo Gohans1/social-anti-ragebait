@@ -121,15 +121,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function handleAddCustomLabel() {
     if (!customLabelInput) return;
-    let val = customLabelInput.value.trim();
-    if (!val) return;
-    val = val.replace(/["\r\n\t]/g, '').trim().slice(0, 40);
+    let val = customLabelInput.value.replace(/["\r\n\t]/g, '').slice(0, 40).trim();
     if (!val || BUILTIN_KEYS.some((k) => k.toLowerCase() === val.toLowerCase())) {
       customLabelInput.value = '';
       return;
     }
     const exists = customLabels.some(
-      (c) => (typeof c === 'string' ? c : c?.name || '').toLowerCase() === val.toLowerCase()
+      (c) => (typeof c === 'string' ? c : c?.name || '').trim().toLowerCase() === val.toLowerCase()
     );
     if (!exists) {
       customLabels.push({ name: val, enabled: true });
