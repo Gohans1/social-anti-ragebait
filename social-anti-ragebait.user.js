@@ -343,23 +343,35 @@
       blockedCount++;
       updatePill();
 
-      textEl.setAttribute('data-jev-content', 'true');
-      const contentWrapper = textEl.closest('div[dir="auto"]')?.parentElement || textEl.parentElement;
-      if (contentWrapper) {
-        contentWrapper.setAttribute('data-jev-content', 'true');
-      }
+      // Only mark the specific content elements (text and images/videos) to blur
+      // Never blur the parentContainer, so the warning box & button stay crystal clear!
+      textEl.setAttribute('data-jev-blur-item', 'true');
+      textEl.classList.add('x-jev-blurred-content');
 
-      if (!postEl.querySelector('.x-jev-warning-box')) {
-        const warningBox = document.createElement('div');
+      // Also blur non-avatar media
+      postEl.querySelectorAll('img, video').forEach((media) => {
+        const isAvatar = (media.closest('a[href*="/@"]') && (media.width < 50 || media.height < 50)) ||
+                         media.alt?.toLowerCase().includes('avatar') ||
+                         media.alt?.toLowerCase().includes('profile') ||
+                         media.src?.includes('profile_images');
+        if (!isAvatar) {
+          media.setAttribute('data-jev-blur-item', 'true');
+        }
+      });
+
+      let warningBox = postEl.querySelector('.x-jev-warning-box');
+      if (!warningBox) {
+        warningBox = document.createElement('div');
         warningBox.className = 'x-jev-warning-box';
         warningBox.innerHTML = `
-          <span>🛡️ <b>Rage Bait Warning:</b> This post is engineered to provoke anger and farm drama.</span>
+          <span>🛡️ <b>Rage Bait Warning:</b> Post hidden to protect your peace of mind.</span>
         `;
 
         const revealBtn = document.createElement('button');
         revealBtn.className = 'x-jev-reveal-btn';
         revealBtn.textContent = 'Reveal post';
         revealBtn.onclick = (e) => {
+          e.preventDefault();
           e.stopPropagation();
           const isRevealed = postEl.classList.toggle('x-jev-revealed');
           revealBtn.textContent = isRevealed ? 'Re-blur' : 'Reveal post';
@@ -371,8 +383,10 @@
 
       if (CONFIG.autoBlurEnabled) {
         postEl.classList.remove('x-jev-revealed');
+        if (warningBox) warningBox.style.display = 'flex';
       } else {
         postEl.classList.add('x-jev-revealed');
+        if (warningBox) warningBox.style.display = 'none';
       }
     }
   }

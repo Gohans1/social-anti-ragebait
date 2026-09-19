@@ -1,53 +1,53 @@
 /* Universal Social Anti-Ragebait Stylesheet (Threads, X, Facebook) */
 
 .x-jev-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: 9999px;
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  margin: 4px 0 8px 0;
-  border: 1px solid;
-  width: fit-content;
-  user-select: none;
-  transition: all 0.2s ease;
-  cursor: help;
-  line-height: 1.2;
-  z-index: 10;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 3px 10px !important;
+  border-radius: 9999px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  margin: 4px 0 8px 0 !important;
+  border: 1px solid !important;
+  width: fit-content !important;
+  user-select: none !important;
+  transition: all 0.2s ease !important;
+  cursor: help !important;
+  line-height: 1.2 !important;
+  z-index: 10 !important;
+  position: relative !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
 }
 
 .x-jev-badge:hover {
-  filter: brightness(1.2);
-  transform: translateY(-1px);
+  filter: brightness(1.2) !important;
+  transform: translateY(-1px) !important;
 }
 
 .x-jev-confidence {
-  font-size: 10px;
-  opacity: 0.85;
-  font-weight: 500;
+  font-size: 10px !important;
+  opacity: 0.85 !important;
+  font-weight: 500 !important;
 }
 
-/* Blur state for Rage Bait: Blurs text, images, and videos in toxic posts */
-.x-jev-blurred-content,
-[data-jev-rage="true"]:not(.x-jev-revealed) [data-jev-content="true"],
-[data-jev-rage="true"]:not(.x-jev-revealed) img:not([alt*="avatar"]):not([alt*="profile"]):not([src*="profile_images"]),
-[data-jev-rage="true"]:not(.x-jev-revealed) video {
+/* ONLY specific blur items (text & media) get blurred - NEVER parents or warning boxes */
+[data-jev-rage="true"]:not(.x-jev-revealed) [data-jev-blur-item="true"],
+.x-jev-blurred-content {
   filter: blur(14px) !important;
-  opacity: 0.18 !important;
+  opacity: 0.15 !important;
   user-select: none !important;
   pointer-events: none !important;
   transition: filter 0.2s ease, opacity 0.2s ease !important;
 }
 
 /* Restored clean state when user clicks 'Reveal post' */
+.x-jev-revealed [data-jev-blur-item="true"],
 .x-jev-revealed .x-jev-blurred-content,
-.x-jev-revealed [data-jev-content="true"],
-.x-jev-revealed img,
-.x-jev-revealed video,
 .x-jev-unblurred {
   filter: none !important;
   opacity: 1 !important;
@@ -55,79 +55,94 @@
   pointer-events: auto !important;
 }
 
-/* Warning box above blurred post */
+/* Warning box: ALWAYS CLEAR, NEVER BLURRED, PROMINENT & CLICKABLE */
 .x-jev-warning-box {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px dashed rgba(239, 68, 68, 0.6);
-  border-radius: 10px;
-  padding: 8px 14px;
-  margin: 6px 0 10px 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 12.5px;
-  color: #ef4444;
-  backdrop-filter: blur(6px);
-  z-index: 10;
-  width: 100%;
-  box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: rgba(239, 68, 68, 0.16) !important;
+  border: 1.5px dashed #ef4444 !important;
+  border-radius: 10px !important;
+  padding: 8px 14px !important;
+  margin: 6px 0 10px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  font-size: 12.5px !important;
+  color: #ef4444 !important;
+  backdrop-filter: blur(6px) !important;
+  z-index: 99 !important;
+  position: relative !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
 }
 
 .x-jev-warning-text {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-  color: #ef4444;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-weight: 600 !important;
+  color: #ef4444 !important;
+  line-height: 1.3 !important;
+  filter: none !important;
+  opacity: 1 !important;
 }
 
 .x-jev-reveal-btn {
-  background: #ef4444;
-  border: none;
-  color: #ffffff;
-  padding: 5px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 11.5px;
-  font-weight: 700;
-  white-space: nowrap;
-  transition: all 0.15s ease;
+  background: #ef4444 !important;
+  border: none !important;
+  color: #ffffff !important;
+  padding: 5px 14px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+  transition: all 0.15s ease !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 100 !important;
+  position: relative !important;
 }
 
 .x-jev-reveal-btn:hover {
-  background: #dc2626;
-  transform: scale(1.02);
+  background: #dc2626 !important;
+  transform: scale(1.04) !important;
 }
 
 /* Floating status indicator */
 .x-jev-floating-pill {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 999999;
-  background: rgba(15, 23, 42, 0.92);
-  color: #e2e8f0;
-  padding: 8px 16px;
-  border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.2s ease;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  z-index: 999999 !important;
+  background: rgba(15, 23, 42, 0.92) !important;
+  color: #e2e8f0 !important;
+  padding: 8px 16px !important;
+  border-radius: 9999px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  transition: all 0.2s ease !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
 }
 
 .x-jev-floating-pill:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
-  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
 }
