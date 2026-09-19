@@ -492,21 +492,28 @@
       const cat = badge.getAttribute('data-jev-badge-category');
       const def = TAXONOMY_CATALOG[cat];
       if (def && config[def.configKey] === false) {
-        badge.style.display = 'none';
+        badge.classList.add('x-jev-hidden');
+        badge.style.setProperty('display', 'none', 'important');
       } else {
-        badge.style.display = 'inline-flex';
+        badge.classList.remove('x-jev-hidden');
+        badge.style.removeProperty('display');
       }
     });
 
     // 6. Restore bypassed posts if taxonomy is enabled
     const activeTaxonomy = getActiveTaxonomy(config);
     if (activeTaxonomy.labels && activeTaxonomy.labels.length > 1) {
+      let restoredCount = 0;
       document.querySelectorAll('[data-jev-bypassed="true"]').forEach((post) => {
         post.removeAttribute('data-jev-bypassed');
         post.removeAttribute('data-jev-scanned');
         post.removeAttribute('data-jev-cmt-scanned');
         post.removeAttribute('data-jev-handled');
+        restoredCount++;
       });
+      if (restoredCount > 0 && typeof scheduleScan === 'function') {
+        scheduleScan();
+      }
     }
   }
 
@@ -872,7 +879,8 @@
 
       const def = TAXONOMY_CATALOG[label];
       if (def && config[def.configKey] === false) {
-        badge.style.display = 'none';
+        badge.classList.add('x-jev-hidden');
+        badge.style.setProperty('display', 'none', 'important');
       }
 
       const textSpan = document.createElement('span');

@@ -65,7 +65,7 @@
 
   const css = `
     .x-jev-badge {
-      display: inline-flex !important;
+      display: inline-flex;
       align-items: center !important;
       gap: 6px !important;
       padding: 3px 10px !important;
@@ -90,6 +90,9 @@
     .x-jev-badge:hover {
       filter: brightness(1.2) !important;
       transform: translateY(-1px) !important;
+    }
+    .x-jev-badge.x-jev-hidden {
+      display: none !important;
     }
     .x-jev-confidence {
       font-size: 10px !important;
@@ -598,6 +601,7 @@
     CONFIG.blockScamsEnabled = !allOn;
     CONFIG.collapseSeedingEnabled = !allOn;
     updatePill();
+    scanFeed();
   });
 
   if (document.body) {
@@ -897,7 +901,8 @@
 
       const def = TAXONOMY_CATALOG[label];
       if (def && CONFIG[def.configKey] === false) {
-        badge.style.display = 'none';
+        badge.classList.add('x-jev-hidden');
+        badge.style.setProperty('display', 'none', 'important');
       }
 
       const textSpan = document.createElement('span');
@@ -1459,6 +1464,30 @@
   }
 
   function scanFeed() {
+    // 0. Synchronize active taxonomy & restore bypassed elements
+    const activeTaxonomy = getActiveTaxonomy(CONFIG);
+    if (activeTaxonomy.labels && activeTaxonomy.labels.length > 1) {
+      document.querySelectorAll('[data-jev-bypassed="true"]').forEach((post) => {
+        post.removeAttribute('data-jev-bypassed');
+        post.removeAttribute('data-jev-scanned');
+        post.removeAttribute('data-jev-cmt-scanned');
+        post.removeAttribute('data-jev-handled');
+      });
+    }
+
+    // Synchronize badge visibility
+    document.querySelectorAll('.x-jev-badge').forEach((badge) => {
+      const cat = badge.getAttribute('data-jev-badge-category');
+      const def = TAXONOMY_CATALOG[cat];
+      if (def && CONFIG[def.configKey] === false) {
+        badge.classList.add('x-jev-hidden');
+        badge.style.setProperty('display', 'none', 'important');
+      } else {
+        badge.classList.remove('x-jev-hidden');
+        badge.style.removeProperty('display');
+      }
+    });
+
     const platform = getPlatform();
 
     if (platform === 'threads') {
