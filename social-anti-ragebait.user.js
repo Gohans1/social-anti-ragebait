@@ -31,7 +31,7 @@
   const CONFIG = {
     apiEndpoint: 'https://classifier.dev',
     batchDebounceMs: 120,
-    confidenceThreshold: 0.50,
+    confidenceThreshold: 0.30,
     monkModeEnabled: true,
     blockReelsEnabled: true,
     autoBlurRageEnabled: true,
