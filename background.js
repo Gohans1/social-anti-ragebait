@@ -2,10 +2,16 @@
 // Handles network requests to classifier.dev in extension background context,
 // completely bypassing page Content Security Policy (CSP) on Threads, Facebook, and X.
 
-const API_ENDPOINT = 'https://classifier.dev';
+const API_ENDPOINT = 'https://classifier.dev/';
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log('[Social Anti-Ragebait] Extension installed / updated.');
+  // Set default confidence threshold in storage if not already set
+  chrome.storage.local.get(['confidenceThreshold'], (res) => {
+    if (typeof res.confidenceThreshold !== 'number' || res.confidenceThreshold > 0.45) {
+      chrome.storage.local.set({ confidenceThreshold: 0.30 });
+    }
+  });
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -17,11 +23,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return false;
     }
 
+    console.log(`[Anti-Ragebait Background] 📡 Đang gửi ${inputs.length} mẫu text lên Jev (classifier.dev)...`);
+
     fetch(API_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'social-anti-ragebait-extension/1.2',
       },
       body: JSON.stringify({
         labels: labels,
@@ -32,11 +39,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .then(async (response) => {
         if (!response.ok) {
           const errText = await response.text();
+          console.error(`[Anti-Ragebait Background] Jev API HTTP Error ${response.status}:`, errText);
           throw new Error(`HTTP ${response.status}: ${errText}`);
         }
         return response.json();
       })
       .then((data) => {
+        console.log(`[Anti-Ragebait Background] ✅ Jev đã trả về kết quả cho ${data.results?.length} items.`);
         sendResponse({ success: true, results: data.results || [] });
       })
       .catch((error) => {

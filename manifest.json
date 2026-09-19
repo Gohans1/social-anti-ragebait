@@ -25,6 +25,7 @@
   },
   "host_permissions": [
     "https://classifier.dev/*",
+    "https://classifier.dev/",
     "*://*.threads.net/*",
     "*://threads.net/*",
     "*://*.threads.com/*",
