@@ -34,7 +34,7 @@
     /(\b(woman|women|girl|girls|female|lady|ladies|bikini|cleavage|swimwear|selfie|thirst\s*trap|goon|gooning|onlyfans|fansly)\b|phụ nữ|con gái|cô gái|gái xinh|nữ sinh|hot girl|mặc hở|khoe thân|áo tắm|nội y|gái|mlem)/i;
 
   // Fast synchronous session cache (0ms instant response on reload)
-  const CACHE_KEY = `social_guardian_cache_v2_${getPlatform()}`;
+  const CACHE_KEY = `social_guardian_cache_v3_${getPlatform()}`;
   const textCache = new Map();
   try {
     const raw = sessionStorage.getItem(CACHE_KEY);
@@ -191,6 +191,7 @@
   const pill = document.createElement('div');
   pill.className = 'x-jev-floating-pill';
   function updatePill() {
+    initPill();
     const pName = getPlatform().toUpperCase();
     pill.innerHTML = `🛡️ ${pName}: <span style="color:#4ade80">ON</span> | 👁️ Quét: <span style="color:#a5f3fc">${scannedCount}</span> | 🧘 Monk: <span style="color:#38bdf8">${monkModeBlockedCount}</span> | 🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span> | 🛑 Scam: <span style="color:#fb923c">${blockedScamCount}</span> | 🧹 Seed: <span style="color:#c084fc">${cleanedSeedingCount}</span>`;
   }
@@ -529,6 +530,9 @@
         chrome.storage.local.set({ blockedRageCount });
       }
       updatePill();
+
+      // Remove any lingering discussion / casual badges
+      postEl.querySelectorAll('.x-jev-badge').forEach((b) => b.remove());
 
       textEl.setAttribute('data-jev-blur-item', 'true');
       postEl.querySelectorAll('img, video').forEach((m) => {
@@ -1241,10 +1245,12 @@
 
         textEls.forEach((el) => {
           if (el.closest('button') || el.closest('time') || el.closest('a[href*="/@"]') || el.classList.contains('x-jev-badge')) return;
-          const t = el.innerText.trim();
-          if (t.length < 10) return;
-          if (/^\d+(\.\d+)?(k|m)?\s*(likes?|replies?|views?|lượt thích|câu trả lời|bình luận|chia sẻ)$/i.test(t)) return;
-          if (/^(\d+\s*(s|m|h|d|w|giây|phút|giờ|ngày|tuần)|just now|vừa xong)$/i.test(t)) return;
+          let t = el.innerText.trim();
+          t = t.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
+          if (t.length < 2) return;
+          if (/^\d+(\.\d+)?(k|m|b)?\s*(likes?|replies?|views?|lượt thích|câu trả lời|bình luận|chia sẻ)?$/i.test(t)) return;
+          if (/^(\d+\s*(s|m|h|d|w|y|giây|phút|giờ|ngày|tuần|tháng|năm)|just now|vừa xong)$/i.test(t)) return;
+          if (/^(translate|xem bản dịch|reply|trả lời|like|thích|share|chia sẻ|follow|theo dõi|following|đang theo dõi|edited|đã chỉnh sửa)$/i.test(t)) return;
 
           if (el.children.length > 3) return;
 
@@ -1254,11 +1260,12 @@
           }
         });
 
-        if (longestTextEl && maxLen >= 10) {
+        if (longestTextEl && maxLen >= 2) {
           post.setAttribute('data-jev-scanned', 'true');
           scannedCount++;
           updatePill();
-          const cleanText = longestTextEl.innerText.trim();
+          let cleanText = longestTextEl.innerText.trim();
+          cleanText = cleanText.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
           if (textCache.has(cleanText)) {
             renderClassification({ postEl: post, text: cleanText, textEl: longestTextEl }, textCache.get(cleanText));
           } else {
@@ -1275,10 +1282,11 @@
         checkAndApplyMonkMode(post, post.innerText || '');
 
         const msgEl = post.querySelector('div[data-ad-rendering-role="story_message"], div[data-ad-preview="message"]') ||
-                      Array.from(post.querySelectorAll('div[dir="auto"], span[dir="auto"]')).find((el) => el.innerText.trim().length >= 12);
+                      Array.from(post.querySelectorAll('div[dir="auto"], span[dir="auto"]')).find((el) => el.innerText.trim().length >= 10);
         if (msgEl) {
-          const text = msgEl.innerText.trim();
-          if (text.length >= 10) {
+          let text = msgEl.innerText.trim();
+          text = text.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
+          if (text.length >= 2) {
             post.setAttribute('data-jev-scanned', 'true');
             scannedCount++;
             updatePill();
@@ -1294,8 +1302,9 @@
       // Individual comments
       document.querySelectorAll('div[aria-label*="bình luận"]:not([data-jev-cmt-scanned]), div[aria-label*="Comment"]:not([data-jev-cmt-scanned]), ul > li div[dir="auto"]:not([data-jev-cmt-scanned])').forEach((cmt) => {
         if (cmt.closest('.x-jev-seeding-collapsed') || cmt.closest('.x-jev-scam-box') || cmt.closest('.x-jev-warning-box')) return;
-        const t = cmt.innerText.trim();
-        if (t.length >= 10 && t.length <= 600) {
+        let t = cmt.innerText.trim();
+        t = t.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
+        if (t.length >= 2 && t.length <= 600) {
           cmt.setAttribute('data-jev-cmt-scanned', 'true');
           scannedCount++;
           updatePill();
@@ -1316,8 +1325,9 @@
 
         const textEl = post.querySelector('div[data-testid="tweetText"]');
         if (textEl) {
-          const text = textEl.innerText.trim();
-          if (text.length >= 10) {
+          let text = textEl.innerText.trim();
+          text = text.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
+          if (text.length >= 2) {
             post.setAttribute('data-jev-scanned', 'true');
             scannedCount++;
             updatePill();
@@ -1379,6 +1389,21 @@
     if (getPlatform() === 'youtube') {
       window.addEventListener('yt-navigate-finish', () => scanYouTubeShorts());
     }
+
+    // Safety heartbeat interval: keep pill alive against React hydration & catch missed feed updates
+    setInterval(() => {
+      initPill();
+      scheduleScan();
+    }, 1500);
+
+    // Watch for SPA URL changes (Threads, X, Facebook)
+    let lastUrl = location.href;
+    setInterval(() => {
+      if (location.href !== lastUrl) {
+        lastUrl = location.href;
+        scheduleScan();
+      }
+    }, 500);
   }
 
   initObserver();

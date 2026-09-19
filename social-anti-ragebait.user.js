@@ -343,7 +343,7 @@
     document.head.appendChild(s);
   }
 
-  const CACHE_KEY = `social_shield_userjs_cache_v2_${getPlatform()}`;
+  const CACHE_KEY = `social_shield_userjs_cache_v3_${getPlatform()}`;
   const textCache = new Map();
   try {
     const raw = sessionStorage.getItem(CACHE_KEY);
@@ -575,6 +575,9 @@
       postEl.setAttribute('data-jev-rage', 'true');
       blockedRageCount++;
       updatePill();
+
+      // Remove any lingering badges
+      postEl.querySelectorAll('.x-jev-badge').forEach((b) => b.remove());
 
       textEl.setAttribute('data-jev-blur-item', 'true');
       postEl.querySelectorAll('img, video').forEach((m) => {
@@ -1171,16 +1174,16 @@
 
     if (platform === 'threads') {
       const candidates = new Set();
-      document.querySelectorAll('div[data-pressable-container="true"], article').forEach((el) => {
+      document.querySelectorAll('div[data-pressable-container="true"], div[role="article"], article, div[data-testid*="post"], div[data-testid*="thread"], div[role="listitem"], div[data-testid*="activity"], div[data-testid*="cell"]').forEach((el) => {
         if (!el.hasAttribute('data-jev-scanned')) candidates.add(el);
       });
-      document.querySelectorAll('a[href*="/post/"]').forEach((link) => {
-        let container = link.closest('div[data-pressable-container="true"]') || link.closest('article');
+      document.querySelectorAll('a[href*="/post/"], a[href*="/t/"]').forEach((link) => {
+        let container = link.closest('div[data-pressable-container="true"]') || link.closest('div[role="article"]') || link.closest('article');
         if (!container) {
           let curr = link.parentElement;
           let depth = 0;
-          while (curr && curr !== document.body && depth < 8) {
-            if (curr.querySelectorAll('svg').length >= 2 && curr.querySelector('span[dir="auto"], div[dir="auto"]')) {
+          while (curr && curr !== document.body && depth < 5) {
+            if (curr.querySelector('span[dir="auto"], div[dir="auto"]') && curr.querySelectorAll('svg').length >= 1) {
               container = curr;
               break;
             }
@@ -1198,19 +1201,25 @@
         let bestEl = null;
         let maxLen = 0;
         textEls.forEach((el) => {
-          if (el.closest('button') || el.closest('time')) return;
-          const t = el.innerText.trim();
-          if (t.length < 15) return;
-          if (/^\d+(\.\d+)?(k|m)?\s*(likes?|replies?|views?|lượt thích|câu trả lời|bình luận|chia sẻ)$/i.test(t)) return;
-          if (/^(\d+\s*(s|m|h|d|w|giây|phút|giờ|ngày|tuần)|just now|vừa xong)$/i.test(t)) return;
+          if (el.closest('button') || el.closest('time') || el.closest('a[href*="/@"]') || el.classList.contains('x-jev-badge')) return;
+          let t = el.innerText.trim();
+          t = t.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
+          if (t.length < 2) return;
+          if (/^\d+(\.\d+)?(k|m|b)?\s*(likes?|replies?|views?|lượt thích|câu trả lời|bình luận|chia sẻ)?$/i.test(t)) return;
+          if (/^(\d+\s*(s|m|h|d|w|y|giây|phút|giờ|ngày|tuần|tháng|năm)|just now|vừa xong)$/i.test(t)) return;
+          if (/^(translate|xem bản dịch|reply|trả lời|like|thích|share|chia sẻ|follow|theo dõi|following|đang theo dõi|edited|đã chỉnh sửa)$/i.test(t)) return;
+
+          if (el.children.length > 3) return;
+
           if (t.length > maxLen) {
             maxLen = t.length;
             bestEl = el;
           }
         });
-        if (bestEl && maxLen >= 15) {
+        if (bestEl && maxLen >= 2) {
           cont.setAttribute('data-jev-scanned', 'true');
-          const cleanText = bestEl.innerText.trim();
+          let cleanText = bestEl.innerText.trim();
+          cleanText = cleanText.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
           if (textCache.has(cleanText)) {
             renderClassification({ postEl: cont, text: cleanText, textEl: bestEl }, textCache.get(cleanText));
           } else {
@@ -1223,13 +1232,14 @@
       scanFacebookReels();
 
       // 2. Scan standard feed units
-      document.querySelectorAll('div[data-pagelet^="FeedUnit_"]:not([data-jev-scanned]), div[role="article"]:not([data-jev-scanned])').forEach((post) => {
+      document.querySelectorAll('div[data-pagelet^="FeedUnit_"]:not([data-jev-scanned]), div[role="article"]:not([data-jev-scanned]), div[role="feed"] > div:not([data-jev-scanned])').forEach((post) => {
         checkAndApplyMonkMode(post, post.innerText || '');
         const msgEl = post.querySelector('div[data-ad-rendering-role="story_message"], div[data-ad-preview="message"]') ||
-                      Array.from(post.querySelectorAll('div[dir="auto"], span[dir="auto"]')).find((el) => el.innerText.trim().length >= 20);
+                      Array.from(post.querySelectorAll('div[dir="auto"], span[dir="auto"]')).find((el) => el.innerText.trim().length >= 10);
         if (msgEl) {
-          const text = msgEl.innerText.trim();
-          if (text.length >= 15) {
+          let text = msgEl.innerText.trim();
+          text = text.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
+          if (text.length >= 2) {
             post.setAttribute('data-jev-scanned', 'true');
             if (textCache.has(text)) {
               renderClassification({ postEl: post, text, textEl: msgEl }, textCache.get(text));
@@ -1244,12 +1254,13 @@
     } else if (platform === 'youtube') {
       scanYouTubeShorts();
     } else if (platform === 'x') {
-      document.querySelectorAll('article[data-testid="tweet"]:not([data-jev-scanned])').forEach((post) => {
+      document.querySelectorAll('article[data-testid="tweet"]:not([data-jev-scanned]), div[data-testid="cellInnerDiv"]:not([data-jev-scanned])').forEach((post) => {
         checkAndApplyMonkMode(post, post.innerText || '');
         const textEl = post.querySelector('div[data-testid="tweetText"]');
         if (textEl) {
-          const text = textEl.innerText.trim();
-          if (text.length >= 15) {
+          let text = textEl.innerText.trim();
+          text = text.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
+          if (text.length >= 2) {
             post.setAttribute('data-jev-scanned', 'true');
             if (textCache.has(text)) {
               renderClassification({ postEl: post, text, textEl }, textCache.get(text));
@@ -1298,4 +1309,20 @@
   if (getPlatform() === 'youtube') {
     window.addEventListener('yt-navigate-finish', () => scanYouTubeShorts());
   }
+
+  // Safety heartbeat interval: keep pill alive & catch dynamic SPA updates
+  setInterval(() => {
+    if (document.body && !document.querySelector('.x-jev-floating-pill')) {
+      document.body.appendChild(pill);
+    }
+    scanFeed();
+  }, 1500);
+
+  let lastUrl = location.href;
+  setInterval(() => {
+    if (location.href !== lastUrl) {
+      lastUrl = location.href;
+      scanFeed();
+    }
+  }, 500);
 })();
