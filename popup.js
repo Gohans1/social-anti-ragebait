@@ -50,11 +50,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const chip = document.createElement('div');
       chip.className = 'custom-label-chip';
 
+      const name = typeof item === 'string' ? item : item?.name || '';
+      const enabled = typeof item === 'string' ? true : item?.enabled !== false;
+
       const labelText = document.createElement('span');
       labelText.style.color = '#c084fc';
       labelText.style.fontWeight = '600';
       labelText.style.fontSize = '11px';
-      labelText.textContent = `🏷️ ${item.name}`;
+      labelText.textContent = `🏷️ ${name}`;
 
       const actions = document.createElement('div');
       actions.style.display = 'flex';
@@ -67,9 +70,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const toggleInput = document.createElement('input');
       toggleInput.type = 'checkbox';
       toggleInput.className = 'custom-toggle';
-      toggleInput.checked = item.enabled !== false;
+      toggleInput.checked = enabled;
       toggleInput.addEventListener('change', () => {
-        customLabels[index].enabled = toggleInput.checked;
+        if (typeof customLabels[index] === 'string') {
+          customLabels[index] = { name: customLabels[index], enabled: toggleInput.checked };
+        } else {
+          customLabels[index].enabled = toggleInput.checked;
+        }
         saveAndNotify();
       });
 
@@ -99,16 +106,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const BUILTIN_KEYS = [
+    'self-improvement / motivational',
+    'meme / humor / satire',
+    'deep dive / technical breakdown / industry insider',
+    'wholesome / positive',
+    'fearmongering / doom',
+    'fomo / hype',
+    'other / casual discussion',
+    'rage bait / toxic / hostile / dismissive negativity',
+    'scam / fraudulent scheme',
+    'bot seeding / affiliate spam / fake review',
+  ];
+
   function handleAddCustomLabel() {
     if (!customLabelInput) return;
     let val = customLabelInput.value.trim();
     if (!val) return;
     val = val.replace(/["\r\n\t]/g, '').trim().slice(0, 40);
-    if (!val || val.toLowerCase() === 'other / casual discussion') {
+    if (!val || BUILTIN_KEYS.some((k) => k.toLowerCase() === val.toLowerCase())) {
       customLabelInput.value = '';
       return;
     }
-    const exists = customLabels.some((c) => c.name.toLowerCase() === val.toLowerCase());
+    const exists = customLabels.some(
+      (c) => (typeof c === 'string' ? c : c?.name || '').toLowerCase() === val.toLowerCase()
+    );
     if (!exists) {
       customLabels.push({ name: val, enabled: true });
       customLabelInput.value = '';
@@ -159,7 +181,9 @@ document.addEventListener('DOMContentLoaded', () => {
     ],
     (res) => {
       if (Array.isArray(res.customLabels)) {
-        customLabels = res.customLabels;
+        customLabels = res.customLabels
+          .map((c) => (typeof c === 'string' ? { name: c.trim(), enabled: true } : { name: (c?.name || '').trim(), enabled: c?.enabled !== false }))
+          .filter((c) => c.name);
       }
       renderCustomLabels();
       if (typeof res.filterMotivationalEnabled === 'boolean' && filterMotivationalToggle) {
@@ -355,7 +379,9 @@ document.addEventListener('DOMContentLoaded', () => {
         customCounter.textContent = changes.customCount.newValue || 0;
       }
       if (changes.customLabels && Array.isArray(changes.customLabels.newValue)) {
-        customLabels = changes.customLabels.newValue;
+        customLabels = changes.customLabels.newValue
+          .map((c) => (typeof c === 'string' ? { name: c.trim(), enabled: true } : { name: (c?.name || '').trim(), enabled: c?.enabled !== false }))
+          .filter((c) => c.name);
         renderCustomLabels();
       }
     });

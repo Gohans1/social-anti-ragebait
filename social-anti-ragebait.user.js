@@ -554,7 +554,7 @@
       cfg.customLabels.forEach((c) => {
         const rawName = typeof c === 'string' ? c : c?.name;
         const enabled = typeof c === 'object' ? c?.enabled !== false : true;
-        const name = rawName ? rawName.trim() : '';
+        const name = rawName ? rawName.replace(/["\r\n\t]/g, '').trim().slice(0, 40) : '';
         const isDuplicate =
           !name ||
           name.toLowerCase() === CATCH_ALL_LABEL.toLowerCase() ||
@@ -648,7 +648,8 @@
     if (CONFIG.filterFomoEnabled !== false && fomoCount > 0) {
       parts.push(`⚡ FOMO: <span style="color:#fde047">${fomoCount}</span>`);
     }
-    if (customCount > 0) {
+    const hasActiveCustom = Array.isArray(CONFIG.customLabels) && CONFIG.customLabels.some((c) => (typeof c === 'object' ? c.enabled !== false : true));
+    if (hasActiveCustom && customCount > 0) {
       parts.push(`🏷️ Custom: <span style="color:#c084fc">${customCount}</span>`);
     }
     pill.innerHTML = parts.join(' | ') + ` <span class="x-jev-pill-close" title="Ẩn thanh trạng thái này">✕</span>`;

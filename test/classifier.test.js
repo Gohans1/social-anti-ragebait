@@ -550,5 +550,68 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     // Because rage bait is omitted, Jev cannot detect it and assigns other / casual discussion!
     expect(dataWithoutRage.results[0].label).toBe("other / casual discussion");
   });
+
+  test("Custom label gating: disabled custom label halts counter accumulation and suppresses pill display", () => {
+    const config = {
+      customLabels: [
+        { name: 'crypto', enabled: false },
+        { name: 'anime', enabled: true },
+      ],
+    };
+
+    let customCount = 0;
+
+    function processCustomClassification(label, confidence, threshold = 0.5) {
+      if (!Array.isArray(config.customLabels)) return null;
+      const customFound = config.customLabels.find(
+        (c) => (typeof c === 'string' ? c : c?.name)?.toLowerCase() === label.toLowerCase()
+      );
+      if (!customFound) return null;
+      const isEnabled = typeof customFound === 'object' ? customFound.enabled !== false : true;
+      if (!isEnabled) return false; // Suppressed
+      if (confidence < threshold) return false; // Threshold gated
+
+      customCount++;
+      const displayName = typeof customFound === 'object' ? customFound.name : customFound;
+      return {
+        text: `🏷️ ${displayName}`,
+        bg: 'rgba(168, 85, 247, 0.18)',
+      };
+    }
+
+    // 1. 'crypto' is disabled: returns false, counter not incremented
+    expect(processCustomClassification('crypto', 0.95)).toBe(false);
+    expect(customCount).toBe(0);
+
+    // 2. 'anime' is enabled but confidence 0.40 < threshold 0.50: fails threshold
+    expect(processCustomClassification('anime', 0.40, 0.50)).toBe(false);
+    expect(customCount).toBe(0);
+
+    // 3. 'anime' is enabled and confidence 0.85: succeeds, renders badge, increments counter
+    const badge = processCustomClassification('anime', 0.85, 0.50);
+    expect(badge).not.toBeNull();
+    expect(badge.text).toBe('🏷️ anime');
+    expect(customCount).toBe(1);
+
+    // 4. Test pill counter visibility logic
+    function shouldShowCustomOnPill(cfg, count) {
+      const hasActiveCustom = Array.isArray(cfg.customLabels) && cfg.customLabels.some(
+        (c) => (typeof c === 'object' ? c.enabled !== false : true)
+      );
+      return Boolean(hasActiveCustom && count > 0);
+    }
+
+    // With active anime and count > 0: shows on pill
+    expect(shouldShowCustomOnPill(config, customCount)).toBe(true);
+
+    // If user disables anime too (all custom labels disabled): pill hides Custom counter
+    const allDisabledConfig = {
+      customLabels: [
+        { name: 'crypto', enabled: false },
+        { name: 'anime', enabled: false },
+      ],
+    };
+    expect(shouldShowCustomOnPill(allDisabledConfig, customCount)).toBe(false);
+  });
 });
 
