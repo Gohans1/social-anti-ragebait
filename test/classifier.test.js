@@ -818,5 +818,66 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(validBadges[0].label).toBe('wholesome / positive');
     expect(validBadges[0].score).toBe(0.85);
   });
+
+  test("Reveal post: syncRevealState propagates x-jev-revealed to both parent and child containers", () => {
+    const createMockClassList = () => {
+      const set = new Set();
+      return {
+        add: (c) => set.add(c),
+        remove: (c) => set.delete(c),
+        contains: (c) => set.has(c),
+        toggle: (c, force) => {
+          if (typeof force === 'boolean') {
+            if (force) set.add(c);
+            else set.delete(c);
+            return force;
+          }
+          if (set.has(c)) { set.delete(c); return false; }
+          set.add(c); return true;
+        },
+      };
+    };
+
+    // Simulate DOM hierarchy: cellInnerDiv (parent) > article (child)
+    const parent = {
+      classList: createMockClassList(),
+      hasAttribute: (attr) => attr === 'data-jev-rage',
+      parentElement: null,
+      children: [],
+      querySelectorAll: () => parent.children,
+    };
+    const child = {
+      classList: createMockClassList(),
+      hasAttribute: (attr) => attr === 'data-jev-rage',
+      parentElement: parent,
+      children: [],
+      querySelectorAll: () => [],
+    };
+    parent.children.push(child);
+
+    function syncReveal(targetEl, isRevealed) {
+      targetEl.classList.toggle('x-jev-revealed', isRevealed);
+      let p = targetEl.parentElement;
+      while (p) {
+        if (p.hasAttribute('data-jev-rage') || p.hasAttribute('data-jev-scam')) {
+          p.classList.toggle('x-jev-revealed', isRevealed);
+        }
+        p = p.parentElement;
+      }
+      targetEl.querySelectorAll().forEach((c) => {
+        c.classList.toggle('x-jev-revealed', isRevealed);
+      });
+    }
+
+    // Trigger reveal on child (article) -> both child and parent must get revealed
+    syncReveal(child, true);
+    expect(child.classList.contains('x-jev-revealed')).toBe(true);
+    expect(parent.classList.contains('x-jev-revealed')).toBe(true);
+
+    // Trigger re-blur on parent -> both must be unrevealed
+    syncReveal(parent, false);
+    expect(child.classList.contains('x-jev-revealed')).toBe(false);
+    expect(parent.classList.contains('x-jev-revealed')).toBe(false);
+  });
 });
 

@@ -72,7 +72,10 @@
 }
 
 /* Restored clean state when user clicks 'Reveal post' */
+[data-jev-rage="true"].x-jev-revealed [data-jev-blur-item="true"],
+[data-jev-scam="true"].x-jev-revealed [data-jev-blur-item="true"],
 .x-jev-revealed [data-jev-blur-item="true"],
+.x-jev-revealed[data-jev-blur-item="true"],
 .x-jev-revealed .x-jev-blurred-content,
 .x-jev-unblurred {
   filter: none !important;

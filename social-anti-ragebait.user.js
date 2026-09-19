@@ -325,7 +325,12 @@
       user-select: none !important;
       pointer-events: none !important;
     }
-    .x-jev-revealed [data-jev-blur-item="true"] {
+    [data-jev-rage="true"].x-jev-revealed [data-jev-blur-item="true"],
+    [data-jev-scam="true"].x-jev-revealed [data-jev-blur-item="true"],
+    .x-jev-revealed [data-jev-blur-item="true"],
+    .x-jev-revealed[data-jev-blur-item="true"],
+    .x-jev-revealed .x-jev-blurred-content,
+    .x-jev-unblurred {
       filter: none !important;
       opacity: 1 !important;
       user-select: auto !important;
@@ -832,11 +837,26 @@
 
   function isProfileOnlyLink(el) {
     if (!el) return false;
+    if (el.closest('[data-testid="User-Name"]') || el.closest('[data-testid="Tweet-User-Avatar"]') || el.closest('[data-testid="UserAvatar-Container"]')) return true;
     const a = el.closest('a[href*="/@"]');
     if (!a) return false;
     const href = a.getAttribute('href') || '';
     // If href contains /post/ or /t/, it links to post content, NOT a user profile link!
     return !href.includes('/post/') && !href.includes('/t/');
+  }
+
+  function syncRevealState(targetEl, isRevealed) {
+    targetEl.classList.toggle('x-jev-revealed', isRevealed);
+    let p = targetEl.parentElement;
+    while (p && p !== document.body) {
+      if (p.hasAttribute('data-jev-rage') || p.hasAttribute('data-jev-scam')) {
+        p.classList.toggle('x-jev-revealed', isRevealed);
+      }
+      p = p.parentElement;
+    }
+    targetEl.querySelectorAll('[data-jev-rage="true"], [data-jev-scam="true"]').forEach((child) => {
+      child.classList.toggle('x-jev-revealed', isRevealed);
+    });
   }
 
   function renderClassification(item, res) {
@@ -888,7 +908,8 @@
         btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const isRevealed = postEl.classList.toggle('x-jev-revealed');
+          const isRevealed = !postEl.classList.contains('x-jev-revealed');
+          syncRevealState(postEl, isRevealed);
           btn.textContent = isRevealed ? 'Ẩn lại' : 'Xem bài viết';
         };
         box.appendChild(btn);
@@ -943,7 +964,8 @@
         btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const isRevealed = postEl.classList.toggle('x-jev-revealed');
+          const isRevealed = !postEl.classList.contains('x-jev-revealed');
+          syncRevealState(postEl, isRevealed);
           btn.textContent = isRevealed ? 'Ẩn lại' : 'Hiện nội dung';
         };
 
@@ -1730,7 +1752,11 @@
         if (container && !container.hasAttribute('data-jev-scanned')) candidates.add(container);
       });
 
-      candidates.forEach((cont) => {
+      const filteredCandidates = Array.from(candidates).filter((el) => {
+        return !Array.from(candidates).some((other) => other !== el && el.contains(other));
+      });
+
+      filteredCandidates.forEach((cont) => {
         checkAndApplyMonkMode(cont, cont.innerText || '');
 
         const textEls = cont.querySelectorAll('span[dir="auto"], div[dir="auto"]');
@@ -1775,7 +1801,7 @@
       scanFacebookReels();
 
       // 2. Scan standard feed units
-      document.querySelectorAll('div[data-pagelet^="FeedUnit_"]:not([data-jev-scanned]), div[role="article"]:not([data-jev-scanned]), div[role="feed"] > div:not([data-jev-scanned])').forEach((post) => {
+      document.querySelectorAll('div[data-pagelet^="FeedUnit_"]:not([data-jev-scanned]):not(:has([role="article"])), div[role="article"]:not([data-jev-scanned]), div[role="feed"] > div:not([data-jev-scanned]):not(:has([data-pagelet])):not(:has([role="article"]))').forEach((post) => {
         checkAndApplyMonkMode(post, post.innerText || '');
         const msgEl = post.querySelector('div[data-ad-rendering-role="story_message"], div[data-ad-preview="message"]') ||
                       Array.from(post.querySelectorAll('div[dir="auto"], span[dir="auto"]')).find((el) => el.innerText.trim().length >= 10);
@@ -1799,7 +1825,7 @@
     } else if (platform === 'youtube') {
       scanYouTubeShorts();
     } else if (platform === 'x') {
-      document.querySelectorAll('article[data-testid="tweet"]:not([data-jev-scanned]), div[data-testid="cellInnerDiv"]:not([data-jev-scanned])').forEach((post) => {
+      document.querySelectorAll('article[data-testid="tweet"]:not([data-jev-scanned]), div[data-testid="cellInnerDiv"]:not(:has(article[data-testid="tweet"])):not([data-jev-scanned])').forEach((post) => {
         checkAndApplyMonkMode(post, post.innerText || '');
         const textEl = post.querySelector('div[data-testid="tweetText"]');
         if (textEl) {
