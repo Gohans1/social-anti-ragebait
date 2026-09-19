@@ -1,10 +1,13 @@
 import { expect, test, describe } from "bun:test";
 
-describe("Custom 4-Filter Classifier Taxonomy", () => {
+describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
   const LABELS = [
     'self-improvement / motivational',
     'meme / humor / satire',
     'deep dive / technical breakdown / industry insider',
+    'wholesome / positive',
+    'fearmongering / doom',
+    'fomo / hype',
     'other / casual discussion',
   ];
 
@@ -13,41 +16,65 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
     '1. "self-improvement / motivational": personal growth, discipline, fitness, productivity lessons, inspiring mindsets, self-help, stoicism. ' +
     '2. "meme / humor / satire": lighthearted jokes, funny memes, sarcastic humor, parody, troll posts. ' +
     '3. "deep dive / technical breakdown / industry insider": in-depth technical threads, architectural teardowns, insider industry analysis, comprehensive teardowns of complex problems. ' +
-    '4. "other / casual discussion": everyday personal chatter, news, generic talk, or any content that does not fit the other three categories.';
+    '4. "wholesome / positive": uplifting, heartwarming, kind, peaceful, constructive positive stories, wholesome moments. ' +
+    '5. "fearmongering / doom": alarming, sensationalized bad news, apocalyptic anxiety, catastrophic predictions, fearmongering. ' +
+    '6. "fomo / hype": exaggerated financial hype, crypto shill, urgency to buy, get-rich-quick, fear of missing out. ' +
+    '7. "other / casual discussion": everyday personal chatter, news, generic talk, or any content that does not fit the other categories.';
 
   const BADGE_MAP = {
     'self-improvement / motivational': {
       text: '🌱 Động lực / Mindset',
-      desc: 'Personal growth, productivity, and constructive mindset',
+      desc: 'Personal growth, productivity, and constructive mindset (Phát triển bản thân, động lực)',
       bg: 'rgba(245, 158, 11, 0.18)',
       border: '#f59e0b',
       color: '#fbbf24',
     },
     'meme / humor / satire': {
       text: '🎭 Meme / Giải trí',
-      desc: 'Humor, memes, satire, and playful wit',
+      desc: 'Humor, memes, satire, and playful wit (Hài hước, ảnh chế, troll vui)',
       bg: 'rgba(236, 72, 153, 0.18)',
       border: '#ec4899',
       color: '#f472b6',
     },
     'deep dive / technical breakdown / industry insider': {
       text: '🔬 Mổ xẻ / Deep Dive',
-      desc: 'Detailed domain teardown, insider analysis, or technical deep dive',
+      desc: 'Detailed domain teardown, insider analysis, or technical deep dive (Phân tích chuyên sâu)',
       bg: 'rgba(99, 102, 241, 0.2)',
       border: '#6366f1',
       color: '#818cf8',
     },
+    'wholesome / positive': {
+      text: '🌿 Wholesome / Tích cực',
+      desc: 'Uplifting, heartwarming, and constructive positive content (Ấm áp, tích cực)',
+      bg: 'rgba(16, 185, 129, 0.18)',
+      border: '#10b981',
+      color: '#34d399',
+    },
+    'fearmongering / doom': {
+      text: '⚠️ Doom / Gieo rắc sợ hãi',
+      desc: 'Sensationalized bad news, existential threat, or doom anxiety (Gieo rắc sợ hãi / bi quan)',
+      bg: 'rgba(249, 115, 22, 0.18)',
+      border: '#f97316',
+      color: '#fb923c',
+    },
+    'fomo / hype': {
+      text: '⚡ FOMO / Hype',
+      desc: 'Urgency, get-rich-quick hype, and aggressive shilling (Hype / Thúc ép fomo)',
+      bg: 'rgba(234, 179, 8, 0.18)',
+      border: '#eab308',
+      color: '#facc15',
+    },
     'other / casual discussion': {
       text: '💬 Thảo luận / Khác',
-      desc: 'Everyday casual talk or general post',
+      desc: 'Everyday casual talk or general post (Thảo luận bình thường)',
       bg: 'rgba(100, 116, 139, 0.15)',
       border: '#64748b',
       color: '#94a3b8',
     },
   };
 
-  test("Taxonomy structure has exactly 4 labels with corresponding badges", () => {
-    expect(LABELS.length).toBe(4);
+  test("Taxonomy structure has all 7 labels with corresponding badges", () => {
+    expect(LABELS.length).toBe(7);
     for (const label of LABELS) {
       expect(BADGE_MAP[label]).toBeDefined();
       expect(BADGE_MAP[label].text).toBeDefined();
@@ -55,7 +82,7 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
     }
   });
 
-  test("Badge logic: suppresses badge for 'other / casual discussion'", () => {
+  test("Badge logic: suppresses badge for 'other / casual discussion' and validates threshold gating", () => {
     function shouldRenderBadge(label, confidence, threshold) {
       if (label === 'other / casual discussion') return false;
       const meta = BADGE_MAP[label];
@@ -69,14 +96,23 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
     expect(shouldRenderBadge('meme / humor / satire', 0.75, 0.50)).toBe(true);
     expect(shouldRenderBadge('meme / humor / satire', 0.40, 0.50)).toBe(false);
     expect(shouldRenderBadge('deep dive / technical breakdown / industry insider', 0.90, 0.35)).toBe(true);
+    expect(shouldRenderBadge('wholesome / positive', 0.80, 0.30)).toBe(true);
+    expect(shouldRenderBadge('wholesome / positive', 0.25, 0.30)).toBe(false);
+    expect(shouldRenderBadge('fearmongering / doom', 0.85, 0.30)).toBe(true);
+    expect(shouldRenderBadge('fearmongering / doom', 0.25, 0.30)).toBe(false);
+    expect(shouldRenderBadge('fomo / hype', 0.70, 0.30)).toBe(true);
+    expect(shouldRenderBadge('fomo / hype', 0.20, 0.30)).toBe(false);
   });
 
-  test("Live classifier.dev API correctly maps samples to the 4 categories", async () => {
+  test("Live classifier.dev API correctly maps samples to the curated categories", async () => {
     const inputs = [
       "Kỷ luật thép mỗi ngày dậy 5h sáng chạy bộ và thiền định",
       "nhìn thằng bạn code CSS căn giữa div cười ỉa vcl =)))",
       "Mổ xẻ chi tiết kiến trúc Distributed Consensus Raft vs Paxos trong database phân tán",
-      "Hôm nay trời đẹp quá tí đi uống cà phê không anh em"
+      "Hôm nay trời đẹp quá tí đi uống cà phê không anh em",
+      "Cảm ơn người lạ tốt bụng đã nhặt được ví và đứng đợi trả lại mình giữa trời mưa",
+      "Khủng hoảng thế kỷ sắp ập đến, bong bóng tài chính chuẩn bị phát nổ và xóa sổ toàn bộ tài sản của bạn",
+      "Coin này sắp list Binance x100 lần ngay trong đêm nay múc gấp kẻo lỡ cơ hội đổi đời"
     ];
 
     const res = await fetch("https://classifier.dev", {
@@ -92,12 +128,15 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
     expect(res.ok).toBe(true);
     const data = await res.json();
     expect(data.results).toBeDefined();
-    expect(data.results.length).toBe(4);
+    expect(data.results.length).toBe(7);
 
     expect(data.results[0].label).toBe("self-improvement / motivational");
     expect(data.results[1].label).toBe("meme / humor / satire");
     expect(data.results[2].label).toBe("deep dive / technical breakdown / industry insider");
     expect(data.results[3].label).toBe("other / casual discussion");
+    expect(data.results[4].label).toBe("wholesome / positive");
+    expect(data.results[5].label).toBe("fearmongering / doom");
+    expect(data.results[6].label).toBe("fomo / hype");
   });
 
   test("Strict threshold check respects user config without bypassing", () => {

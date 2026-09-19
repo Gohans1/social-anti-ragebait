@@ -931,6 +931,12 @@
       return;
     }
 
+    const def = TAXONOMY_CATALOG[label];
+    if (def && CONFIG[def.configKey] === false) {
+      postEl.setAttribute('data-jev-handled', 'true');
+      return;
+    }
+
     const meta = BADGE_MAP[label];
     if (meta && confidence >= CONFIG.confidenceThreshold && !postEl.querySelector('.x-jev-badge')) {
       if (!countedTexts.has(item.text)) {
@@ -952,12 +958,6 @@
       badge.style.borderColor = meta.border;
       badge.style.color = meta.color;
       badge.title = `${meta.desc} (Confidence: ${Math.round(confidence * 100)}%)`;
-
-      const def = TAXONOMY_CATALOG[label];
-      if (def && CONFIG[def.configKey] === false) {
-        badge.classList.add('x-jev-hidden');
-        badge.style.setProperty('display', 'none', 'important');
-      }
 
       const textSpan = document.createElement('span');
       textSpan.textContent = meta.text;

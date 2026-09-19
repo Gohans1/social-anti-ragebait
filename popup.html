@@ -13,10 +13,23 @@
     }
     body {
       width: 320px;
+      max-height: 580px;
+      overflow-y: auto;
+      overflow-x: hidden;
       background: #090d16;
       color: #f8fafc;
       padding: 16px;
       font-size: 13px;
+    }
+    body::-webkit-scrollbar {
+      width: 5px;
+    }
+    body::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    body::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
     }
     .header {
       display: flex;
@@ -235,8 +248,8 @@
   </div>
 
   <div class="section">
-    <!-- Cụm 1: Bộ lọc Tinh hoa (AI Gắn Badge) -->
-    <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">✨ Bộ Lọc Tinh Hoa (Gắn Badge)</div>
+    <!-- Cụm 1: Bộ lọc Chủ đề & Gắn Badge (AI Taxonomy) -->
+    <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em;">✨ Phân Loại & Gắn Badge (AI Taxonomy)</div>
     <div class="row">
       <div>
         <div class="label" style="color: #fbbf24;">🌱 Động lực / Mindset</div>
