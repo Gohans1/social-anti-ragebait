@@ -34,7 +34,7 @@
     /(\b(woman|women|girl|girls|female|lady|ladies|bikini|cleavage|swimwear|selfie|thirst\s*trap|goon|gooning|onlyfans|fansly)\b|phụ nữ|con gái|cô gái|gái xinh|nữ sinh|hot girl|mặc hở|khoe thân|áo tắm|nội y|gái|mlem)/i;
 
   // Fast synchronous session cache (0ms instant response on reload)
-  const CACHE_KEY = `social_guardian_cache_${getPlatform()}`;
+  const CACHE_KEY = `social_guardian_cache_v2_${getPlatform()}`;
   const textCache = new Map();
   try {
     const raw = sessionStorage.getItem(CACHE_KEY);
@@ -106,7 +106,7 @@
   const LABELS = [
     'scam / fraudulent scheme',
     'goon baiting / thirst trap / seductive woman media',
-    'rage bait / outrage',
+    'rage bait / toxic / hostile / dismissive negativity',
     'bot seeding / affiliate spam / fake review',
     'fearmongering / doom',
     'fomo / hype',
@@ -116,7 +116,7 @@
   ];
 
   const INSTRUCTIONS =
-    'Classify the content into: online scam/financial trap (fake remote CTV, crypto Ponzi, gambling), goon baiting/thirst trap/seductive suggestive female content/OnlyFans funnel, intentional rage-bait/outrage/drama, bot seeding/affiliate manipulation/fake praise, fearmongering, fomo, wholesome, informative, or casual discussion in Vietnamese or English.';
+    'Classify content into: online scam/trap, goon baiting/thirst trap, rage-bait/toxic drama/hostile or dismissive negativity/rude insult (such as vô bổ, rác, xàm, nhảm, cút, vớ vẩn, toxic), bot seeding, fearmongering, fomo, wholesome, informative, or casual constructive discussion in Vietnamese or English.';
 
   const BADGE_MAP = {
     'scam / fraudulent scheme': {
@@ -133,9 +133,9 @@
       border: '#ec4899',
       color: '#f472b6',
     },
-    'rage bait / outrage': {
-      text: '🚨 Rage Bait',
-      desc: 'Engineered to provoke anger / outrage (Kích động phẫn nộ / câu war)',
+    'rage bait / toxic / hostile / dismissive negativity': {
+      text: '🚨 Rage Bait / Toxic',
+      desc: 'Toxic, hostile, dismissive or engineered to provoke outrage (Gây war / công kích / vô bổ)',
       bg: 'rgba(239, 68, 68, 0.18)',
       border: '#ef4444',
       color: '#f87171',
@@ -519,11 +519,11 @@
       return;
     }
 
-    // --- PRIORITY 3: RAGE BAIT / OUTRAGE ---
-    if (label === 'rage bait / outrage' && meetsThreshold) {
+    // --- PRIORITY 3: RAGE BAIT / TOXIC / DISMISSIVE NEGATIVITY ---
+    if (label === 'rage bait / toxic / hostile / dismissive negativity' && meetsThreshold) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-rage', 'true');
-      console.warn(`[Social Shield 🚨 CHẶN RAGE BAIT]`, item.text);
+      console.warn(`[Social Shield 🚨 CHẶN RAGE BAIT / TOXIC]`, item.text);
       blockedRageCount++;
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         chrome.storage.local.set({ blockedRageCount });
@@ -540,7 +540,7 @@
         warningBox.className = 'x-jev-warning-box';
         const pct = Math.round(Math.max(confidence, topScore) * 100);
         warningBox.innerHTML = `
-          <span class="x-jev-warning-text">🛡️ <b>Rage Bait Warning (${pct}%):</b> Bài viết gây war / kích động đã bị làm mờ.</span>
+          <span class="x-jev-warning-text">🛡️ <b>Rage / Toxic Warning (${pct}%):</b> Bài viết / bình luận tiêu cực, công kích, vô bổ đã bị làm mờ.</span>
         `;
 
         const revealBtn = document.createElement('button');

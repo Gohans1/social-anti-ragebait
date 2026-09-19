@@ -343,7 +343,7 @@
     document.head.appendChild(s);
   }
 
-  const CACHE_KEY = `social_shield_userjs_cache_${getPlatform()}`;
+  const CACHE_KEY = `social_shield_userjs_cache_v2_${getPlatform()}`;
   const textCache = new Map();
   try {
     const raw = sessionStorage.getItem(CACHE_KEY);
@@ -365,7 +365,7 @@
   const LABELS = [
     'scam / fraudulent scheme',
     'goon baiting / thirst trap / seductive woman media',
-    'rage bait / outrage',
+    'rage bait / toxic / hostile / dismissive negativity',
     'bot seeding / affiliate spam / fake review',
     'fearmongering / doom',
     'fomo / hype',
@@ -375,7 +375,7 @@
   ];
 
   const INSTRUCTIONS =
-    'Classify the content into: online scam/financial trap, goon baiting/thirst trap/seductive suggestive female content/OnlyFans funnel, intentional rage-bait/outrage/drama, bot seeding/affiliate manipulation/fake praise, fearmongering, fomo, wholesome, informative, or casual discussion in Vietnamese or English.';
+    'Classify content into: online scam/financial trap, goon baiting/thirst trap/seductive suggestive female content/OnlyFans funnel, rage-bait/toxic insults/hostile cynicism/dismissive negativity (e.g. "Vô bổ", "Rác rưởi", "Xàm", "Đồ ngu", "Nhảm"), bot seeding/affiliate manipulation/fake praise, fearmongering, fomo, wholesome, informative, or casual discussion in Vietnamese or English.';
 
   let queue = [];
   let debounceTimer = null;
@@ -566,8 +566,11 @@
       return;
     }
 
-    // 3. RAGE BAIT
-    if (label === 'rage bait / outrage' && confidence >= CONFIG.confidenceThreshold) {
+    // 3. RAGE BAIT / TOXIC NEGATIVITY
+    if (
+      (label === 'rage bait / toxic / hostile / dismissive negativity' || label === 'rage bait / outrage') &&
+      confidence >= CONFIG.confidenceThreshold
+    ) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-rage', 'true');
       blockedRageCount++;
@@ -582,7 +585,7 @@
         const box = document.createElement('div');
         box.className = 'x-jev-warning-box';
         const pct = Math.round(confidence * 100);
-        box.innerHTML = `<span>🛡️ <b>Rage Bait Warning (${pct}%):</b> Bài viết gây war đã bị làm mờ.</span>`;
+        box.innerHTML = `<span>🛡️ <b>Rage Bait / Toxic Warning (${pct}%):</b> Bình luận tiêu cực / công kích đã bị làm mờ.</span>`;
         const btn = document.createElement('button');
         btn.className = 'x-jev-reveal-btn';
         btn.textContent = 'Reveal post';
