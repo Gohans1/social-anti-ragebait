@@ -19,6 +19,7 @@
     blockScamsEnabled: true,
     collapseSeedingEnabled: true,
     hideFloatingPill: false,
+    customLabels: [],
   };
 
   let scannedCount = 0;
@@ -32,6 +33,7 @@
   let wholesomeCount = 0;
   let doomCount = 0;
   let fomoCount = 0;
+  let customCount = 0;
 
   function getPlatform() {
     const host = window.location.hostname.toLowerCase();
@@ -92,6 +94,7 @@
         'filterWholesomeEnabled',
         'filterDoomEnabled',
         'filterFomoEnabled',
+        'customLabels',
         'monkModeEnabled',
         'blockReelsEnabled',
         'autoBlurRageEnabled',
@@ -109,6 +112,7 @@
         'wholesomeCount',
         'doomCount',
         'fomoCount',
+        'customCount',
       ],
       (res) => {
         if (typeof res.filterMotivationalEnabled === 'boolean') config.filterMotivationalEnabled = res.filterMotivationalEnabled;
@@ -117,6 +121,7 @@
         if (typeof res.filterWholesomeEnabled === 'boolean') config.filterWholesomeEnabled = res.filterWholesomeEnabled;
         if (typeof res.filterDoomEnabled === 'boolean') config.filterDoomEnabled = res.filterDoomEnabled;
         if (typeof res.filterFomoEnabled === 'boolean') config.filterFomoEnabled = res.filterFomoEnabled;
+        if (Array.isArray(res.customLabels)) config.customLabels = res.customLabels;
         if (typeof res.monkModeEnabled === 'boolean') config.monkModeEnabled = res.monkModeEnabled;
         if (typeof res.blockReelsEnabled === 'boolean') config.blockReelsEnabled = res.blockReelsEnabled;
         if (typeof res.autoBlurRageEnabled === 'boolean') config.autoBlurRageEnabled = res.autoBlurRageEnabled;
@@ -137,6 +142,7 @@
         if (typeof res.wholesomeCount === 'number') wholesomeCount = res.wholesomeCount;
         if (typeof res.doomCount === 'number') doomCount = res.doomCount;
         if (typeof res.fomoCount === 'number') fomoCount = res.fomoCount;
+        if (typeof res.customCount === 'number') customCount = res.customCount;
 
         updatePill();
         applyStateToDOM();
@@ -150,6 +156,7 @@
       'filterWholesomeEnabled',
       'filterDoomEnabled',
       'filterFomoEnabled',
+      'customLabels',
       'autoBlurRageEnabled',
       'blockScamsEnabled',
       'collapseSeedingEnabled',
@@ -160,7 +167,11 @@
       if (request.type === 'UPDATE_CONFIG') {
         let taxonomyChanged = false;
         TAXONOMY_KEYS.forEach((key) => {
-          if (request.config[key] !== undefined && request.config[key] !== config[key]) {
+          if (key === 'customLabels') {
+            if (Array.isArray(request.config.customLabels) && JSON.stringify(request.config.customLabels) !== JSON.stringify(config.customLabels)) {
+              taxonomyChanged = true;
+            }
+          } else if (request.config[key] !== undefined && request.config[key] !== config[key]) {
             taxonomyChanged = true;
           }
         });
@@ -171,6 +182,7 @@
         if (typeof request.config.filterWholesomeEnabled === 'boolean') config.filterWholesomeEnabled = request.config.filterWholesomeEnabled;
         if (typeof request.config.filterDoomEnabled === 'boolean') config.filterDoomEnabled = request.config.filterDoomEnabled;
         if (typeof request.config.filterFomoEnabled === 'boolean') config.filterFomoEnabled = request.config.filterFomoEnabled;
+        if (Array.isArray(request.config.customLabels)) config.customLabels = request.config.customLabels;
         config.monkModeEnabled = request.config.monkModeEnabled;
         if (typeof request.config.blockReelsEnabled === 'boolean') config.blockReelsEnabled = request.config.blockReelsEnabled;
         config.autoBlurRageEnabled = request.config.autoBlurRageEnabled;
@@ -193,6 +205,7 @@
         wholesomeCount = 0;
         doomCount = 0;
         fomoCount = 0;
+        customCount = 0;
         monkModeBlockedCount = 0;
         blockedRageCount = 0;
         blockedScamCount = 0;
@@ -216,6 +229,7 @@
           'filterWholesomeEnabled',
           'filterDoomEnabled',
           'filterFomoEnabled',
+          'customLabels',
           'monkModeEnabled',
           'blockReelsEnabled',
           'autoBlurRageEnabled',
@@ -225,10 +239,17 @@
           'hideFloatingPill',
         ].forEach((key) => {
           if (changes[key]) {
-            if (TAXONOMY_KEYS.includes(key) && changes[key].newValue !== config[key]) {
-              taxonomyChanged = true;
+            if (key === 'customLabels') {
+              if (JSON.stringify(changes.customLabels.newValue) !== JSON.stringify(config.customLabels)) {
+                taxonomyChanged = true;
+              }
+              config.customLabels = changes.customLabels.newValue || [];
+            } else {
+              if (TAXONOMY_KEYS.includes(key) && changes[key].newValue !== config[key]) {
+                taxonomyChanged = true;
+              }
+              config[key] = changes[key].newValue;
             }
-            config[key] = changes[key].newValue;
             configChanged = true;
           }
         });
@@ -239,6 +260,7 @@
         if (changes.wholesomeCount) wholesomeCount = changes.wholesomeCount.newValue || 0;
         if (changes.doomCount) doomCount = changes.doomCount.newValue || 0;
         if (changes.fomoCount) fomoCount = changes.fomoCount.newValue || 0;
+        if (changes.customCount) customCount = changes.customCount.newValue || 0;
         if (changes.monkModeBlockedCount) monkModeBlockedCount = changes.monkModeBlockedCount.newValue || 0;
         if (changes.blockedRageCount) blockedRageCount = changes.blockedRageCount.newValue || 0;
         if (changes.blockedScamCount) blockedScamCount = changes.blockedScamCount.newValue || 0;
@@ -368,6 +390,18 @@
       }
     });
 
+    if (Array.isArray(cfg?.customLabels)) {
+      cfg.customLabels.forEach((c) => {
+        const rawName = typeof c === 'string' ? c : c?.name;
+        const enabled = typeof c === 'object' ? c?.enabled !== false : true;
+        const name = rawName ? rawName.trim() : '';
+        if (name && enabled && !activeLabels.includes(name)) {
+          activeLabels.push(name);
+          instructionsList.push(`"${name}": content specifically discussing, focused on, or related to ${name}.`);
+        }
+      });
+    }
+
     if (activeLabels.length === 0) {
       return { labels: [], instructions: '' };
     }
@@ -445,6 +479,9 @@
     }
     if (config.filterFomoEnabled !== false && fomoCount > 0) {
       parts.push(`⚡ FOMO: <span style="color:#fde047">${fomoCount}</span>`);
+    }
+    if (customCount > 0) {
+      parts.push(`🏷️ Custom: <span style="color:#c084fc">${customCount}</span>`);
     }
     pill.innerHTML = parts.join(' | ') + ` <span class="x-jev-pill-close" title="Ẩn thanh trạng thái nổi này (bật lại trong popup)">✕</span>`;
     const closeBtn = pill.querySelector('.x-jev-pill-close');
@@ -565,11 +602,24 @@
       }
     });
 
-    // 5. Curated Badges State (All Curated Categories)
+    // 5. Curated & Custom Badges State
     document.querySelectorAll('.x-jev-badge').forEach((badge) => {
       const cat = badge.getAttribute('data-jev-badge-category');
       const def = TAXONOMY_CATALOG[cat];
+      let isHidden = false;
       if (def && config[def.configKey] === false) {
+        isHidden = true;
+      } else if (Array.isArray(config.customLabels)) {
+        const customFound = config.customLabels.find(
+          (c) => (typeof c === 'string' ? c : c?.name)?.toLowerCase() === cat?.toLowerCase()
+        );
+        if (customFound && typeof customFound === 'object' && customFound.enabled === false) {
+          isHidden = true;
+        } else if (!customFound && !def && cat !== 'other / casual discussion') {
+          isHidden = true;
+        }
+      }
+      if (isHidden) {
         badge.classList.add('x-jev-hidden');
         badge.style.setProperty('display', 'none', 'important');
       } else {
@@ -916,7 +966,7 @@
       return;
     }
 
-    // --- PRIORITY 5: CURATED CATEGORY BADGES ---
+    // --- PRIORITY 5: CURATED & CUSTOM CATEGORY BADGES ---
     if (label === 'other / casual discussion') {
       postEl.setAttribute('data-jev-handled', 'true');
       return; // Do not clutter feed with badges on regular casual posts
@@ -928,7 +978,31 @@
       return;
     }
 
-    const meta = BADGE_MAP[label];
+    let isCustom = false;
+    let customMeta = null;
+    if (Array.isArray(config.customLabels)) {
+      const customFound = config.customLabels.find(
+        (c) => (typeof c === 'string' ? c : c?.name)?.toLowerCase() === label.toLowerCase()
+      );
+      if (customFound) {
+        const isEnabled = typeof customFound === 'object' ? customFound.enabled !== false : true;
+        if (!isEnabled) {
+          postEl.setAttribute('data-jev-handled', 'true');
+          return;
+        }
+        isCustom = true;
+        const displayName = typeof customFound === 'object' ? customFound.name : customFound;
+        customMeta = {
+          text: `🏷️ ${displayName}`,
+          desc: `Nhãn tùy chỉnh: ${displayName}`,
+          bg: 'rgba(168, 85, 247, 0.18)',
+          border: '#a855f7',
+          color: '#c084fc',
+        };
+      }
+    }
+
+    const meta = BADGE_MAP[label] || customMeta;
     if (meta && meetsThreshold && !postEl.querySelector('.x-jev-badge')) {
       if (!countedTexts.has(item.text)) {
         countedTexts.add(item.text);
@@ -963,6 +1037,11 @@
           fomoCount++;
           if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
             chrome.storage.local.set({ fomoCount });
+          }
+        } else if (isCustom) {
+          customCount++;
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ customCount });
           }
         }
         updatePill();

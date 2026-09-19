@@ -149,6 +149,32 @@
     input.fomo-toggle:checked + .slider {
       background-color: #eab308;
     }
+    input.custom-toggle:checked + .slider {
+      background-color: #a855f7;
+    }
+    .custom-label-chip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(168, 85, 247, 0.1);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      border-radius: 6px;
+      padding: 5px 8px;
+    }
+    .custom-label-chip .remove-btn {
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .custom-label-chip .remove-btn:hover {
+      color: #f87171;
+      background: rgba(239, 68, 68, 0.15);
+    }
     input.monk-toggle:checked + .slider {
       background-color: #0284c7;
     }
@@ -314,6 +340,19 @@
         <input type="checkbox" id="filterFomoToggle" class="fomo-toggle" checked>
         <span class="slider"></span>
       </label>
+    </div>
+
+    <!-- Cụm Nhãn Tự Điền (Custom Labels) -->
+    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255, 255, 255, 0.12);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <div class="label" style="color: #c084fc; font-weight: 700;">🏷️ Nhãn Tự Điền (Custom Labels)</div>
+        <span style="font-size: 10px; color: #94a3b8;">Tự bọc prompt</span>
+      </div>
+      <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+        <input type="text" id="customLabelInput" placeholder="Nhập nhãn (vd: anime, bóng đá)..." style="flex: 1; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; padding: 6px 8px; color: #fff; font-size: 11px; outline: none;">
+        <button id="addCustomLabelBtn" type="button" style="background: #8b5cf6; border: none; border-radius: 6px; color: #fff; font-weight: 600; font-size: 11px; padding: 0 10px; cursor: pointer;">Thêm</button>
+      </div>
+      <div id="customLabelsContainer" style="display: flex; flex-direction: column; gap: 6px;"></div>
     </div>
 
     <!-- Cụm 2: Khiên Phòng Thủ (AI Làm Mờ & Thu Gọn) -->

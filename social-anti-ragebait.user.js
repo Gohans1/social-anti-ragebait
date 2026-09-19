@@ -38,6 +38,7 @@
     filterWholesomeEnabled: true,
     filterDoomEnabled: true,
     filterFomoEnabled: true,
+    customLabels: [],
     monkModeEnabled: true,
     blockReelsEnabled: true,
     autoBlurRageEnabled: true,
@@ -56,6 +57,7 @@
   let wholesomeCount = 0;
   let doomCount = 0;
   let fomoCount = 0;
+  let customCount = 0;
 
   function getPlatform() {
     const host = window.location.hostname.toLowerCase();
@@ -548,6 +550,18 @@
       }
     });
 
+    if (Array.isArray(cfg?.customLabels)) {
+      cfg.customLabels.forEach((c) => {
+        const rawName = typeof c === 'string' ? c : c?.name;
+        const enabled = typeof c === 'object' ? c?.enabled !== false : true;
+        const name = rawName ? rawName.trim() : '';
+        if (name && enabled && !activeLabels.includes(name)) {
+          activeLabels.push(name);
+          instructionsList.push(`"${name}": content specifically discussing, focused on, or related to ${name}.`);
+        }
+      });
+    }
+
     if (activeLabels.length === 0) {
       return { labels: [], instructions: '' };
     }
@@ -629,6 +643,9 @@
     }
     if (CONFIG.filterFomoEnabled !== false && fomoCount > 0) {
       parts.push(`⚡ FOMO: <span style="color:#fde047">${fomoCount}</span>`);
+    }
+    if (customCount > 0) {
+      parts.push(`🏷️ Custom: <span style="color:#c084fc">${customCount}</span>`);
     }
     pill.innerHTML = parts.join(' | ') + ` <span class="x-jev-pill-close" title="Ẩn thanh trạng thái này">✕</span>`;
     const closeBtn = pill.querySelector('.x-jev-pill-close');
@@ -925,7 +942,7 @@
       return;
     }
 
-    // 4. CURATED CATEGORY BADGES
+    // 4. CURATED & CUSTOM CATEGORY BADGES
     if (label === 'other / casual discussion') {
       postEl.setAttribute('data-jev-handled', 'true');
       return;
@@ -937,7 +954,31 @@
       return;
     }
 
-    const meta = BADGE_MAP[label];
+    let isCustom = false;
+    let customMeta = null;
+    if (Array.isArray(CONFIG.customLabels)) {
+      const customFound = CONFIG.customLabels.find(
+        (c) => (typeof c === 'string' ? c : c?.name)?.toLowerCase() === label.toLowerCase()
+      );
+      if (customFound) {
+        const isEnabled = typeof customFound === 'object' ? customFound.enabled !== false : true;
+        if (!isEnabled) {
+          postEl.setAttribute('data-jev-handled', 'true');
+          return;
+        }
+        isCustom = true;
+        const displayName = typeof customFound === 'object' ? customFound.name : customFound;
+        customMeta = {
+          text: `🏷️ ${displayName}`,
+          desc: `Nhãn tùy chỉnh: ${displayName}`,
+          bg: 'rgba(168, 85, 247, 0.18)',
+          border: '#a855f7',
+          color: '#c084fc',
+        };
+      }
+    }
+
+    const meta = BADGE_MAP[label] || customMeta;
     if (meta && confidence >= CONFIG.confidenceThreshold && !postEl.querySelector('.x-jev-badge')) {
       if (!countedTexts.has(item.text)) {
         countedTexts.add(item.text);
@@ -948,6 +989,7 @@
         else if (label === 'wholesome / positive') wholesomeCount++;
         else if (label === 'fearmongering / doom') doomCount++;
         else if (label === 'fomo / hype') fomoCount++;
+        else if (isCustom) customCount++;
         updatePill();
       }
 

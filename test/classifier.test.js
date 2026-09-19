@@ -405,6 +405,7 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
       'filterWholesomeEnabled',
       'filterDoomEnabled',
       'filterFomoEnabled',
+      'customLabels',
       'autoBlurRageEnabled',
       'blockScamsEnabled',
       'collapseSeedingEnabled',
@@ -415,10 +416,89 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(TAXONOMY_KEYS.includes('filterWholesomeEnabled')).toBe(true);
     expect(TAXONOMY_KEYS.includes('filterDoomEnabled')).toBe(true);
     expect(TAXONOMY_KEYS.includes('filterFomoEnabled')).toBe(true);
+    expect(TAXONOMY_KEYS.includes('customLabels')).toBe(true);
     expect(TAXONOMY_KEYS.includes('autoBlurRageEnabled')).toBe(true);
     expect(TAXONOMY_KEYS.includes('hideFloatingPill')).toBe(false);
     expect(TAXONOMY_KEYS.includes('blockReelsEnabled')).toBe(false);
     expect(TAXONOMY_KEYS.includes('monkModeEnabled')).toBe(false);
+  });
+
+  test("Dynamic taxonomy seamlessly integrates customLabels with auto prompt wrapping", () => {
+    const TAXONOMY_CATALOG = {
+      'meme / humor / satire': { configKey: 'filterMemeEnabled', instruction: 'lighthearted jokes...' },
+    };
+    const CATCH_ALL_LABEL = 'other / casual discussion';
+
+    function getActiveTaxonomy(cfg = {}) {
+      const activeLabels = [];
+      const instructionsList = [];
+
+      Object.entries(TAXONOMY_CATALOG).forEach(([label, def]) => {
+        if (cfg && cfg[def.configKey] !== false) {
+          activeLabels.push(label);
+          instructionsList.push(`"${label}": ${def.instruction}`);
+        }
+      });
+
+      if (Array.isArray(cfg?.customLabels)) {
+        cfg.customLabels.forEach((c) => {
+          const rawName = typeof c === 'string' ? c : c?.name;
+          const enabled = typeof c === 'object' ? c?.enabled !== false : true;
+          const name = rawName ? rawName.trim() : '';
+          if (name && enabled && !activeLabels.includes(name)) {
+            activeLabels.push(name);
+            instructionsList.push(`"${name}": content specifically discussing, focused on, or related to ${name}.`);
+          }
+        });
+      }
+
+      if (activeLabels.length === 0) return { labels: [], instructions: '' };
+
+      activeLabels.push(CATCH_ALL_LABEL);
+      instructionsList.push(`"${CATCH_ALL_LABEL}": other...`);
+
+      const formattedInstructions = instructionsList.map((item, idx) => `${idx + 1}. ${item}`).join(' ');
+      return {
+        labels: activeLabels,
+        instructions: 'Classify social media content: ' + formattedInstructions,
+      };
+    }
+
+    const taxonomy = getActiveTaxonomy({
+      filterMemeEnabled: true,
+      customLabels: [
+        { name: 'anime', enabled: true },
+        { name: 'bóng đá', enabled: false }, // disabled
+        { name: 'meme / humor / satire', enabled: true }, // duplicate of catalog label
+      ],
+    });
+
+    expect(taxonomy.labels).toContain('meme / humor / satire');
+    expect(taxonomy.labels).toContain('anime');
+    expect(taxonomy.labels).not.toContain('bóng đá');
+    // Ensure duplicate was not added twice
+    expect(taxonomy.labels.filter(l => l === 'meme / humor / satire').length).toBe(1);
+    expect(taxonomy.instructions).toContain('"anime": content specifically discussing, focused on, or related to anime.');
+  });
+
+  test("Live API proof: custom label with auto prompt wrapping classifies matching content", async () => {
+    const customPrompt = 'Classify social media content: 1. "anime": content specifically discussing, focused on, or related to anime. 2. "other / casual discussion": everyday chatter.';
+    const post = "Tập mới nhất của Jujutsu Kaisen Gojo đánh nhau với Sukuna animation đỉnh vcl";
+
+    const res = await fetch("https://classifier.dev", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        labels: ['anime', 'other / casual discussion'],
+        inputs: [post],
+        instructions: customPrompt,
+      })
+    });
+
+    expect(res.ok).toBe(true);
+    const data = await res.json();
+    expect(data.results[0].label).toBe("anime");
+    expect(data.results[0].confidence).toBeGreaterThan(0.5);
   });
 
   test("Live API proof: disabling a category makes Jev AI blind to it", async () => {

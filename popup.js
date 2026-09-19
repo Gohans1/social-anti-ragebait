@@ -26,6 +26,105 @@ document.addEventListener('DOMContentLoaded', () => {
   const fomoCounter = document.getElementById('fomoCounter');
   const resetStats = document.getElementById('resetStats');
 
+  const customLabelInput = document.getElementById('customLabelInput');
+  const addCustomLabelBtn = document.getElementById('addCustomLabelBtn');
+  const customLabelsContainer = document.getElementById('customLabelsContainer');
+
+  let customLabels = [];
+
+  function renderCustomLabels() {
+    if (!customLabelsContainer) return;
+    customLabelsContainer.innerHTML = '';
+    if (customLabels.length === 0) {
+      const emptyMsg = document.createElement('div');
+      emptyMsg.style.fontSize = '10.5px';
+      emptyMsg.style.color = '#64748b';
+      emptyMsg.style.fontStyle = 'italic';
+      emptyMsg.textContent = 'Chưa có nhãn tự điền nào';
+      customLabelsContainer.appendChild(emptyMsg);
+      return;
+    }
+
+    customLabels.forEach((item, index) => {
+      const chip = document.createElement('div');
+      chip.className = 'custom-label-chip';
+
+      const labelText = document.createElement('span');
+      labelText.style.color = '#c084fc';
+      labelText.style.fontWeight = '600';
+      labelText.style.fontSize = '11px';
+      labelText.textContent = `🏷️ ${item.name}`;
+
+      const actions = document.createElement('div');
+      actions.style.display = 'flex';
+      actions.style.alignItems = 'center';
+      actions.style.gap = '8px';
+
+      const switchLabel = document.createElement('label');
+      switchLabel.className = 'switch';
+      switchLabel.style.width = '28px';
+      switchLabel.style.height = '16px';
+
+      const toggleInput = document.createElement('input');
+      toggleInput.type = 'checkbox';
+      toggleInput.className = 'custom-toggle';
+      toggleInput.checked = item.enabled !== false;
+      toggleInput.addEventListener('change', () => {
+        customLabels[index].enabled = toggleInput.checked;
+        saveAndNotify();
+      });
+
+      const sliderSpan = document.createElement('span');
+      sliderSpan.className = 'slider';
+
+      switchLabel.appendChild(toggleInput);
+      switchLabel.appendChild(sliderSpan);
+
+      const removeBtn = document.createElement('span');
+      removeBtn.className = 'remove-btn';
+      removeBtn.textContent = '✕';
+      removeBtn.title = 'Xóa nhãn này';
+      removeBtn.addEventListener('click', () => {
+        customLabels.splice(index, 1);
+        renderCustomLabels();
+        saveAndNotify();
+      });
+
+      actions.appendChild(switchLabel);
+      actions.appendChild(removeBtn);
+
+      chip.appendChild(labelText);
+      chip.appendChild(actions);
+
+      customLabelsContainer.appendChild(chip);
+    });
+  }
+
+  function handleAddCustomLabel() {
+    if (!customLabelInput) return;
+    const val = customLabelInput.value.trim();
+    if (!val) return;
+    const exists = customLabels.some((c) => c.name.toLowerCase() === val.toLowerCase());
+    if (!exists) {
+      customLabels.push({ name: val, enabled: true });
+      customLabelInput.value = '';
+      renderCustomLabels();
+      saveAndNotify();
+    } else {
+      customLabelInput.value = '';
+    }
+  }
+
+  if (addCustomLabelBtn) addCustomLabelBtn.addEventListener('click', handleAddCustomLabel);
+  if (customLabelInput) {
+    customLabelInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAddCustomLabel();
+      }
+    });
+  }
+
   // Load saved settings
   chrome.storage.local.get(
     [
@@ -35,6 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'filterWholesomeEnabled',
       'filterDoomEnabled',
       'filterFomoEnabled',
+      'customLabels',
       'monkModeEnabled',
       'blockReelsEnabled',
       'autoBlurRageEnabled',
@@ -53,6 +153,10 @@ document.addEventListener('DOMContentLoaded', () => {
       'fomoCount',
     ],
     (res) => {
+      if (Array.isArray(res.customLabels)) {
+        customLabels = res.customLabels;
+      }
+      renderCustomLabels();
       if (typeof res.filterMotivationalEnabled === 'boolean' && filterMotivationalToggle) {
         filterMotivationalToggle.checked = res.filterMotivationalEnabled;
       }
@@ -132,6 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
       filterWholesomeEnabled: filterWholesomeToggle ? filterWholesomeToggle.checked : true,
       filterDoomEnabled: filterDoomToggle ? filterDoomToggle.checked : true,
       filterFomoEnabled: filterFomoToggle ? filterFomoToggle.checked : true,
+      customLabels: customLabels,
       monkModeEnabled: monkModeToggle.checked,
       blockReelsEnabled: blockReelsToggle.checked,
       autoBlurRageEnabled: autoBlurRageToggle.checked,
@@ -235,6 +340,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (changes.fomoCount && fomoCounter) {
         fomoCounter.textContent = changes.fomoCount.newValue || 0;
+      }
+      if (changes.customLabels && Array.isArray(changes.customLabels.newValue)) {
+        customLabels = changes.customLabels.newValue;
+        renderCustomLabels();
       }
     });
   }
