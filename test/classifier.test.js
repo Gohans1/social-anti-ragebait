@@ -11,8 +11,7 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     'other / casual discussion',
   ];
 
-  const INSTRUCTIONS =
-    'Classify social media content in Vietnamese or English into exactly one category: ' +
+  const CATEGORY_DESCRIPTIONS =
     '1. "self-improvement / motivational": personal growth, discipline, fitness, productivity lessons, inspiring mindsets, self-help, stoicism. ' +
     '2. "meme / humor / satire": lighthearted jokes, funny memes, sarcastic humor, parody, troll posts. ' +
     '3. "deep dive / technical breakdown / industry insider": in-depth technical threads, architectural teardowns, insider industry analysis, comprehensive teardowns of complex problems. ' +
@@ -20,6 +19,14 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     '5. "fearmongering / doom": alarming, sensationalized bad news, apocalyptic anxiety, catastrophic predictions, fearmongering. ' +
     '6. "fomo / hype": exaggerated financial hype, crypto shill, urgency to buy, get-rich-quick, fear of missing out. ' +
     '7. "other / casual discussion": everyday personal chatter, news, generic talk, or any content that does not fit the other categories.';
+
+  const INSTRUCTIONS =
+    'Classify social media content in Vietnamese or English into exactly one category: ' +
+    CATEGORY_DESCRIPTIONS;
+
+  const MULTI_INSTRUCTIONS =
+    'Analyze social media content in Vietnamese or English for any categories that apply: ' +
+    CATEGORY_DESCRIPTIONS;
 
   const BADGE_MAP = {
     'self-improvement / motivational': {
@@ -630,6 +637,186 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
       ],
     };
     expect(shouldShowCustomOnPill(allDisabledConfig, customCount)).toBe(false);
+  });
+
+  test("Live classifier.dev API multi-label returns array of labels and independent scores", async () => {
+    const input = "Bài viết phân tích chuyên sâu kiến trúc microservices và kèm meme lập trình hài hước";
+    const res = await fetch("https://classifier.dev", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        labels: LABELS,
+        inputs: [input],
+        instructions: MULTI_INSTRUCTIONS,
+        multi: true,
+        max_labels: 5,
+      }),
+    });
+
+    expect(res.ok).toBe(true);
+    const data = await res.json();
+    expect(data.results).toBeDefined();
+    expect(data.results.length).toBe(1);
+
+    const result = data.results[0];
+    expect(Array.isArray(result.labels)).toBe(true);
+    expect(result.scores).toBeDefined();
+    expect(typeof result.scores['deep dive / technical breakdown / industry insider']).toBe('number');
+    expect(typeof result.scores['meme / humor / satire']).toBe('number');
+  });
+
+  test("Multi-label rendering selects top matching categories and ignores protective actions in badge list", () => {
+    const res = {
+      scores: {
+        'deep dive / technical breakdown / industry insider': 0.95,
+        'meme / humor / satire': 0.82,
+        'wholesome / positive': 0.75,
+        'other / casual discussion': 0.35,
+        'gaming': 0.10,
+      },
+    };
+
+    const config = {
+      confidenceThreshold: 0.50,
+      filterDeepDiveEnabled: true,
+      filterMemeEnabled: true,
+      filterWholesomeEnabled: true,
+      filterCasualEnabled: true,
+    };
+
+    function selectMultiBadges(scores, cfg) {
+      const eligible = [];
+      Object.entries(scores).forEach(([label, score]) => {
+        if (typeof score !== 'number' || score < cfg.confidenceThreshold) return;
+        if (
+          label === 'scam / fraudulent scheme' ||
+          label === 'rage bait / toxic / hostile / dismissive negativity' ||
+          label === 'bot seeding / affiliate spam / fake review'
+        ) return;
+        if (BADGE_MAP[label]) {
+          eligible.push({ label, score, meta: BADGE_MAP[label] });
+        }
+      });
+      eligible.sort((a, b) => b.score - a.score);
+      return eligible.slice(0, 4);
+    }
+
+    const selected = selectMultiBadges(res.scores, config);
+    expect(selected.length).toBe(3);
+    expect(selected[0].label).toBe('deep dive / technical breakdown / industry insider');
+    expect(selected[1].label).toBe('meme / humor / satire');
+    expect(selected[2].label).toBe('wholesome / positive');
+    // 'other / casual discussion' has score 0.35 < 0.50 threshold, so excluded
+  });
+
+  test("Multi-label priority: protective action (scam / rage / seeding) takes precedence over badges", () => {
+    const res = {
+      scores: {
+        'rage bait / toxic / hostile / dismissive negativity': 0.88,
+        'meme / humor / satire': 0.92,
+        'deep dive / technical breakdown / industry insider': 0.75,
+      },
+    };
+
+    function determineAction(scores, threshold) {
+      if ((scores['scam / fraudulent scheme'] || 0) >= threshold) return 'SCAM_BLUR';
+      if ((scores['rage bait / toxic / hostile / dismissive negativity'] || 0) >= threshold) return 'RAGE_BLUR';
+      if ((scores['bot seeding / affiliate spam / fake review'] || 0) >= threshold) return 'SEEDING_COLLAPSE';
+      return 'BADGES';
+    }
+
+    // Even though meme has 0.92, rage bait has 0.88 >= 0.50 so it must trigger RAGE_BLUR!
+    expect(determineAction(res.scores, 0.50)).toBe('RAGE_BLUR');
+
+    // If rage bait is below threshold, it falls back to BADGES
+    const harmlessRes = {
+      scores: {
+        'rage bait / toxic / hostile / dismissive negativity': 0.20,
+        'meme / humor / satire': 0.92,
+      },
+    };
+    expect(determineAction(harmlessRes, 0.50)).toBe('BADGES');
+  });
+
+  test("Multi-label counter accumulation updates all matching category counters", () => {
+    const counts = {
+      motivationalCount: 0,
+      memeCount: 0,
+      deepDiveCount: 0,
+    };
+
+    const selectedBadges = [
+      { label: 'self-improvement / motivational' },
+      { label: 'meme / humor / satire' },
+    ];
+
+    selectedBadges.forEach(({ label }) => {
+      if (label === 'self-improvement / motivational') counts.motivationalCount++;
+      if (label === 'meme / humor / satire') counts.memeCount++;
+      if (label === 'deep dive / technical breakdown / industry insider') counts.deepDiveCount++;
+    });
+
+    expect(counts.motivationalCount).toBe(1);
+    expect(counts.memeCount).toBe(1);
+    expect(counts.deepDiveCount).toBe(0);
+  });
+
+  test("Multi-label null-safety: gracefully handles null/undefined res and corrupt scores", () => {
+    function extractScores(res) {
+      if (!res || typeof res !== 'object') return {};
+      return (typeof res.scores === 'object' && res.scores !== null)
+        ? res.scores
+        : (res.label ? { [res.label]: res.confidence || 0 } : {});
+    }
+
+    expect(extractScores(null)).toEqual({});
+    expect(extractScores(undefined)).toEqual({});
+    expect(extractScores({ scores: null })).toEqual({});
+    expect(extractScores({ label: 'meme / humor / satire', confidence: 0.8 })).toEqual({
+      'meme / humor / satire': 0.8,
+    });
+    expect(extractScores({ scores: { 'wholesome / positive': 0.9 } })).toEqual({
+      'wholesome / positive': 0.9,
+    });
+  });
+
+  test("Multi-label score filtering rejects NaN, Infinity, and respects legacy taxonomy keys", () => {
+    const scores = {
+      'meme / humor / satire': NaN,
+      'self-improvement / motivational': Infinity,
+      'wholesome / positive': 0.85,
+      'rage bait / outrage': 0.95,
+      'bot seeding / affiliate spam': 0.90,
+    };
+
+    const threshold = 0.50;
+
+    // Check protective legacy shield trigger
+    const rageScore = scores['rage bait / toxic / hostile / dismissive negativity'] || scores['rage bait / outrage'] || 0;
+    expect(rageScore).toBe(0.95);
+    expect(rageScore >= threshold).toBe(true);
+
+    const seedingScore = scores['bot seeding / affiliate spam / fake review'] || scores['bot seeding / affiliate spam'] || 0;
+    expect(seedingScore).toBe(0.90);
+    expect(seedingScore >= threshold).toBe(true);
+
+    // Check finite number check in badge candidate collector
+    const validBadges = [];
+    Object.entries(scores).forEach(([label, score]) => {
+      if (typeof score !== 'number' || !Number.isFinite(score) || score < threshold) return;
+      if (
+        label === 'scam / fraudulent scheme' ||
+        label === 'rage bait / toxic / hostile / dismissive negativity' ||
+        label === 'rage bait / outrage' ||
+        label === 'bot seeding / affiliate spam / fake review' ||
+        label === 'bot seeding / affiliate spam'
+      ) return;
+      validBadges.push({ label, score });
+    });
+
+    expect(validBadges.length).toBe(1);
+    expect(validBadges[0].label).toBe('wholesome / positive');
+    expect(validBadges[0].score).toBe(0.85);
   });
 });
 

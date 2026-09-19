@@ -74,6 +74,23 @@
     /(\b(woman|women|girl|girls|female|lady|ladies|bikini|cleavage|swimwear|selfie|thirst\s*trap|goon|gooning|onlyfans|fansly)\b|phụ nữ|con gái|cô gái|gái xinh|nữ sinh|hot girl|mặc hở|khoe thân|áo tắm|nội y|gái|mlem)/i;
 
   const css = `
+    .x-jev-badge-container {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      align-items: center !important;
+      gap: 6px !important;
+      margin: 4px 0 8px 0 !important;
+      width: 100% !important;
+      position: relative !important;
+      z-index: 10 !important;
+    }
+    .x-jev-badge-container:empty,
+    .x-jev-badge-container:not(:has(.x-jev-badge:not(.x-jev-hidden))) {
+      display: none !important;
+    }
+    .x-jev-badge-container .x-jev-badge {
+      margin: 0 !important;
+    }
     .x-jev-badge {
       display: inline-flex;
       align-items: center !important;
@@ -588,7 +605,7 @@
     return {
       labels: activeLabels,
       instructions:
-        'Classify social media content in Vietnamese or English into exactly one category: ' +
+        'Analyze social media content in Vietnamese or English for any categories that apply: ' +
         formattedInstructions,
     };
   }
@@ -795,6 +812,8 @@
           labels: taxonomy.labels,
           inputs: inputs,
           instructions: taxonomy.instructions,
+          multi: true,
+          max_labels: 5,
         }),
         onload: function (res) {
           try {
@@ -826,17 +845,27 @@
 
     checkAndApplyMonkMode(postEl, item.text);
     if (postEl.hasAttribute('data-jev-handled')) return;
+    if (!res || typeof res !== 'object') return;
 
-    const label = res.label;
-    const confidence = res.confidence || 0;
+    const scores = (typeof res.scores === 'object' && res.scores !== null)
+      ? res.scores
+      : (res.label ? { [res.label]: res.confidence || 0 } : {});
     const parentContainer = textEl.parentElement;
 
     // 1. SCAM
-    if (label === 'scam / fraudulent scheme' && confidence >= CONFIG.confidenceThreshold) {
+    const rawScam = scores['scam / fraudulent scheme'];
+    const scamScore = typeof rawScam === 'number' && Number.isFinite(rawScam) ? rawScam : 0;
+    if (scamScore >= CONFIG.confidenceThreshold) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-scam', 'true');
       blockedScamCount++;
       updatePill();
+
+      // Remove any lingering badges or container (including sibling container on comments)
+      postEl.querySelectorAll('.x-jev-badge-container, .x-jev-badge').forEach((b) => b.remove());
+      if (postEl.previousElementSibling && postEl.previousElementSibling.classList.contains('x-jev-badge-container')) {
+        postEl.previousElementSibling.remove();
+      }
 
       textEl.setAttribute('data-jev-blur-item', 'true');
       postEl.querySelectorAll('img, video').forEach((m) => {
@@ -846,7 +875,7 @@
       if (!postEl.querySelector('.x-jev-scam-box')) {
         const box = document.createElement('div');
         box.className = 'x-jev-scam-box';
-        const pct = Math.round(confidence * 100);
+        const pct = Math.round(scamScore * 100);
         box.innerHTML = `
           <div>
             <b>🛑 Cảnh báo Lừa đảo / Bẫy tài chính (${pct}%):</b>
@@ -869,17 +898,20 @@
     }
 
     // 2. RAGE BAIT / TOXIC NEGATIVITY
-    if (
-      (label === 'rage bait / toxic / hostile / dismissive negativity' || label === 'rage bait / outrage') &&
-      confidence >= CONFIG.confidenceThreshold
-    ) {
+    const rawRage =
+      scores['rage bait / toxic / hostile / dismissive negativity'] || scores['rage bait / outrage'];
+    const rageScore = typeof rawRage === 'number' && Number.isFinite(rawRage) ? rawRage : 0;
+    if (rageScore >= CONFIG.confidenceThreshold) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-rage', 'true');
       blockedRageCount++;
       updatePill();
 
-      // Remove any lingering badges
-      postEl.querySelectorAll('.x-jev-badge').forEach((b) => b.remove());
+      // Remove any lingering badges or container (including sibling container on comments)
+      postEl.querySelectorAll('.x-jev-badge-container, .x-jev-badge').forEach((b) => b.remove());
+      if (postEl.previousElementSibling && postEl.previousElementSibling.classList.contains('x-jev-badge-container')) {
+        postEl.previousElementSibling.remove();
+      }
 
       textEl.setAttribute('data-jev-blur-item', 'true');
       postEl.querySelectorAll('span[dir="auto"], div[dir="auto"]').forEach((span) => {
@@ -894,7 +926,7 @@
       if (!postEl.querySelector('.x-jev-warning-box')) {
         const warning = document.createElement('div');
         warning.className = 'x-jev-warning-box';
-        const pct = Math.round(confidence * 100);
+        const pct = Math.round(rageScore * 100);
         warning.innerHTML = `
           <div class="x-jev-warning-text">
             <span>🛡️</span>
@@ -928,20 +960,26 @@
     }
 
     // 3. BOT SEEDING / AFFILIATE SPAM
-    if (label === 'bot seeding / affiliate spam / fake review' && confidence >= CONFIG.confidenceThreshold) {
+    const rawSeeding =
+      scores['bot seeding / affiliate spam / fake review'] || scores['bot seeding / affiliate spam'];
+    const seedingScore = typeof rawSeeding === 'number' && Number.isFinite(rawSeeding) ? rawSeeding : 0;
+    if (seedingScore >= CONFIG.confidenceThreshold) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-seeding', 'true');
       cleanedSeedingCount++;
       updatePill();
 
-      // Remove any lingering badges
-      postEl.querySelectorAll('.x-jev-badge').forEach((b) => b.remove());
+      // Remove any lingering badges or container (including sibling container on comments)
+      postEl.querySelectorAll('.x-jev-badge-container, .x-jev-badge').forEach((b) => b.remove());
+      if (postEl.previousElementSibling && postEl.previousElementSibling.classList.contains('x-jev-badge-container')) {
+        postEl.previousElementSibling.remove();
+      }
 
       textEl.setAttribute('data-jev-seeding-content', 'true');
       if (!postEl.querySelector('.x-jev-seeding-collapsed')) {
         const bar = document.createElement('div');
         bar.className = 'x-jev-seeding-collapsed';
-        const pct = Math.round(confidence * 100);
+        const pct = Math.round(seedingScore * 100);
         bar.innerHTML = `
           <div>🧹 Đã thu gọn bình luận nghi vấn <b>Seeding / Clone</b> (${pct}%)</div>
           <span style="font-size:11px;font-weight:700;">Xem nội dung ▾</span>
@@ -960,77 +998,114 @@
       return;
     }
 
-    // 4. CURATED & CUSTOM CATEGORY BADGES
+    // 4. MULTI-TAG CONTENT BADGES
     const isActivity = window.location.pathname.includes('/activity');
-    if (label === 'other / casual discussion' && (CONFIG.filterCasualEnabled === false || isActivity)) {
-      postEl.setAttribute('data-jev-handled', 'true');
-      return;
-    }
+    const eligibleBadges = [];
 
-    const def = TAXONOMY_CATALOG[label];
-    if (def && CONFIG[def.configKey] === false) {
-      postEl.setAttribute('data-jev-handled', 'true');
-      return;
-    }
-
-    let isCustom = false;
-    let customMeta = null;
-    if (Array.isArray(CONFIG.customLabels)) {
-      const customFound = CONFIG.customLabels.find(
-        (c) => (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase() === label?.trim().toLowerCase()
-      );
-      if (customFound) {
-        const isEnabled = typeof customFound === 'object' ? customFound.enabled !== false : true;
-        if (!isEnabled) {
-          postEl.setAttribute('data-jev-handled', 'true');
-          return;
-        }
-        isCustom = true;
-        const displayName = typeof customFound === 'object' ? customFound.name : customFound;
-        customMeta = {
-          text: `🏷️ ${displayName}`,
-          desc: `Nhãn tùy chỉnh: ${displayName}`,
-          bg: 'rgba(168, 85, 247, 0.18)',
-          border: '#a855f7',
-          color: '#c084fc',
-        };
+    Object.entries(scores).forEach(([candidateLabel, score]) => {
+      if (typeof score !== 'number' || !Number.isFinite(score) || score < CONFIG.confidenceThreshold) return;
+      if (
+        candidateLabel === 'scam / fraudulent scheme' ||
+        candidateLabel === 'rage bait / toxic / hostile / dismissive negativity' ||
+        candidateLabel === 'rage bait / outrage' ||
+        candidateLabel === 'bot seeding / affiliate spam / fake review' ||
+        candidateLabel === 'bot seeding / affiliate spam'
+      ) {
+        return;
       }
-    }
+      if (candidateLabel === 'other / casual discussion' && (CONFIG.filterCasualEnabled === false || isActivity)) {
+        return;
+      }
 
-    const meta = BADGE_MAP[label] || customMeta;
-    if (meta && confidence >= CONFIG.confidenceThreshold && !postEl.querySelector('.x-jev-badge')) {
+      const def = TAXONOMY_CATALOG[candidateLabel];
+      if (def && CONFIG[def.configKey] === false) {
+        return;
+      }
+
+      let isCustom = false;
+      let customMeta = null;
+      if (Array.isArray(CONFIG.customLabels)) {
+        const customFound = CONFIG.customLabels.find(
+          (c) => (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase() === candidateLabel?.trim().toLowerCase()
+        );
+        if (customFound) {
+          const isEnabled = typeof customFound === 'object' ? customFound.enabled !== false : true;
+          if (!isEnabled) return;
+          isCustom = true;
+          const displayName = typeof customFound === 'object' ? customFound.name : customFound;
+          customMeta = {
+            text: `🏷️ ${displayName}`,
+            desc: `Nhãn tùy chỉnh: ${displayName}`,
+            bg: 'rgba(168, 85, 247, 0.18)',
+            border: '#a855f7',
+            color: '#c084fc',
+          };
+        }
+      }
+
+      const meta = BADGE_MAP[candidateLabel] || customMeta;
+      if (meta) {
+        eligibleBadges.push({ label: candidateLabel, score, meta, isCustom });
+      }
+    });
+
+    eligibleBadges.sort((a, b) => b.score - a.score);
+    const selectedBadges = eligibleBadges.slice(0, 4);
+
+    if (selectedBadges.length > 0) {
       if (!countedTexts.has(item.text)) {
         countedTexts.add(item.text);
         postEl.setAttribute('data-jev-counted', 'true');
-        if (label === 'self-improvement / motivational') motivationalCount++;
-        else if (label === 'meme / humor / satire') memeCount++;
-        else if (label === 'deep dive / technical breakdown / industry insider') deepDiveCount++;
-        else if (label === 'wholesome / positive') wholesomeCount++;
-        else if (label === 'fearmongering / doom') doomCount++;
-        else if (label === 'fomo / hype') fomoCount++;
-        else if (label === 'other / casual discussion') casualCount++;
-        else if (isCustom) customCount++;
+        selectedBadges.forEach(({ label, isCustom }) => {
+          if (label === 'self-improvement / motivational') motivationalCount++;
+          else if (label === 'meme / humor / satire') memeCount++;
+          else if (label === 'deep dive / technical breakdown / industry insider') deepDiveCount++;
+          else if (label === 'wholesome / positive') wholesomeCount++;
+          else if (label === 'fearmongering / doom') doomCount++;
+          else if (label === 'fomo / hype') fomoCount++;
+          else if (label === 'other / casual discussion') casualCount++;
+          else if (isCustom) customCount++;
+        });
         updatePill();
       }
 
-      const badge = document.createElement('div');
-      badge.className = 'x-jev-badge';
-      badge.setAttribute('data-jev-badge-category', label);
-      badge.style.backgroundColor = meta.bg;
-      badge.style.borderColor = meta.border;
-      badge.style.color = meta.color;
-      badge.title = `${meta.desc} (Confidence: ${Math.round(confidence * 100)}%)`;
+      // Remove any lingering uncontained badge right before textEl
+      if (textEl.previousElementSibling && textEl.previousElementSibling.classList.contains('x-jev-badge')) {
+        textEl.previousElementSibling.remove();
+      }
 
-      const textSpan = document.createElement('span');
-      textSpan.textContent = meta.text;
-      const confSpan = document.createElement('span');
-      confSpan.className = 'x-jev-confidence';
-      confSpan.textContent = `${Math.round(confidence * 100)}%`;
+      // Scope container search strictly to textEl's previous sibling to prevent leaking into child comments
+      let container = (textEl.previousElementSibling && textEl.previousElementSibling.classList.contains('x-jev-badge-container'))
+        ? textEl.previousElementSibling
+        : null;
+      if (!container) {
+        container = document.createElement('div');
+        container.className = 'x-jev-badge-container';
+        parentContainer.insertBefore(container, textEl);
+      }
+      container.innerHTML = '';
 
-      badge.appendChild(textSpan);
-      badge.appendChild(confSpan);
-      parentContainer.insertBefore(badge, textEl);
+      selectedBadges.forEach(({ label, score, meta }) => {
+        const badge = document.createElement('div');
+        badge.className = 'x-jev-badge';
+        badge.setAttribute('data-jev-badge-category', label);
+        badge.style.backgroundColor = meta.bg;
+        badge.style.borderColor = meta.border;
+        badge.style.color = meta.color;
+        badge.title = `${meta.desc} (Confidence: ${Math.round(score * 100)}%)`;
+
+        const textSpan = document.createElement('span');
+        textSpan.textContent = meta.text;
+        const confSpan = document.createElement('span');
+        confSpan.className = 'x-jev-confidence';
+        confSpan.textContent = `${Math.round(score * 100)}%`;
+
+        badge.appendChild(textSpan);
+        badge.appendChild(confSpan);
+        container.appendChild(badge);
+      });
     }
+
     postEl.setAttribute('data-jev-handled', 'true');
   }
 
@@ -1061,14 +1136,28 @@
 
     if (uncachedInputs.length > 0) {
       const results = await callJevBatch(uncachedInputs);
-      results.forEach((res, i) => {
-        const item = currentBatch[uncachedIndices[i]];
-        if (item && res) {
-          textCache.set(item.text, res);
-          renderClassification(item, res);
-        }
-      });
-      saveCache();
+      if (Array.isArray(results) && results.length > 0) {
+        uncachedIndices.forEach((itemIdx, i) => {
+          const item = currentBatch[itemIdx];
+          const res = results[i];
+          if (item && res) {
+            textCache.set(item.text, res);
+            renderClassification(item, res);
+          } else if (item && item.postEl) {
+            item.postEl.removeAttribute('data-jev-scanned');
+            item.postEl.removeAttribute('data-jev-cmt-scanned');
+          }
+        });
+        saveCache();
+      } else {
+        uncachedIndices.forEach((idx) => {
+          const item = currentBatch[idx];
+          if (item && item.postEl) {
+            item.postEl.removeAttribute('data-jev-scanned');
+            item.postEl.removeAttribute('data-jev-cmt-scanned');
+          }
+        });
+      }
     }
 
     if (queue.length > 0) {
@@ -1648,7 +1737,7 @@
         const candidateEls = [];
 
         textEls.forEach((el) => {
-          if (el.closest('button') || el.closest('time') || isProfileOnlyLink(el) || el.classList.contains('x-jev-badge')) return;
+          if (el.closest('button') || el.closest('time') || isProfileOnlyLink(el) || el.classList.contains('x-jev-badge') || el.closest('.x-jev-badge-container')) return;
           let t = el.innerText.trim();
           t = t.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
           if (t.length < 2) return;
