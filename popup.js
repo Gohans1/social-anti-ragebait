@@ -1,6 +1,7 @@
 // Popup script for Social Shield All-in-One + Monk Mode
 document.addEventListener('DOMContentLoaded', () => {
   const monkModeToggle = document.getElementById('monkModeToggle');
+  const blockReelsToggle = document.getElementById('blockReelsToggle');
   const autoBlurRageToggle = document.getElementById('autoBlurRageToggle');
   const blockScamsToggle = document.getElementById('blockScamsToggle');
   const collapseSeedingToggle = document.getElementById('collapseSeedingToggle');
@@ -17,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   chrome.storage.local.get(
     [
       'monkModeEnabled',
+      'blockReelsEnabled',
       'autoBlurRageEnabled',
       'blockScamsEnabled',
       'collapseSeedingEnabled',
@@ -29,6 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
     (res) => {
       if (typeof res.monkModeEnabled === 'boolean') {
         monkModeToggle.checked = res.monkModeEnabled;
+      }
+      if (typeof res.blockReelsEnabled === 'boolean') {
+        blockReelsToggle.checked = res.blockReelsEnabled;
       }
       if (typeof res.autoBlurRageEnabled === 'boolean') {
         autoBlurRageToggle.checked = res.autoBlurRageEnabled;
@@ -62,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function saveAndNotify() {
     const config = {
       monkModeEnabled: monkModeToggle.checked,
+      blockReelsEnabled: blockReelsToggle.checked,
       autoBlurRageEnabled: autoBlurRageToggle.checked,
       blockScamsEnabled: blockScamsToggle.checked,
       collapseSeedingEnabled: collapseSeedingToggle.checked,
@@ -98,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   monkModeToggle.addEventListener('change', saveAndNotify);
+  blockReelsToggle.addEventListener('change', saveAndNotify);
   autoBlurRageToggle.addEventListener('change', saveAndNotify);
   blockScamsToggle.addEventListener('change', saveAndNotify);
   collapseSeedingToggle.addEventListener('change', saveAndNotify);

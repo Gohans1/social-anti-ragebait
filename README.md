@@ -12,8 +12,9 @@
 * 🛑 **Lớp 2: Chặn Bẫy Lừa Đảo (Anti-Scam & Financial Fraud)**:
   - Phát hiện các bài viết tuyển CTV xem TikTok/gõ văn bản lừa cọc, kéo nhóm Telegram/Zalo crypto cam kết lãi khủng, app vay nặng lãi, mạo danh ngân hàng.
   - Làm mờ bài viết và hiển thị dấu hiệu cảnh báo chi tiết.
-* 🧘 **Lớp 3: Chế độ Tu Tập (Monk Mode - Anti-Goonbaiting / Hardcore)**:
+* 🧘 **Lớp 3: Chế độ Tu Tập & Chặn Pop-up Reels (Monk Mode & Facebook Reels Shield)**:
   - Tự động quét và làm mờ mọi hình ảnh, video có phụ nữ / khoe thân / goonbait / thirst-traps nhằm duy trì sự tập trung tối đa, cai nghiện dopamine độc hại.
+  - **Chặn triệt để Pop-up Reels trên Facebook**: Tự động phát hiện hộp thoại Pop-up Reels (`role="dialog"`, `/reel/`, `data-pagelet="Tahoe"`, mini-player) và khay "Reels & Video ngắn" trên Bảng tin. Tự động **tạm dừng (pause)** và **tắt tiếng (mute)** video ngay lập tức, hiển thị màn hình bảo vệ tập trung kèm nút `[▶ Xem video]` và `[✕ Đóng pop-up]`.
   - Sử dụng kết hợp **0ms Meta AI Vision Alt-Tags** (trên Threads & Facebook) và **Jev Zero-Shot AI** để phát hiện tức thì.
   - Bảo vệ avatar tài khoản (không làm mờ ảnh đại diện người đăng), kèm nút *"Xem ảnh"* để chủ động bật khi cần.
 * 🧹 **Lớp 4: Dọn Sạch Comment Seeding (Seeding & Bot Purger)**:

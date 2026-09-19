@@ -121,6 +121,9 @@
     input.monk-toggle:checked + .slider {
       background-color: #0284c7;
     }
+    input.reels-toggle:checked + .slider {
+      background-color: #06b6d4;
+    }
     input.rage-toggle:checked + .slider {
       background-color: #ef4444;
     }
@@ -218,6 +221,18 @@
       </div>
       <label class="switch">
         <input type="checkbox" id="monkModeToggle" class="monk-toggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- Facebook Reels Popups -->
+    <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+      <div>
+        <div class="label" style="color: #67e8f9;">🎬 Chặn Pop-up Reels Facebook</div>
+        <div class="sublabel">Tự động làm mờ & pause Thước phim ngắn</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="blockReelsToggle" class="reels-toggle" checked>
         <span class="slider"></span>
       </label>
     </div>

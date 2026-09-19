@@ -130,6 +130,192 @@
   transform: scale(1.04) !important;
 }
 
+/* --- Facebook Reels & Video Popups / Shelves (Monk Mode) --- */
+[data-monk-reels-blocked="true"]:not(.monk-revealed) video,
+[data-monk-reels-blocked="true"]:not(.monk-revealed) img,
+[data-monk-tray-blocked="true"]:not(.monk-revealed) video,
+[data-monk-tray-blocked="true"]:not(.monk-revealed) img {
+  filter: blur(36px) grayscale(80%) !important;
+  opacity: 0.05 !important;
+  pointer-events: none !important;
+  transition: filter 0.25s ease, opacity 0.25s ease !important;
+}
+
+[data-monk-reels-blocked="true"].monk-revealed video,
+[data-monk-reels-blocked="true"].monk-revealed img,
+[data-monk-tray-blocked="true"].monk-revealed video,
+[data-monk-tray-blocked="true"].monk-revealed img {
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* High-z-index Reels Modal / Pop-up Center Overlay */
+.x-monk-reels-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 240px !important;
+  background: rgba(9, 13, 22, 0.94) !important;
+  backdrop-filter: blur(25px) !important;
+  -webkit-backdrop-filter: blur(25px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 999999 !important;
+  padding: 24px !important;
+  box-sizing: border-box !important;
+  filter: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+[data-monk-reels-blocked="true"].monk-revealed .x-monk-reels-overlay {
+  display: none !important;
+}
+
+.x-monk-reels-card {
+  max-width: 360px !important;
+  background: rgba(15, 23, 42, 0.96) !important;
+  border: 1.5px solid rgba(56, 189, 248, 0.5) !important;
+  border-radius: 16px !important;
+  padding: 22px 20px !important;
+  text-align: center !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7) !important;
+  color: #f8fafc !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+.x-monk-reels-icon {
+  font-size: 38px !important;
+  margin-bottom: 10px !important;
+  line-height: 1 !important;
+}
+
+.x-monk-reels-title {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #38bdf8 !important;
+  margin-bottom: 6px !important;
+}
+
+.x-monk-reels-desc {
+  font-size: 12px !important;
+  color: #94a3b8 !important;
+  line-height: 1.45 !important;
+  margin-bottom: 16px !important;
+}
+
+.x-monk-reels-actions {
+  display: flex !important;
+  gap: 10px !important;
+  justify-content: center !important;
+}
+
+.x-monk-btn-reveal {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+.x-monk-btn-reveal:hover {
+  background: #0369a1 !important;
+  transform: scale(1.03) !important;
+}
+
+.x-monk-btn-close {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #fca5a5 !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+.x-monk-btn-close:hover {
+  background: rgba(239, 68, 68, 0.3) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Floating re-blur toggle button when video revealed */
+.x-monk-re-blur-floating {
+  position: absolute !important;
+  top: 14px !important;
+  left: 14px !important;
+  z-index: 999999 !important;
+  background: rgba(15, 23, 42, 0.88) !important;
+  border: 1px solid rgba(56, 189, 248, 0.6) !important;
+  color: #38bdf8 !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  backdrop-filter: blur(8px) !important;
+  display: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+}
+.x-monk-re-blur-floating:hover {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+}
+[data-monk-reels-blocked="true"].monk-revealed .x-monk-re-blur-floating {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+/* Reels Tray Banner in Feed */
+.x-monk-tray-banner {
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 58, 138, 0.9) 100%) !important;
+  border: 1.5px solid rgba(56, 189, 248, 0.4) !important;
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  margin: 10px 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  color: #f8fafc !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  z-index: 10 !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+.x-monk-tray-content {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  font-size: 12.5px !important;
+}
+
+.x-monk-tray-toggle {
+  background: #0284c7 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 6px 14px !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: all 0.15s ease !important;
+}
+.x-monk-tray-toggle:hover {
+  background: #0369a1 !important;
+  transform: scale(1.04) !important;
+}
+
 /* --- Rage Bait Warning Box --- */
 .x-jev-warning-box {
   background: rgba(239, 68, 68, 0.16) !important;
