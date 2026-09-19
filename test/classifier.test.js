@@ -59,10 +59,10 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     },
     'fomo / hype': {
       text: '⚡ FOMO / Hype',
-      desc: 'Urgency, get-rich-quick hype, and aggressive shilling (Hype / Thúc ép fomo)',
+      desc: 'Sensationalized hype, crypto shill, or fear of missing out (Thổi phồng, lùa gà fomo)',
       bg: 'rgba(234, 179, 8, 0.18)',
       border: '#eab308',
-      color: '#facc15',
+      color: '#fde047',
     },
     'other / casual discussion': {
       text: '💬 Thảo luận / Khác',
@@ -176,6 +176,49 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     // New tweet
     expect(countText("Tweet 2")).toBe(true);
     expect(counter).toBe(2);
+  });
+
+  test("Counter suppression: disabled filter halts counter accumulation and badge rendering", () => {
+    const config = {
+      filterWholesomeEnabled: false,
+      filterDoomEnabled: true,
+      filterFomoEnabled: false,
+    };
+    const counts = {
+      wholesomeCount: 0,
+      doomCount: 0,
+      fomoCount: 0,
+    };
+
+    const CATALOG = {
+      'wholesome / positive': { configKey: 'filterWholesomeEnabled', countKey: 'wholesomeCount' },
+      'fearmongering / doom': { configKey: 'filterDoomEnabled', countKey: 'doomCount' },
+      'fomo / hype': { configKey: 'filterFomoEnabled', countKey: 'fomoCount' },
+    };
+
+    function processClassification(label) {
+      const def = CATALOG[label];
+      if (def && config[def.configKey] === false) {
+        return false; // Suppressed
+      }
+      if (def) {
+        counts[def.countKey]++;
+        return true;
+      }
+      return false;
+    }
+
+    // Wholesome is disabled: should suppress and NOT increment
+    expect(processClassification('wholesome / positive')).toBe(false);
+    expect(counts.wholesomeCount).toBe(0);
+
+    // Doom is enabled: should process and increment
+    expect(processClassification('fearmongering / doom')).toBe(true);
+    expect(counts.doomCount).toBe(1);
+
+    // FOMO is disabled: should suppress and NOT increment
+    expect(processClassification('fomo / hype')).toBe(false);
+    expect(counts.fomoCount).toBe(0);
   });
 
   test("Dynamic taxonomy generation excludes disabled categories", () => {

@@ -565,7 +565,7 @@
       }
     });
 
-    // 5. Curated Badges State (Motivational, Meme, Deep Dive)
+    // 5. Curated Badges State (All Curated Categories)
     document.querySelectorAll('.x-jev-badge').forEach((badge) => {
       const cat = badge.getAttribute('data-jev-badge-category');
       const def = TAXONOMY_CATALOG[cat];
