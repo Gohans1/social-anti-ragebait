@@ -133,6 +133,9 @@
     input.seeding-toggle:checked + .slider {
       background-color: #a855f7;
     }
+    input.pill-toggle:checked + .slider {
+      background-color: #0284c7;
+    }
     input:checked + .slider:before {
       transform: translateX(16px);
     }
@@ -270,6 +273,18 @@
       </div>
       <label class="switch">
         <input type="checkbox" id="collapseSeedingToggle" class="seeding-toggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- Floating Status Pill -->
+    <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+      <div>
+        <div class="label" style="color: #cbd5e1;">Ẩn thanh trạng thái nổi</div>
+        <div class="sublabel">Tắt cục đếm góc dưới màn hình để đỡ vướng mắt</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="hideFloatingPillToggle" class="pill-toggle">
         <span class="slider"></span>
       </label>
     </div>

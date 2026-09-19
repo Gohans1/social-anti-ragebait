@@ -12,6 +12,7 @@
     autoBlurRageEnabled: true,
     blockScamsEnabled: true,
     collapseSeedingEnabled: true,
+    hideFloatingPill: false,
   };
 
   let scannedCount = 0;
@@ -62,6 +63,7 @@
         'autoBlurRageEnabled',
         'blockScamsEnabled',
         'collapseSeedingEnabled',
+        'hideFloatingPill',
         'confidenceThreshold',
         'monkModeBlockedCount',
         'blockedRageCount',
@@ -74,6 +76,7 @@
         if (typeof res.autoBlurRageEnabled === 'boolean') config.autoBlurRageEnabled = res.autoBlurRageEnabled;
         if (typeof res.blockScamsEnabled === 'boolean') config.blockScamsEnabled = res.blockScamsEnabled;
         if (typeof res.collapseSeedingEnabled === 'boolean') config.collapseSeedingEnabled = res.collapseSeedingEnabled;
+        if (typeof res.hideFloatingPill === 'boolean') config.hideFloatingPill = res.hideFloatingPill;
         if (typeof res.confidenceThreshold === 'number') {
           config.confidenceThreshold = res.confidenceThreshold > 0.45 ? 0.30 : res.confidenceThreshold;
         }
@@ -95,6 +98,7 @@
         config.autoBlurRageEnabled = request.config.autoBlurRageEnabled;
         config.blockScamsEnabled = request.config.blockScamsEnabled;
         config.collapseSeedingEnabled = request.config.collapseSeedingEnabled;
+        if (typeof request.config.hideFloatingPill === 'boolean') config.hideFloatingPill = request.config.hideFloatingPill;
         config.confidenceThreshold = request.config.confidenceThreshold;
         updatePill();
         applyStateToDOM();
@@ -191,13 +195,31 @@
   const pill = document.createElement('div');
   pill.className = 'x-jev-floating-pill';
   function updatePill() {
+    if (config.hideFloatingPill) {
+      pill.style.display = 'none';
+      return;
+    }
     initPill();
+    pill.style.display = 'flex';
     const pName = getPlatform().toUpperCase();
-    pill.innerHTML = `🛡️ ${pName}: <span style="color:#4ade80">ON</span> | 👁️ Quét: <span style="color:#a5f3fc">${scannedCount}</span> | 🧘 Monk: <span style="color:#38bdf8">${monkModeBlockedCount}</span> | 🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span> | 🛑 Scam: <span style="color:#fb923c">${blockedScamCount}</span> | 🧹 Seed: <span style="color:#c084fc">${cleanedSeedingCount}</span>`;
+    pill.innerHTML = `🛡️ ${pName}: <span style="color:#4ade80">ON</span> | 👁️ Quét: <span style="color:#a5f3fc">${scannedCount}</span> | 🧘 Monk: <span style="color:#38bdf8">${monkModeBlockedCount}</span> | 🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span> | 🛑 Scam: <span style="color:#fb923c">${blockedScamCount}</span> | 🧹 Seed: <span style="color:#c084fc">${cleanedSeedingCount}</span> <span class="x-jev-pill-close" title="Ẩn thanh trạng thái nổi này (bật lại trong popup)">✕</span>`;
+    const closeBtn = pill.querySelector('.x-jev-pill-close');
+    if (closeBtn) {
+      closeBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        config.hideFloatingPill = true;
+        pill.style.display = 'none';
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ hideFloatingPill: true });
+        }
+      };
+    }
   }
   updatePill();
   pill.title = 'Social Shield: All-in-One Protection (Click to toggle master state)';
-  pill.addEventListener('click', () => {
+  pill.addEventListener('click', (e) => {
+    if (e.target.closest('.x-jev-pill-close')) return;
     const allOn = config.monkModeEnabled || config.autoBlurRageEnabled || config.blockScamsEnabled || config.collapseSeedingEnabled;
     config.monkModeEnabled = !allOn;
     config.autoBlurRageEnabled = !allOn;
@@ -217,9 +239,14 @@
   });
 
   function initPill() {
+    if (config.hideFloatingPill) {
+      pill.style.display = 'none';
+      return;
+    }
     if (document.body && !document.querySelector('.x-jev-floating-pill')) {
       document.body.appendChild(pill);
     }
+    pill.style.display = 'flex';
   }
   if (document.body) {
     initPill();

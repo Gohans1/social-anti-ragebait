@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const autoBlurRageToggle = document.getElementById('autoBlurRageToggle');
   const blockScamsToggle = document.getElementById('blockScamsToggle');
   const collapseSeedingToggle = document.getElementById('collapseSeedingToggle');
+  const hideFloatingPillToggle = document.getElementById('hideFloatingPillToggle');
   const thresholdRange = document.getElementById('thresholdRange');
   const thresholdVal = document.getElementById('thresholdVal');
 
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'autoBlurRageEnabled',
       'blockScamsEnabled',
       'collapseSeedingEnabled',
+      'hideFloatingPill',
       'confidenceThreshold',
       'monkModeBlockedCount',
       'blockedRageCount',
@@ -43,6 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (typeof res.collapseSeedingEnabled === 'boolean') {
         collapseSeedingToggle.checked = res.collapseSeedingEnabled;
+      }
+      if (typeof res.hideFloatingPill === 'boolean') {
+        hideFloatingPillToggle.checked = res.hideFloatingPill;
       }
       if (typeof res.confidenceThreshold === 'number') {
         thresholdRange.value = Math.round(res.confidenceThreshold * 100);
@@ -71,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
       autoBlurRageEnabled: autoBlurRageToggle.checked,
       blockScamsEnabled: blockScamsToggle.checked,
       collapseSeedingEnabled: collapseSeedingToggle.checked,
+      hideFloatingPill: hideFloatingPillToggle.checked,
       confidenceThreshold: parseInt(thresholdRange.value, 10) / 100,
     };
 
@@ -112,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
   autoBlurRageToggle.addEventListener('change', saveAndNotify);
   blockScamsToggle.addEventListener('change', saveAndNotify);
   collapseSeedingToggle.addEventListener('change', saveAndNotify);
+  hideFloatingPillToggle.addEventListener('change', saveAndNotify);
 
   thresholdRange.addEventListener('input', () => {
     thresholdVal.textContent = `${thresholdRange.value}%`;

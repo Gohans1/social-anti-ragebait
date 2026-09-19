@@ -513,3 +513,24 @@ main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6) !important;
   border-color: rgba(255, 255, 255, 0.25) !important;
 }
+
+.x-jev-pill-close {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-left: 6px !important;
+  padding: 1px 5px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  border-radius: 9999px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  transition: all 0.15s ease !important;
+}
+
+.x-jev-pill-close:hover {
+  color: #ffffff !important;
+  background: #ef4444 !important;
+  transform: scale(1.1) !important;
+}

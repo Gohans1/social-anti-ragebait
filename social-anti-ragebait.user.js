@@ -333,6 +333,23 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
       border: 1px solid rgba(255,255,255,0.12) !important;
     }
+    .x-jev-pill-close {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      margin-left: 6px !important;
+      padding: 1px 5px !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      color: #94a3b8 !important;
+      cursor: pointer !important;
+      border-radius: 9999px !important;
+      background: rgba(255, 255, 255, 0.08) !important;
+    }
+    .x-jev-pill-close:hover {
+      color: #ffffff !important;
+      background: #ef4444 !important;
+    }
   `;
 
   if (typeof GM_addStyle !== 'undefined') {
@@ -380,14 +397,35 @@
   let queue = [];
   let debounceTimer = null;
 
+  let hideFloatingPill = false;
+  try {
+    hideFloatingPill = localStorage.getItem('social_shield_hide_pill') === 'true';
+  } catch (e) {}
+
   const pill = document.createElement('div');
   pill.className = 'x-jev-floating-pill';
   function updatePill() {
+    if (hideFloatingPill) {
+      pill.style.display = 'none';
+      return;
+    }
+    pill.style.display = 'flex';
     const pName = getPlatform().toUpperCase();
-    pill.innerHTML = `🛡️ ${pName}: <span style="color:#4ade80">ON</span> | 🧘 Monk: <span style="color:#38bdf8">${monkModeBlockedCount}</span> | 🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span> | 🛑 Scam: <span style="color:#fb923c">${blockedScamCount}</span> | 🧹 Seed: <span style="color:#c084fc">${cleanedSeedingCount}</span>`;
+    pill.innerHTML = `🛡️ ${pName}: <span style="color:#4ade80">ON</span> | 🧘 Monk: <span style="color:#38bdf8">${monkModeBlockedCount}</span> | 🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span> | 🛑 Scam: <span style="color:#fb923c">${blockedScamCount}</span> | 🧹 Seed: <span style="color:#c084fc">${cleanedSeedingCount}</span> <span class="x-jev-pill-close" title="Ẩn thanh trạng thái này">✕</span>`;
+    const closeBtn = pill.querySelector('.x-jev-pill-close');
+    if (closeBtn) {
+      closeBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        hideFloatingPill = true;
+        try { localStorage.setItem('social_shield_hide_pill', 'true'); } catch (err) {}
+        pill.style.display = 'none';
+      };
+    }
   }
   updatePill();
-  pill.addEventListener('click', () => {
+  pill.addEventListener('click', (e) => {
+    if (e.target.closest('.x-jev-pill-close')) return;
     const allOn = CONFIG.monkModeEnabled || CONFIG.autoBlurRageEnabled || CONFIG.blockScamsEnabled || CONFIG.collapseSeedingEnabled;
     CONFIG.monkModeEnabled = !allOn;
     CONFIG.autoBlurRageEnabled = !allOn;
@@ -396,10 +434,20 @@
     updatePill();
   });
 
+  function initPill() {
+    if (hideFloatingPill) {
+      pill.style.display = 'none';
+      return;
+    }
+    if (document.body && !document.querySelector('.x-jev-floating-pill')) {
+      document.body.appendChild(pill);
+    }
+  }
+
   if (document.body) {
-    document.body.appendChild(pill);
+    initPill();
   } else {
-    document.addEventListener('DOMContentLoaded', () => document.body.appendChild(pill));
+    document.addEventListener('DOMContentLoaded', initPill);
   }
 
   function checkAndApplyMonkMode(postEl, text) {
@@ -1331,9 +1379,7 @@
 
   // Safety heartbeat interval: keep pill alive & catch dynamic SPA updates
   setInterval(() => {
-    if (document.body && !document.querySelector('.x-jev-floating-pill')) {
-      document.body.appendChild(pill);
-    }
+    initPill();
     scanFeed();
   }, 1500);
 
