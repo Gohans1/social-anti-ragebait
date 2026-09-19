@@ -34,6 +34,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         labels: labels,
         inputs: inputs,
         instructions: instructions,
+        multi: true,
+        max_labels: 5,
       }),
     })
       .then(async (response) => {
