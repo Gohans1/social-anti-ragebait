@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Social Anti-Ragebait & Emotion Predictor",
-  "version": "1.2.0",
-  "description": "Predicts emotional intent & automatically blurs rage-bait on Threads, X (Twitter), and Facebook using Jev",
+  "name": "Social Shield: Anti-Ragebait, Scam & Seeding Guard",
+  "version": "2.0.0",
+  "description": "All-in-one AI shield: auto-blur rage-bait, block financial scams, and collapse bot seeding comments on Threads, Facebook, and X using Jev",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",

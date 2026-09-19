@@ -1,20 +1,20 @@
 // ==UserScript==
-// @name         Social Anti-Ragebait & Emotion Predictor (Threads, X, Facebook)
+// @name         Social Shield All-in-One: Anti-Ragebait, Anti-Scam, Anti-Seeding
 // @namespace    https://classifier.dev/
-// @version      1.2.1
-// @description  Predicts emotional intent & automatically blurs rage-bait posts on Threads (threads.com / threads.net), X (Twitter), and Facebook in English & Vietnamese using Jev
+// @version      2.0.0
+// @description  Tự động làm mờ rage-bait, chặn bài viết lừa đảo, và thu gọn comment seeding trên Threads, Facebook, X bằng Jev AI
 // @author       Antigravity
 // @match        *://*.threads.com/*
 // @match        *://threads.com/*
 // @match        *://*.threads.net/*
 // @match        *://threads.net/*
+// @match        *://*.facebook.com/*
+// @match        *://facebook.com/*
+// @match        *://*.fb.com/*
 // @match        *://*.x.com/*
 // @match        *://x.com/*
 // @match        *://*.twitter.com/*
 // @match        *://twitter.com/*
-// @match        *://*.facebook.com/*
-// @match        *://facebook.com/*
-// @match        *://*.fb.com/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_addStyle
 // @connect      classifier.dev
@@ -24,186 +24,19 @@
 (function () {
   'use strict';
 
-  // --- CONFIGURATION ---
   const CONFIG = {
     apiEndpoint: 'https://classifier.dev',
     batchDebounceMs: 120,
-    blurThreshold: 0.50,
-    autoBlurEnabled: true,
+    confidenceThreshold: 0.50,
+    autoBlurRageEnabled: true,
+    blockScamsEnabled: true,
+    collapseSeedingEnabled: true,
   };
 
-  const LABELS = [
-    'rage bait / outrage',
-    'fearmongering / doom',
-    'fomo / hype',
-    'wholesome / positive',
-    'informative / educational',
-    'casual discussion / personal',
-  ];
+  let blockedRageCount = 0;
+  let blockedScamCount = 0;
+  let cleanedSeedingCount = 0;
 
-  const INSTRUCTIONS =
-    'Classify the emotional hook or manipulation intended by the author. Detect intentional rage-bait, drama-farming, outrage, fearmongering, FOMO, wholesome, or informative content in Vietnamese, English, or any language.';
-
-  const BADGE_MAP = {
-    'rage bait / outrage': {
-      text: '🚨 Rage Bait',
-      desc: 'Engineered to provoke anger / outrage (Kích động phẫn nộ)',
-      bg: 'rgba(239, 68, 68, 0.18)',
-      border: '#ef4444',
-      color: '#f87171',
-      isRage: true,
-    },
-    'fearmongering / doom': {
-      text: '⚠️ Doom / Fear',
-      desc: 'Fearmongering / inducing anxiety (Gieo rắc sợ hãi / hoang mang)',
-      bg: 'rgba(249, 115, 22, 0.18)',
-      border: '#f97316',
-      color: '#fb923c',
-      isRage: false,
-    },
-    'fomo / hype': {
-      text: '⚡ FOMO / Hype',
-      desc: 'Sensationalized hype / fear of missing out (Thổi phồng giật gân)',
-      bg: 'rgba(168, 85, 247, 0.18)',
-      border: '#a855f7',
-      color: '#c084fc',
-      isRage: false,
-    },
-    'wholesome / positive': {
-      text: '🌿 Wholesome',
-      desc: 'Uplifting, entertaining, and positive (Tích cực, giải trí)',
-      bg: 'rgba(16, 185, 129, 0.18)',
-      border: '#10b981',
-      color: '#34d399',
-      isRage: false,
-    },
-    'informative / educational': {
-      text: '💡 Informative',
-      desc: 'Objective news / insightful knowledge (Thông tin, kiến thức)',
-      bg: 'rgba(6, 182, 212, 0.18)',
-      border: '#06b6d4',
-      color: '#22d3ee',
-      isRage: false,
-    },
-    'casual discussion / personal': {
-      text: '💬 Discussion / Casual',
-      desc: 'Personal thoughts / standard conversation (Thảo luận đời thường)',
-      bg: 'rgba(100, 116, 139, 0.15)',
-      border: '#64748b',
-      color: '#94a3b8',
-      isRage: false,
-    },
-  };
-
-  const css = `
-    .x-jev-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 3px 9px;
-      border-radius: 9999px;
-      font-size: 11.5px;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      margin: 4px 0 8px 0;
-      border: 1px solid;
-      width: fit-content;
-      user-select: none;
-      transition: all 0.2s ease;
-      cursor: help;
-      z-index: 10;
-    }
-    .x-jev-badge:hover {
-      filter: brightness(1.15);
-      transform: translateY(-1px);
-    }
-    .x-jev-confidence {
-      font-size: 10px;
-      opacity: 0.85;
-      font-weight: 500;
-    }
-    .x-jev-blurred-content,
-    [data-jev-rage="true"]:not(.x-jev-revealed) [data-jev-content="true"],
-    [data-jev-rage="true"]:not(.x-jev-revealed) img:not([alt*="avatar"]):not([alt*="profile"]):not([src*="profile_images"]),
-    [data-jev-rage="true"]:not(.x-jev-revealed) video {
-      filter: blur(14px) !important;
-      opacity: 0.18 !important;
-      user-select: none !important;
-      pointer-events: none !important;
-      transition: filter 0.2s ease, opacity 0.2s ease !important;
-    }
-    .x-jev-revealed .x-jev-blurred-content,
-    .x-jev-revealed [data-jev-content="true"],
-    .x-jev-revealed img,
-    .x-jev-revealed video,
-    .x-jev-unblurred {
-      filter: none !important;
-      opacity: 1 !important;
-      user-select: auto !important;
-      pointer-events: auto !important;
-    }
-    .x-jev-warning-box {
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px dashed rgba(239, 68, 68, 0.5);
-      border-radius: 10px;
-      padding: 8px 12px;
-      margin: 6px 0 8px 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 12.5px;
-      color: #fca5a5;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .x-jev-reveal-btn {
-      background: rgba(239, 68, 68, 0.35);
-      border: 1px solid rgba(239, 68, 68, 0.7);
-      color: #fff;
-      padding: 4px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 11.5px;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-    .x-jev-reveal-btn:hover {
-      background: rgba(239, 68, 68, 0.55);
-    }
-    .x-jev-floating-pill {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      z-index: 999999;
-      background: rgba(15, 23, 42, 0.9);
-      color: #e2e8f0;
-      padding: 8px 14px;
-      border-radius: 9999px;
-      font-size: 12px;
-      font-weight: 600;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.1);
-      cursor: pointer;
-      user-select: none;
-      transition: all 0.2s ease;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-    .x-jev-floating-pill:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 24px rgba(0,0,0,0.5);
-    }
-  `;
-
-  if (typeof GM_addStyle !== 'undefined') {
-    GM_addStyle(css);
-  } else {
-    const styleEl = document.createElement('style');
-    styleEl.textContent = css;
-    document.head.appendChild(styleEl);
-  }
-
-  // --- PLATFORM DETECTION ---
   function getPlatform() {
     const host = window.location.hostname.toLowerCase();
     if (host.includes('threads.net') || host.includes('threads.com')) return 'threads';
@@ -211,8 +44,124 @@
     return 'x';
   }
 
-  // Synchronous session cache
-  const CACHE_KEY = `x_jev_userjs_cache_${getPlatform()}`;
+  const css = `
+    .x-jev-badge {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      padding: 3px 10px !important;
+      border-radius: 9999px !important;
+      font-size: 11.5px !important;
+      font-weight: 600 !important;
+      margin: 4px 0 8px 0 !important;
+      border: 1px solid !important;
+      width: fit-content !important;
+      user-select: none !important;
+      cursor: help !important;
+      z-index: 10 !important;
+    }
+    [data-jev-rage="true"]:not(.x-jev-revealed) [data-jev-blur-item="true"],
+    [data-jev-scam="true"]:not(.x-jev-revealed) [data-jev-blur-item="true"],
+    .x-jev-blurred-content {
+      filter: blur(14px) !important;
+      opacity: 0.15 !important;
+      user-select: none !important;
+      pointer-events: none !important;
+      transition: filter 0.2s ease, opacity 0.2s ease !important;
+    }
+    .x-jev-revealed [data-jev-blur-item="true"],
+    .x-jev-revealed .x-jev-blurred-content {
+      filter: none !important;
+      opacity: 1 !important;
+      user-select: auto !important;
+      pointer-events: auto !important;
+    }
+    .x-jev-warning-box {
+      background: rgba(239, 68, 68, 0.16) !important;
+      border: 1.5px dashed #ef4444 !important;
+      border-radius: 10px !important;
+      padding: 8px 14px !important;
+      margin: 6px 0 10px 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      font-size: 12.5px !important;
+      color: #ef4444 !important;
+      z-index: 99 !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .x-jev-scam-box {
+      background: rgba(220, 38, 38, 0.18) !important;
+      border: 1.5px dashed #dc2626 !important;
+      border-radius: 10px !important;
+      padding: 9px 14px !important;
+      margin: 6px 0 10px 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      font-size: 12.5px !important;
+      color: #f87171 !important;
+      z-index: 99 !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .x-jev-reveal-btn {
+      background: #ef4444 !important;
+      border: none !important;
+      color: #ffffff !important;
+      padding: 5px 14px !important;
+      border-radius: 6px !important;
+      cursor: pointer !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      white-space: nowrap !important;
+    }
+    .x-jev-seeding-collapsed {
+      background: rgba(168, 85, 247, 0.12) !important;
+      border: 1px dashed rgba(168, 85, 247, 0.45) !important;
+      border-radius: 8px !important;
+      padding: 6px 12px !important;
+      margin: 4px 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      font-size: 11.5px !important;
+      color: #c084fc !important;
+      cursor: pointer !important;
+      user-select: none !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .x-jev-collapsed-body {
+      display: none !important;
+    }
+    .x-jev-floating-pill {
+      position: fixed !important;
+      bottom: 24px !important;
+      right: 24px !important;
+      z-index: 999999 !important;
+      background: rgba(15, 23, 42, 0.94) !important;
+      color: #e2e8f0 !important;
+      padding: 8px 16px !important;
+      border-radius: 9999px !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+      border: 1px solid rgba(255,255,255,0.12) !important;
+    }
+  `;
+
+  if (typeof GM_addStyle !== 'undefined') {
+    GM_addStyle(css);
+  } else {
+    const s = document.createElement('style');
+    s.textContent = css;
+    document.head.appendChild(s);
+  }
+
+  const CACHE_KEY = `social_shield_userjs_cache_${getPlatform()}`;
   const textCache = new Map();
   try {
     const raw = sessionStorage.getItem(CACHE_KEY);
@@ -225,58 +174,52 @@
   function saveCache() {
     try {
       const obj = {};
-      const entries = Array.from(textCache.entries()).slice(-250);
+      const entries = Array.from(textCache.entries()).slice(-300);
       entries.forEach(([k, v]) => (obj[k] = v));
       sessionStorage.setItem(CACHE_KEY, JSON.stringify(obj));
     } catch (e) {}
   }
 
-  let blockedCount = 0;
-  const pill = document.createElement('div');
-  pill.className = 'x-jev-floating-pill';
-  function updatePill() {
-    const pName = getPlatform().toUpperCase();
-    pill.innerHTML = `🛡️ ${pName} Anti-Rage: <span style="color:${CONFIG.autoBlurEnabled ? '#4ade80' : '#94a3b8'}">${CONFIG.autoBlurEnabled ? 'ON' : 'OFF'}</span> | Blocked: <span style="color:#f87171">${blockedCount}</span>`;
-  }
-  updatePill();
-  pill.title = 'Click to toggle auto-blur on this platform';
-  pill.addEventListener('click', () => {
-    CONFIG.autoBlurEnabled = !CONFIG.autoBlurEnabled;
-    updatePill();
-    document.querySelectorAll('[data-jev-rage="true"]').forEach((post) => {
-      const warning = post.querySelector('.x-jev-warning-box');
-      if (CONFIG.autoBlurEnabled) {
-        post.classList.remove('x-jev-revealed');
-        if (warning) warning.style.display = 'flex';
-      } else {
-        post.classList.add('x-jev-revealed');
-        if (warning) warning.style.display = 'none';
-      }
-    });
-  });
+  const LABELS = [
+    'scam / fraudulent scheme',
+    'rage bait / outrage',
+    'bot seeding / affiliate spam / fake review',
+    'fearmongering / doom',
+    'fomo / hype',
+    'wholesome / positive',
+    'informative / educational',
+    'casual discussion / personal',
+  ];
 
-  function initPill() {
-    if (document.body && !document.querySelector('.x-jev-floating-pill')) {
-      document.body.appendChild(pill);
-    }
-  }
-  if (document.body) {
-    initPill();
-  } else {
-    document.addEventListener('DOMContentLoaded', initPill);
-  }
+  const INSTRUCTIONS =
+    'Classify the content into: online scam/financial trap, intentional rage-bait/outrage/drama, bot seeding/affiliate manipulation/fake praise, fearmongering, fomo/hype, wholesome, informative, or casual discussion in Vietnamese or English.';
 
   let queue = [];
   let debounceTimer = null;
 
+  const pill = document.createElement('div');
+  pill.className = 'x-jev-floating-pill';
+  function updatePill() {
+    const pName = getPlatform().toUpperCase();
+    pill.innerHTML = `🛡️ ${pName} Shield: <span style="color:#4ade80">ON</span> | 🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span> | 🛑 Scam: <span style="color:#fb923c">${blockedScamCount}</span> | 🧹 Seeding: <span style="color:#c084fc">${cleanedSeedingCount}</span>`;
+  }
+  updatePill();
+  pill.addEventListener('click', () => {
+    const allOn = CONFIG.autoBlurRageEnabled || CONFIG.blockScamsEnabled || CONFIG.collapseSeedingEnabled;
+    CONFIG.autoBlurRageEnabled = !allOn;
+    CONFIG.blockScamsEnabled = !allOn;
+    CONFIG.collapseSeedingEnabled = !allOn;
+    updatePill();
+  });
+
+  if (document.body) {
+    document.body.appendChild(pill);
+  } else {
+    document.addEventListener('DOMContentLoaded', () => document.body.appendChild(pill));
+  }
+
   function callJevBatch(inputs) {
     return new Promise((resolve) => {
-      const payload = JSON.stringify({
-        labels: LABELS,
-        inputs: inputs,
-        instructions: INSTRUCTIONS,
-      });
-
       const sendReq =
         typeof GM_xmlhttpRequest !== 'undefined'
           ? GM_xmlhttpRequest
@@ -286,9 +229,9 @@
                 headers: opts.headers,
                 body: opts.data,
               })
-                .then((res) => res.json())
-                .then((data) => opts.onload({ responseText: JSON.stringify(data) }))
-                .catch((err) => opts.onerror(err));
+                .then((r) => r.json())
+                .then((d) => opts.onload({ responseText: JSON.stringify(d) }))
+                .catch((e) => opts.onerror(e));
             };
 
       sendReq({
@@ -296,20 +239,22 @@
         url: CONFIG.apiEndpoint,
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'social-anti-ragebait/1.2.1',
+          'User-Agent': 'social-shield-userjs/2.0',
         },
-        data: payload,
-        onload: function (response) {
+        data: JSON.stringify({
+          labels: LABELS,
+          inputs: inputs,
+          instructions: INSTRUCTIONS,
+        }),
+        onload: function (res) {
           try {
-            const data = JSON.parse(response.responseText);
+            const data = JSON.parse(res.responseText);
             resolve(data.results || []);
           } catch (e) {
-            console.error('[Anti-Ragebait] Parse error:', e);
             resolve([]);
           }
         },
-        onerror: function (err) {
-          console.error('[Anti-Ragebait] Network error:', err);
+        onerror: function () {
           resolve([]);
         },
       });
@@ -319,81 +264,113 @@
   function renderClassification(item, res) {
     const { postEl, textEl } = item;
     if (!textEl || !textEl.parentElement) return;
-    if (postEl.querySelector('.x-jev-badge')) return;
+    if (postEl.hasAttribute('data-jev-handled')) return;
 
     const label = res.label;
     const confidence = res.confidence || 0;
-    const meta = BADGE_MAP[label] || BADGE_MAP['casual discussion / personal'];
-
-    const badge = document.createElement('div');
-    badge.className = 'x-jev-badge';
-    badge.style.backgroundColor = meta.bg;
-    badge.style.borderColor = meta.border;
-    badge.style.color = meta.color;
-    badge.title = `${meta.desc} (Confidence: ${Math.round(confidence * 100)}%)`;
-
-    const pct = Math.round(confidence * 100);
-    badge.innerHTML = `<span>${meta.text}</span><span class="x-jev-confidence">${pct}%</span>`;
-
     const parentContainer = textEl.parentElement;
-    parentContainer.insertBefore(badge, textEl);
 
-    if (meta.isRage && confidence >= CONFIG.blurThreshold) {
-      postEl.setAttribute('data-jev-rage', 'true');
-      blockedCount++;
+    // 1. SCAM
+    if (label === 'scam / fraudulent scheme' && confidence >= CONFIG.confidenceThreshold) {
+      postEl.setAttribute('data-jev-handled', 'true');
+      postEl.setAttribute('data-jev-scam', 'true');
+      blockedScamCount++;
       updatePill();
 
-      // Only mark the specific content elements (text and images/videos) to blur
-      // Never blur the parentContainer, so the warning box & button stay crystal clear!
       textEl.setAttribute('data-jev-blur-item', 'true');
-      textEl.classList.add('x-jev-blurred-content');
-
-      // Also blur non-avatar media
-      postEl.querySelectorAll('img, video').forEach((media) => {
-        const isAvatar = (media.closest('a[href*="/@"]') && (media.width < 50 || media.height < 50)) ||
-                         media.alt?.toLowerCase().includes('avatar') ||
-                         media.alt?.toLowerCase().includes('profile') ||
-                         media.src?.includes('profile_images');
-        if (!isAvatar) {
-          media.setAttribute('data-jev-blur-item', 'true');
-        }
+      postEl.querySelectorAll('img, video').forEach((m) => {
+        if (!m.closest('a[href*="/@"]')) m.setAttribute('data-jev-blur-item', 'true');
       });
 
-      let warningBox = postEl.querySelector('.x-jev-warning-box');
-      if (!warningBox) {
-        warningBox = document.createElement('div');
-        warningBox.className = 'x-jev-warning-box';
-        warningBox.innerHTML = `
-          <span>🛡️ <b>Rage Bait Warning:</b> Post hidden to protect your peace of mind.</span>
+      if (!postEl.querySelector('.x-jev-scam-box')) {
+        const box = document.createElement('div');
+        box.className = 'x-jev-scam-box';
+        const pct = Math.round(confidence * 100);
+        box.innerHTML = `
+          <div>
+            <b>🛑 Cảnh báo Lừa đảo / Bẫy tài chính (${pct}%):</b>
+            <div style="font-size:11px;opacity:0.9;">Dấu hiệu: Hứa hẹn thu nhập bất thường, lùa gà crypto.</div>
+          </div>
         `;
-
-        const revealBtn = document.createElement('button');
-        revealBtn.className = 'x-jev-reveal-btn';
-        revealBtn.textContent = 'Reveal post';
-        revealBtn.onclick = (e) => {
+        const btn = document.createElement('button');
+        btn.className = 'x-jev-reveal-btn';
+        btn.textContent = 'Xem bài viết';
+        btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
           const isRevealed = postEl.classList.toggle('x-jev-revealed');
-          revealBtn.textContent = isRevealed ? 'Re-blur' : 'Reveal post';
+          btn.textContent = isRevealed ? 'Ẩn lại' : 'Xem bài viết';
         };
-
-        warningBox.appendChild(revealBtn);
-        parentContainer.insertBefore(warningBox, badge);
+        box.appendChild(btn);
+        parentContainer.insertBefore(box, textEl);
       }
+      return;
+    }
 
-      if (CONFIG.autoBlurEnabled) {
-        postEl.classList.remove('x-jev-revealed');
-        if (warningBox) warningBox.style.display = 'flex';
-      } else {
-        postEl.classList.add('x-jev-revealed');
-        if (warningBox) warningBox.style.display = 'none';
+    // 2. RAGE BAIT
+    if (label === 'rage bait / outrage' && confidence >= CONFIG.confidenceThreshold) {
+      postEl.setAttribute('data-jev-handled', 'true');
+      postEl.setAttribute('data-jev-rage', 'true');
+      blockedRageCount++;
+      updatePill();
+
+      textEl.setAttribute('data-jev-blur-item', 'true');
+      postEl.querySelectorAll('img, video').forEach((m) => {
+        if (!m.closest('a[href*="/@"]')) m.setAttribute('data-jev-blur-item', 'true');
+      });
+
+      if (!postEl.querySelector('.x-jev-warning-box')) {
+        const box = document.createElement('div');
+        box.className = 'x-jev-warning-box';
+        const pct = Math.round(confidence * 100);
+        box.innerHTML = `<span>🛡️ <b>Rage Bait Warning (${pct}%):</b> Bài viết gây war đã bị làm mờ.</span>`;
+        const btn = document.createElement('button');
+        btn.className = 'x-jev-reveal-btn';
+        btn.textContent = 'Reveal post';
+        btn.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const isRevealed = postEl.classList.toggle('x-jev-revealed');
+          btn.textContent = isRevealed ? 'Re-blur' : 'Reveal post';
+        };
+        box.appendChild(btn);
+        parentContainer.insertBefore(box, textEl);
+      }
+      return;
+    }
+
+    // 3. SEEDING
+    if (label === 'bot seeding / affiliate spam / fake review' && confidence >= CONFIG.confidenceThreshold) {
+      postEl.setAttribute('data-jev-handled', 'true');
+      postEl.setAttribute('data-jev-seeding', 'true');
+      cleanedSeedingCount++;
+      updatePill();
+
+      textEl.setAttribute('data-jev-seeding-content', 'true');
+      if (!postEl.querySelector('.x-jev-seeding-collapsed')) {
+        const bar = document.createElement('div');
+        bar.className = 'x-jev-seeding-collapsed';
+        const pct = Math.round(confidence * 100);
+        bar.innerHTML = `
+          <div>🧹 Đã thu gọn bình luận nghi vấn <b>Seeding / Clone</b> (${pct}%)</div>
+          <span style="font-size:11px;font-weight:700;">Xem nội dung ▾</span>
+        `;
+        bar.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const isCollapsed = textEl.classList.toggle('x-jev-collapsed-body');
+          bar.querySelector('span').textContent = isCollapsed ? 'Xem nội dung ▾' : 'Thu gọn ▴';
+        };
+        parentContainer.insertBefore(bar, textEl);
+        if (CONFIG.collapseSeedingEnabled) {
+          textEl.classList.add('x-jev-collapsed-body');
+        }
       }
     }
   }
 
   async function flushQueue() {
     if (queue.length === 0) return;
-
     const currentBatch = queue.splice(0, 15);
     const uncachedIndices = [];
     const uncachedInputs = [];
@@ -424,25 +401,21 @@
     }
   }
 
-  function scanPosts() {
+  function scanFeed() {
     const platform = getPlatform();
 
     if (platform === 'threads') {
-      const postContainers = new Set();
-
+      const candidates = new Set();
       document.querySelectorAll('div[data-pressable-container="true"], article').forEach((el) => {
-        if (!el.hasAttribute('data-jev-scanned')) postContainers.add(el);
+        if (!el.hasAttribute('data-jev-scanned')) candidates.add(el);
       });
-
       document.querySelectorAll('a[href*="/post/"]').forEach((link) => {
         let container = link.closest('div[data-pressable-container="true"]') || link.closest('article');
         if (!container) {
           let curr = link.parentElement;
           let depth = 0;
           while (curr && curr !== document.body && depth < 8) {
-            const svgs = curr.querySelectorAll('svg').length;
-            const hasText = curr.querySelector('span[dir="auto"], div[dir="auto"]');
-            if (svgs >= 2 && hasText) {
+            if (curr.querySelectorAll('svg').length >= 2 && curr.querySelector('span[dir="auto"], div[dir="auto"]')) {
               container = curr;
               break;
             }
@@ -450,37 +423,47 @@
             depth++;
           }
         }
-        if (container && !container.hasAttribute('data-jev-scanned')) {
-          postContainers.add(container);
-        }
+        if (container && !container.hasAttribute('data-jev-scanned')) candidates.add(container);
       });
 
-      postContainers.forEach((post) => {
-        const textEls = post.querySelectorAll('span[dir="auto"], div[dir="auto"]');
-        let longestTextEl = null;
+      candidates.forEach((cont) => {
+        const textEls = cont.querySelectorAll('span[dir="auto"], div[dir="auto"]');
+        let bestEl = null;
         let maxLen = 0;
-
         textEls.forEach((el) => {
-          if (el.closest('button') || el.closest('time') || el.classList.contains('x-jev-badge')) return;
+          if (el.closest('button') || el.closest('time')) return;
           const t = el.innerText.trim();
-
           if (t.length < 15) return;
           if (/^\d+(\.\d+)?(k|m)?\s*(likes?|replies?|views?|lượt thích|câu trả lời|bình luận|chia sẻ)$/i.test(t)) return;
           if (/^(\d+\s*(s|m|h|d|w|giây|phút|giờ|ngày|tuần)|just now|vừa xong)$/i.test(t)) return;
-
           if (t.length > maxLen) {
             maxLen = t.length;
-            longestTextEl = el;
+            bestEl = el;
           }
         });
-
-        if (longestTextEl && maxLen >= 15) {
-          post.setAttribute('data-jev-scanned', 'true');
-          const cleanText = longestTextEl.innerText.trim();
+        if (bestEl && maxLen >= 15) {
+          cont.setAttribute('data-jev-scanned', 'true');
+          const cleanText = bestEl.innerText.trim();
           if (textCache.has(cleanText)) {
-            renderClassification({ postEl: post, text: cleanText, textEl: longestTextEl }, textCache.get(cleanText));
+            renderClassification({ postEl: cont, text: cleanText, textEl: bestEl }, textCache.get(cleanText));
           } else {
-            queue.push({ postEl: post, text: cleanText, textEl: longestTextEl });
+            queue.push({ postEl: cont, text: cleanText, textEl: bestEl });
+          }
+        }
+      });
+    } else if (platform === 'facebook') {
+      document.querySelectorAll('div[data-pagelet^="FeedUnit_"]:not([data-jev-scanned]), div[role="article"]:not([data-jev-scanned])').forEach((post) => {
+        const msgEl = post.querySelector('div[data-ad-rendering-role="story_message"], div[data-ad-preview="message"]') ||
+                      Array.from(post.querySelectorAll('div[dir="auto"], span[dir="auto"]')).find((el) => el.innerText.trim().length >= 20);
+        if (msgEl) {
+          const text = msgEl.innerText.trim();
+          if (text.length >= 15) {
+            post.setAttribute('data-jev-scanned', 'true');
+            if (textCache.has(text)) {
+              renderClassification({ postEl: post, text, textEl: msgEl }, textCache.get(text));
+            } else {
+              queue.push({ postEl: post, text, textEl: msgEl });
+            }
           }
         }
       });
@@ -499,22 +482,6 @@
           }
         }
       });
-    } else if (platform === 'facebook') {
-      document.querySelectorAll('div[data-pagelet^="FeedUnit_"]:not([data-jev-scanned]), div[role="article"]:not([data-jev-scanned])').forEach((post) => {
-        const msgEl = post.querySelector('div[data-ad-rendering-role="story_message"], div[data-ad-preview="message"]') ||
-                      Array.from(post.querySelectorAll('div[dir="auto"]')).find((el) => el.innerText.trim().length >= 25);
-        if (msgEl) {
-          const text = msgEl.innerText.trim();
-          if (text.length >= 15) {
-            post.setAttribute('data-jev-scanned', 'true');
-            if (textCache.has(text)) {
-              renderClassification({ postEl: post, text, textEl: msgEl }, textCache.get(text));
-            } else {
-              queue.push({ postEl: post, text, textEl: msgEl });
-            }
-          }
-        }
-      });
     }
 
     if (queue.length > 0) {
@@ -523,20 +490,14 @@
     }
   }
 
-  const observer = new MutationObserver(() => scanPosts());
-
-  function initObserver() {
-    if (document.body) {
+  const observer = new MutationObserver(() => scanFeed());
+  if (document.body) {
+    observer.observe(document.body, { childList: true, subtree: true });
+    scanFeed();
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
       observer.observe(document.body, { childList: true, subtree: true });
-      scanPosts();
-    } else {
-      document.addEventListener('DOMContentLoaded', () => {
-        observer.observe(document.body, { childList: true, subtree: true });
-        scanPosts();
-      });
-    }
+      scanFeed();
+    });
   }
-
-  initObserver();
-  console.log(`[Social Anti-Ragebait Userscript] Active on ${getPlatform().toUpperCase()} (${window.location.hostname}) 🛡️`);
 })();

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Social Anti-Ragebait Settings</title>
+  <title>Social Shield: All-in-One Guardian</title>
   <style>
     * {
       box-sizing: border-box;
@@ -13,7 +13,7 @@
     }
     body {
       width: 320px;
-      background: #0f172a;
+      background: #090d16;
       color: #f8fafc;
       padding: 16px;
       font-size: 13px;
@@ -24,19 +24,18 @@
       gap: 10px;
       margin-bottom: 14px;
       padding-bottom: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
     .logo {
-      width: 30px;
-      height: 30px;
-      background: #ef4444;
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #ef4444 0%, #a855f7 100%);
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 900;
+      font-size: 16px;
       color: #fff;
-      font-size: 15px;
     }
     .title h1 {
       font-size: 14px;
@@ -53,8 +52,8 @@
       margin-bottom: 12px;
     }
     .platform-tag {
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 6px;
       padding: 3px 8px;
       font-size: 10.5px;
@@ -78,11 +77,12 @@
       margin-bottom: 0;
     }
     .label {
-      font-weight: 500;
+      font-weight: 600;
       color: #e2e8f0;
+      font-size: 12px;
     }
     .sublabel {
-      font-size: 11px;
+      font-size: 10.5px;
       color: #64748b;
       margin-top: 2px;
     }
@@ -90,8 +90,9 @@
     .switch {
       position: relative;
       display: inline-block;
-      width: 40px;
+      width: 38px;
       height: 22px;
+      flex-shrink: 0;
     }
     .switch input {
       opacity: 0;
@@ -120,12 +121,20 @@
     input:checked + .slider {
       background-color: #ef4444;
     }
+    input.scam-toggle:checked + .slider {
+      background-color: #f97316;
+    }
+    input.seeding-toggle:checked + .slider {
+      background-color: #a855f7;
+    }
     input:checked + .slider:before {
-      transform: translateX(18px);
+      transform: translateX(16px);
     }
     /* Range input */
     .range-wrap {
-      margin-top: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
     input[type=range] {
       width: 100%;
@@ -140,22 +149,24 @@
       margin-top: 4px;
     }
     .stats {
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
       text-align: center;
-      padding: 10px;
-      background: rgba(239, 68, 68, 0.08);
-      border: 1px solid rgba(239, 68, 68, 0.2);
+      margin-bottom: 12px;
+    }
+    .stat-card {
+      padding: 8px 4px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 8px;
     }
     .stat-num {
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 800;
-      color: #f87171;
     }
     .stat-lbl {
-      font-size: 10.5px;
+      font-size: 9.5px;
       color: #cbd5e1;
       margin-top: 2px;
     }
@@ -165,7 +176,6 @@
       justify-content: space-between;
       font-size: 11px;
       color: #64748b;
-      margin-top: 10px;
     }
     .btn-reset {
       background: none;
@@ -176,7 +186,7 @@
       text-decoration: underline;
     }
     .btn-reset:hover {
-      color: #f87171;
+      color: #ef4444;
     }
   </style>
 </head>
@@ -184,57 +194,83 @@
   <div class="header">
     <div class="logo">🛡️</div>
     <div class="title">
-      <h1>Social Anti-Ragebait</h1>
-      <p>X, Threads & Facebook • Jev Model</p>
+      <h1>Social Shield</h1>
+      <p>All-in-One Guardian • Jev Zero-shot AI</p>
     </div>
   </div>
 
   <div class="platform-tags">
-    <span class="platform-tag">𝕏 Twitter</span>
     <span class="platform-tag">🧵 Threads</span>
     <span class="platform-tag">📘 Facebook</span>
+    <span class="platform-tag">𝕏 Twitter</span>
     <span class="platform-tag">🇻🇳 Tiếng Việt</span>
   </div>
 
   <div class="section">
     <div class="row">
       <div>
-        <div class="label">Auto-Blur Rage Bait</div>
-        <div class="sublabel">Blur toxic & outrage-inducing posts</div>
+        <div class="label">Làm mờ Rage Bait & War</div>
+        <div class="sublabel">Chặn bài phốt, kích động thù hận, drama</div>
       </div>
       <label class="switch">
-        <input type="checkbox" id="autoBlurToggle" checked>
+        <input type="checkbox" id="autoBlurRageToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+      <div>
+        <div class="label">Chặn Bẫy Lừa Đảo (Scams)</div>
+        <div class="sublabel">Làm mờ bẫy CTV, lùa gà crypto, đa cấp</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="blockScamsToggle" class="scam-toggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+      <div>
+        <div class="label">Thu gọn Comment Seeding</div>
+        <div class="sublabel">Tự động ẩn bot clone, "check ib", review ảo</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="collapseSeedingToggle" class="seeding-toggle" checked>
         <span class="slider"></span>
       </label>
     </div>
 
     <div class="range-wrap">
       <div class="row" style="margin-bottom: 2px;">
-        <span class="label" style="font-size: 12px;">Sensitivity (Threshold)</span>
+        <span class="label" style="font-size: 11px;">Độ nhạy phân loại (Threshold)</span>
         <span id="thresholdVal" style="font-weight: 700; color: #f87171;">50%</span>
       </div>
       <input type="range" id="thresholdRange" min="30" max="80" step="5" value="50">
       <div class="range-val">
-        <span>30% (Aggressive)</span>
-        <span>80% (Obvious only)</span>
+        <span>30% (Chặt chẽ)</span>
+        <span>80% (Rõ ràng mới lọc)</span>
       </div>
     </div>
   </div>
 
   <div class="stats">
-    <div>
-      <div class="stat-num" id="blockedCounter">0</div>
-      <div class="stat-lbl">Toxic Posts Blocked</div>
+    <div class="stat-card">
+      <div class="stat-num" id="rageCounter" style="color: #f87171;">0</div>
+      <div class="stat-lbl">Rage Bait Chặn</div>
     </div>
-    <div>
-      <div class="stat-num" style="color: #4ade80;">~250ms</div>
-      <div class="stat-lbl">Inference Latency</div>
+    <div class="stat-card">
+      <div class="stat-num" id="scamCounter" style="color: #fb923c;">0</div>
+      <div class="stat-lbl">Lừa Đảo Chặn</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="seedingCounter" style="color: #c084fc;">0</div>
+      <div class="stat-lbl">Seeding Đã Ẩn</div>
     </div>
   </div>
 
   <div class="footer">
-    <span>Multilingual Zero-shot Model</span>
-    <button class="btn-reset" id="resetStats">Reset counter</button>
+    <span>Jev Multilingual AI (~250ms)</span>
+    <button class="btn-reset" id="resetStats">Đặt lại số đếm</button>
   </div>
 
   <script src="popup.js"></script>
