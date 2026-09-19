@@ -38,6 +38,7 @@
     filterWholesomeEnabled: true,
     filterDoomEnabled: true,
     filterFomoEnabled: true,
+    filterCasualEnabled: true,
     customLabels: [],
     monkModeEnabled: true,
     blockReelsEnabled: true,
@@ -57,6 +58,7 @@
   let wholesomeCount = 0;
   let doomCount = 0;
   let fomoCount = 0;
+  let casualCount = 0;
   let customCount = 0;
 
   function getPlatform() {
@@ -506,6 +508,18 @@
         color: '#fde047',
       },
     },
+    'other / casual discussion': {
+      configKey: 'filterCasualEnabled',
+      countKey: 'casualCount',
+      badge: {
+        text: '💬 Thảo luận / Khác',
+        desc: 'Everyday casual talk or general post (Thảo luận bình thường)',
+        bg: 'rgba(100, 116, 139, 0.15)',
+        border: '#64748b',
+        color: '#94a3b8',
+      },
+      instruction: 'everyday personal chatter, news, generic talk, or any content that does not fit the other categories.',
+    },
     'rage bait / toxic / hostile / dismissive negativity': {
       configKey: 'autoBlurRageEnabled',
       instruction: 'provocative content designed to incite outrage, anger, toxic drama, hostile or dismissive negativity, cynicism, or insults.',
@@ -530,13 +544,7 @@
     'wholesome / positive': TAXONOMY_CATALOG['wholesome / positive'].badge,
     'fearmongering / doom': TAXONOMY_CATALOG['fearmongering / doom'].badge,
     'fomo / hype': TAXONOMY_CATALOG['fomo / hype'].badge,
-    'other / casual discussion': {
-      text: '💬 Thảo luận / Khác',
-      desc: 'Everyday casual talk or general post (Thảo luận bình thường)',
-      bg: 'rgba(100, 116, 139, 0.15)',
-      border: '#64748b',
-      color: '#94a3b8',
-    },
+    'other / casual discussion': TAXONOMY_CATALOG['other / casual discussion'].badge,
   };
 
   function getActiveTaxonomy(cfg = {}) {
@@ -544,6 +552,7 @@
     const instructionsList = [];
 
     Object.entries(TAXONOMY_CATALOG).forEach(([label, def]) => {
+      if (label === CATCH_ALL_LABEL) return; // Always appended at the end
       if (cfg && cfg[def.configKey] !== false) {
         activeLabels.push(label);
         instructionsList.push(`"${label}": ${def.instruction}`);
@@ -648,6 +657,9 @@
     }
     if (CONFIG.filterFomoEnabled !== false && fomoCount > 0) {
       parts.push(`⚡ FOMO: <span style="color:#fde047">${fomoCount}</span>`);
+    }
+    if (CONFIG.filterCasualEnabled !== false && casualCount > 0) {
+      parts.push(`💬 Thảo luận: <span style="color:#94a3b8">${casualCount}</span>`);
     }
     const hasActiveCustom = Array.isArray(CONFIG.customLabels) && CONFIG.customLabels.some((c) => (c && typeof c === 'object' ? c.enabled !== false : Boolean(c)));
     if (hasActiveCustom && customCount > 0) {
@@ -949,7 +961,8 @@
     }
 
     // 4. CURATED & CUSTOM CATEGORY BADGES
-    if (label === 'other / casual discussion') {
+    const isActivity = window.location.pathname.includes('/activity');
+    if (label === 'other / casual discussion' && (CONFIG.filterCasualEnabled === false || isActivity)) {
       postEl.setAttribute('data-jev-handled', 'true');
       return;
     }
@@ -995,6 +1008,7 @@
         else if (label === 'wholesome / positive') wholesomeCount++;
         else if (label === 'fearmongering / doom') doomCount++;
         else if (label === 'fomo / hype') fomoCount++;
+        else if (label === 'other / casual discussion') casualCount++;
         else if (isCustom) customCount++;
         updatePill();
       }
@@ -1582,7 +1596,7 @@
       const cat = badge.getAttribute('data-jev-badge-category');
       const def = TAXONOMY_CATALOG[cat];
       let isHidden = false;
-      if (def && CONFIG[def.configKey] === false) {
+      if ((def && CONFIG[def.configKey] === false) || (cat === 'other / casual discussion' && window.location.pathname.includes('/activity'))) {
         isHidden = true;
       } else if (Array.isArray(CONFIG.customLabels)) {
         const customFound = CONFIG.customLabels.find(

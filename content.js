@@ -13,6 +13,7 @@
     filterWholesomeEnabled: true,
     filterDoomEnabled: true,
     filterFomoEnabled: true,
+    filterCasualEnabled: true,
     monkModeEnabled: true,       // Hardcore Monk Mode: Block all photos/videos with women & goon-bait
     blockReelsEnabled: true,     // Block Reels pop-ups & short videos on Facebook
     autoBlurRageEnabled: true,
@@ -33,6 +34,7 @@
   let wholesomeCount = 0;
   let doomCount = 0;
   let fomoCount = 0;
+  let casualCount = 0;
   let customCount = 0;
 
   function getPlatform() {
@@ -94,6 +96,7 @@
         'filterWholesomeEnabled',
         'filterDoomEnabled',
         'filterFomoEnabled',
+        'filterCasualEnabled',
         'customLabels',
         'monkModeEnabled',
         'blockReelsEnabled',
@@ -112,6 +115,7 @@
         'wholesomeCount',
         'doomCount',
         'fomoCount',
+        'casualCount',
         'customCount',
       ],
       (res) => {
@@ -121,6 +125,7 @@
         if (typeof res.filterWholesomeEnabled === 'boolean') config.filterWholesomeEnabled = res.filterWholesomeEnabled;
         if (typeof res.filterDoomEnabled === 'boolean') config.filterDoomEnabled = res.filterDoomEnabled;
         if (typeof res.filterFomoEnabled === 'boolean') config.filterFomoEnabled = res.filterFomoEnabled;
+        if (typeof res.filterCasualEnabled === 'boolean') config.filterCasualEnabled = res.filterCasualEnabled;
         if (Array.isArray(res.customLabels)) config.customLabels = res.customLabels;
         if (typeof res.monkModeEnabled === 'boolean') config.monkModeEnabled = res.monkModeEnabled;
         if (typeof res.blockReelsEnabled === 'boolean') config.blockReelsEnabled = res.blockReelsEnabled;
@@ -142,6 +147,7 @@
         if (typeof res.wholesomeCount === 'number') wholesomeCount = res.wholesomeCount;
         if (typeof res.doomCount === 'number') doomCount = res.doomCount;
         if (typeof res.fomoCount === 'number') fomoCount = res.fomoCount;
+        if (typeof res.casualCount === 'number') casualCount = res.casualCount;
         if (typeof res.customCount === 'number') customCount = res.customCount;
 
         updatePill();
@@ -156,6 +162,7 @@
       'filterWholesomeEnabled',
       'filterDoomEnabled',
       'filterFomoEnabled',
+      'filterCasualEnabled',
       'customLabels',
       'autoBlurRageEnabled',
       'blockScamsEnabled',
@@ -182,6 +189,7 @@
         if (typeof request.config.filterWholesomeEnabled === 'boolean') config.filterWholesomeEnabled = request.config.filterWholesomeEnabled;
         if (typeof request.config.filterDoomEnabled === 'boolean') config.filterDoomEnabled = request.config.filterDoomEnabled;
         if (typeof request.config.filterFomoEnabled === 'boolean') config.filterFomoEnabled = request.config.filterFomoEnabled;
+        if (typeof request.config.filterCasualEnabled === 'boolean') config.filterCasualEnabled = request.config.filterCasualEnabled;
         if (Array.isArray(request.config.customLabels)) config.customLabels = request.config.customLabels;
         config.monkModeEnabled = request.config.monkModeEnabled;
         if (typeof request.config.blockReelsEnabled === 'boolean') config.blockReelsEnabled = request.config.blockReelsEnabled;
@@ -205,6 +213,7 @@
         wholesomeCount = 0;
         doomCount = 0;
         fomoCount = 0;
+        casualCount = 0;
         customCount = 0;
         monkModeBlockedCount = 0;
         blockedRageCount = 0;
@@ -229,6 +238,7 @@
           'filterWholesomeEnabled',
           'filterDoomEnabled',
           'filterFomoEnabled',
+          'filterCasualEnabled',
           'customLabels',
           'monkModeEnabled',
           'blockReelsEnabled',
@@ -260,6 +270,7 @@
         if (changes.wholesomeCount) wholesomeCount = changes.wholesomeCount.newValue || 0;
         if (changes.doomCount) doomCount = changes.doomCount.newValue || 0;
         if (changes.fomoCount) fomoCount = changes.fomoCount.newValue || 0;
+        if (changes.casualCount) casualCount = changes.casualCount.newValue || 0;
         if (changes.customCount) customCount = changes.customCount.newValue || 0;
         if (changes.monkModeBlockedCount) monkModeBlockedCount = changes.monkModeBlockedCount.newValue || 0;
         if (changes.blockedRageCount) blockedRageCount = changes.blockedRageCount.newValue || 0;
@@ -337,14 +348,27 @@
     },
     'fomo / hype': {
       configKey: 'filterFomoEnabled',
-      instruction: 'exaggerated financial hype, crypto shill, urgency to buy, get-rich-quick, fear of missing out.',
+      countKey: 'fomoCount',
       badge: {
         text: '⚡ FOMO / Hype',
-        desc: 'Sensationalized hype, crypto shill, or fear of missing out (Thổi phồng, lùa gà fomo)',
-        bg: 'rgba(234, 179, 8, 0.18)',
+        desc: 'Hyperbolic hype, get-rich-quick claims (Lùa gà, thổi phồng ảo)',
+        bg: 'rgba(234, 179, 8, 0.15)',
         border: '#eab308',
         color: '#fde047',
       },
+      instruction: 'exaggerated breakthrough hype, urgency inducing claims, overnight wealth promises, or artificial urgency.',
+    },
+    'other / casual discussion': {
+      configKey: 'filterCasualEnabled',
+      countKey: 'casualCount',
+      badge: {
+        text: '💬 Thảo luận / Khác',
+        desc: 'Everyday casual talk or general post (Thảo luận bình thường)',
+        bg: 'rgba(100, 116, 139, 0.15)',
+        border: '#64748b',
+        color: '#94a3b8',
+      },
+      instruction: 'everyday personal chatter, news, generic talk, or any content that does not fit the other categories.',
     },
     'rage bait / toxic / hostile / dismissive negativity': {
       configKey: 'autoBlurRageEnabled',
@@ -370,13 +394,7 @@
     'wholesome / positive': TAXONOMY_CATALOG['wholesome / positive'].badge,
     'fearmongering / doom': TAXONOMY_CATALOG['fearmongering / doom'].badge,
     'fomo / hype': TAXONOMY_CATALOG['fomo / hype'].badge,
-    'other / casual discussion': {
-      text: '💬 Thảo luận / Khác',
-      desc: 'Everyday casual talk or general post (Thảo luận bình thường)',
-      bg: 'rgba(100, 116, 139, 0.15)',
-      border: '#64748b',
-      color: '#94a3b8',
-    },
+    'other / casual discussion': TAXONOMY_CATALOG['other / casual discussion'].badge,
   };
 
   function getActiveTaxonomy(cfg = {}) {
@@ -384,6 +402,7 @@
     const instructionsList = [];
 
     Object.entries(TAXONOMY_CATALOG).forEach(([label, def]) => {
+      if (label === CATCH_ALL_LABEL) return; // Always appended at the end
       if (cfg && cfg[def.configKey] !== false) {
         activeLabels.push(label);
         instructionsList.push(`"${label}": ${def.instruction}`);
@@ -484,6 +503,9 @@
     }
     if (config.filterFomoEnabled !== false && fomoCount > 0) {
       parts.push(`⚡ FOMO: <span style="color:#fde047">${fomoCount}</span>`);
+    }
+    if (config.filterCasualEnabled !== false && casualCount > 0) {
+      parts.push(`💬 Thảo luận: <span style="color:#94a3b8">${casualCount}</span>`);
     }
     const hasActiveCustom = Array.isArray(config.customLabels) && config.customLabels.some((c) => (c && typeof c === 'object' ? c.enabled !== false : Boolean(c)));
     if (hasActiveCustom && customCount > 0) {
@@ -613,7 +635,7 @@
       const cat = badge.getAttribute('data-jev-badge-category');
       const def = TAXONOMY_CATALOG[cat];
       let isHidden = false;
-      if (def && config[def.configKey] === false) {
+      if ((def && config[def.configKey] === false) || (cat === 'other / casual discussion' && window.location.pathname.includes('/activity'))) {
         isHidden = true;
       } else if (Array.isArray(config.customLabels)) {
         const customFound = config.customLabels.find(
@@ -829,7 +851,7 @@
     if (label === 'scam / fraudulent scheme' && meetsThreshold) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-scam', 'true');
-      console.warn(`[Social Shield 🛑 CHẶN SCAM]`, item.text);
+      console.info(`[Social Shield 🛑 CHẶN SCAM]`, item.text);
       blockedScamCount++;
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         chrome.storage.local.set({ blockedScamCount });
@@ -881,7 +903,7 @@
     if (label === 'rage bait / toxic / hostile / dismissive negativity' && meetsThreshold) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-rage', 'true');
-      console.warn(`[Social Shield 🚨 CHẶN RAGE BAIT / TOXIC]`, item.text);
+      console.info(`[Social Shield 🚨 CHẶN RAGE BAIT / TOXIC]`, item.text);
       blockedRageCount++;
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         chrome.storage.local.set({ blockedRageCount });
@@ -973,9 +995,10 @@
     }
 
     // --- PRIORITY 5: CURATED & CUSTOM CATEGORY BADGES ---
-    if (label === 'other / casual discussion') {
+    const isActivity = window.location.pathname.includes('/activity');
+    if (label === 'other / casual discussion' && (config.filterCasualEnabled === false || isActivity)) {
       postEl.setAttribute('data-jev-handled', 'true');
-      return; // Do not clutter feed with badges on regular casual posts
+      return;
     }
 
     const def = TAXONOMY_CATALOG[label];
@@ -1043,6 +1066,11 @@
           fomoCount++;
           if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
             chrome.storage.local.set({ fomoCount });
+          }
+        } else if (label === 'other / casual discussion') {
+          casualCount++;
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ casualCount });
           }
         } else if (isCustom) {
           customCount++;

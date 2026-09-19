@@ -82,15 +82,23 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     }
   });
 
-  test("Badge logic: suppresses badge for 'other / casual discussion' and validates threshold gating", () => {
-    function shouldRenderBadge(label, confidence, threshold) {
-      if (label === 'other / casual discussion') return false;
+  test("Badge logic: renders badge for 'other / casual discussion' when enabled, suppresses when disabled or on /activity", () => {
+    function shouldRenderBadge(label, confidence, threshold, config = { filterCasualEnabled: true }, isActivity = false) {
+      if (label === 'other / casual discussion' && (config.filterCasualEnabled === false || isActivity)) return false;
       const meta = BADGE_MAP[label];
       if (!meta) return false;
       return confidence >= threshold;
     }
 
-    expect(shouldRenderBadge('other / casual discussion', 0.99, 0.30)).toBe(false);
+    // Casual enabled and above threshold: renders
+    expect(shouldRenderBadge('other / casual discussion', 0.99, 0.30, { filterCasualEnabled: true }, false)).toBe(true);
+    // Casual enabled but below threshold: suppresses
+    expect(shouldRenderBadge('other / casual discussion', 0.20, 0.30, { filterCasualEnabled: true }, false)).toBe(false);
+    // Casual disabled via setting: suppresses
+    expect(shouldRenderBadge('other / casual discussion', 0.99, 0.30, { filterCasualEnabled: false }, false)).toBe(false);
+    // Casual on /activity page: suppresses
+    expect(shouldRenderBadge('other / casual discussion', 0.99, 0.30, { filterCasualEnabled: true }, true)).toBe(false);
+
     expect(shouldRenderBadge('self-improvement / motivational', 0.85, 0.30)).toBe(true);
     expect(shouldRenderBadge('self-improvement / motivational', 0.20, 0.30)).toBe(false);
     expect(shouldRenderBadge('meme / humor / satire', 0.75, 0.50)).toBe(true);
@@ -405,6 +413,7 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
       'filterWholesomeEnabled',
       'filterDoomEnabled',
       'filterFomoEnabled',
+      'filterCasualEnabled',
       'customLabels',
       'autoBlurRageEnabled',
       'blockScamsEnabled',
@@ -416,6 +425,7 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(TAXONOMY_KEYS.includes('filterWholesomeEnabled')).toBe(true);
     expect(TAXONOMY_KEYS.includes('filterDoomEnabled')).toBe(true);
     expect(TAXONOMY_KEYS.includes('filterFomoEnabled')).toBe(true);
+    expect(TAXONOMY_KEYS.includes('filterCasualEnabled')).toBe(true);
     expect(TAXONOMY_KEYS.includes('customLabels')).toBe(true);
     expect(TAXONOMY_KEYS.includes('autoBlurRageEnabled')).toBe(true);
     expect(TAXONOMY_KEYS.includes('hideFloatingPill')).toBe(false);

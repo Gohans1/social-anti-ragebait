@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const filterWholesomeToggle = document.getElementById('filterWholesomeToggle');
   const filterDoomToggle = document.getElementById('filterDoomToggle');
   const filterFomoToggle = document.getElementById('filterFomoToggle');
+  const filterCasualToggle = document.getElementById('filterCasualToggle');
   const monkModeToggle = document.getElementById('monkModeToggle');
   const blockReelsToggle = document.getElementById('blockReelsToggle');
   const autoBlurRageToggle = document.getElementById('autoBlurRageToggle');
@@ -24,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const wholesomeCounter = document.getElementById('wholesomeCounter');
   const doomCounter = document.getElementById('doomCounter');
   const fomoCounter = document.getElementById('fomoCounter');
+  const casualCounter = document.getElementById('casualCounter');
   const customCounter = document.getElementById('customCounter');
   const resetStats = document.getElementById('resetStats');
 
@@ -158,6 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'filterWholesomeEnabled',
       'filterDoomEnabled',
       'filterFomoEnabled',
+      'filterCasualEnabled',
       'customLabels',
       'monkModeEnabled',
       'blockReelsEnabled',
@@ -175,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'wholesomeCount',
       'doomCount',
       'fomoCount',
+      'casualCount',
       'customCount',
     ],
     (res) => {
@@ -201,6 +205,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (typeof res.filterFomoEnabled === 'boolean' && filterFomoToggle) {
         filterFomoToggle.checked = res.filterFomoEnabled;
+      }
+      if (typeof res.filterCasualEnabled === 'boolean' && filterCasualToggle) {
+        filterCasualToggle.checked = res.filterCasualEnabled;
       }
       if (typeof res.monkModeEnabled === 'boolean') {
         monkModeToggle.checked = res.monkModeEnabled;
@@ -252,6 +259,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof res.fomoCount === 'number' && fomoCounter) {
         fomoCounter.textContent = res.fomoCount;
       }
+      if (typeof res.casualCount === 'number' && casualCounter) {
+        casualCounter.textContent = res.casualCount;
+      }
       if (typeof res.customCount === 'number' && customCounter) {
         customCounter.textContent = res.customCount;
       }
@@ -266,6 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
       filterWholesomeEnabled: filterWholesomeToggle ? filterWholesomeToggle.checked : true,
       filterDoomEnabled: filterDoomToggle ? filterDoomToggle.checked : true,
       filterFomoEnabled: filterFomoToggle ? filterFomoToggle.checked : true,
+      filterCasualEnabled: filterCasualToggle ? filterCasualToggle.checked : true,
       customLabels: customLabels,
       monkModeEnabled: monkModeToggle.checked,
       blockReelsEnabled: blockReelsToggle.checked,
@@ -297,6 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filterWholesomeToggle) filterWholesomeToggle.addEventListener('change', saveAndNotify);
   if (filterDoomToggle) filterDoomToggle.addEventListener('change', saveAndNotify);
   if (filterFomoToggle) filterFomoToggle.addEventListener('change', saveAndNotify);
+  if (filterCasualToggle) filterCasualToggle.addEventListener('change', saveAndNotify);
   monkModeToggle.addEventListener('change', saveAndNotify);
   blockReelsToggle.addEventListener('change', saveAndNotify);
   autoBlurRageToggle.addEventListener('change', saveAndNotify);
@@ -322,6 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
       wholesomeCount: 0,
       doomCount: 0,
       fomoCount: 0,
+      casualCount: 0,
       customCount: 0,
     });
     if (motivationalCounter) motivationalCounter.textContent = '0';
@@ -333,6 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (wholesomeCounter) wholesomeCounter.textContent = '0';
     if (doomCounter) doomCounter.textContent = '0';
     if (fomoCounter) fomoCounter.textContent = '0';
+    if (casualCounter) casualCounter.textContent = '0';
     if (customCounter) customCounter.textContent = '0';
 
     chrome.tabs.query({}, (tabs) => {
@@ -372,6 +386,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (changes.fomoCount && fomoCounter) {
         fomoCounter.textContent = changes.fomoCount.newValue || 0;
+      }
+      if (changes.casualCount && casualCounter) {
+        casualCounter.textContent = changes.casualCount.newValue || 0;
       }
       if (changes.customCount && customCounter) {
         customCounter.textContent = changes.customCount.newValue || 0;

@@ -219,6 +219,9 @@
     input.pill-toggle:checked + .slider {
       background-color: #0284c7;
     }
+    input.casual-toggle:checked + .slider {
+      background-color: #64748b;
+    }
     input:checked + .slider:before {
       transform: translateX(16px);
     }
@@ -368,6 +371,17 @@
       </label>
     </div>
 
+    <div class="row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06);">
+      <div>
+        <div class="label" style="color: #94a3b8;">💬 Thảo luận / Khác (Casual)</div>
+        <div class="sublabel">Hiện nhãn bài viết thông thường, chia sẻ thường nhật</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="filterCasualToggle" class="casual-toggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
     <!-- Cụm Nhãn Tự Điền (Custom Labels) -->
     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255, 255, 255, 0.12);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
@@ -507,7 +521,11 @@
       <div class="stat-num" id="fomoCounter" style="color: #fde047;">0</div>
       <div class="stat-lbl">⚡ FOMO</div>
     </div>
-    <div class="stat-card" style="grid-column: span 3; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px;">
+    <div class="stat-card">
+      <div class="stat-num" id="casualCounter" style="color: #94a3b8;">0</div>
+      <div class="stat-lbl">💬 Thảo luận</div>
+    </div>
+    <div class="stat-card" style="grid-column: span 2; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px;">
       <div class="stat-lbl" style="margin: 0; font-size: 11px; color: #c084fc;">🏷️ Nhãn Tự Điền (Custom)</div>
       <div class="stat-num" id="customCounter" style="color: #c084fc; font-size: 14px;">0</div>
     </div>
