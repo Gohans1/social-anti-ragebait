@@ -112,8 +112,29 @@
         updatePill();
         applyStateToDOM();
         sendResponse({ status: 'ok' });
+      } else if (request.type === 'RESET_STATS') {
+        motivationalCount = 0;
+        memeCount = 0;
+        deepDiveCount = 0;
+        monkModeBlockedCount = 0;
+        blockedRageCount = 0;
+        blockedScamCount = 0;
+        cleanedSeedingCount = 0;
+        updatePill();
+        sendResponse({ status: 'ok' });
       }
     });
+
+    if (chrome.storage && chrome.storage.onChanged) {
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area !== 'local') return;
+        if (changes.motivationalCount) motivationalCount = changes.motivationalCount.newValue || 0;
+        if (changes.memeCount) memeCount = changes.memeCount.newValue || 0;
+        if (changes.deepDiveCount) deepDiveCount = changes.deepDiveCount.newValue || 0;
+        if (changes.monkModeBlockedCount) monkModeBlockedCount = changes.monkModeBlockedCount.newValue || 0;
+        updatePill();
+      });
+    }
   }
 
   const LABELS = [
@@ -639,28 +660,32 @@
 
     // --- PRIORITY 5: CURATED CATEGORY BADGES ---
     if (label === 'other / casual discussion') {
+      postEl.setAttribute('data-jev-handled', 'true');
       return; // Do not clutter feed with badges on regular casual posts
     }
 
     const meta = BADGE_MAP[label];
-    if (meta && !postEl.querySelector('.x-jev-badge')) {
-      if (label === 'self-improvement / motivational') {
-        motivationalCount++;
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-          chrome.storage.local.set({ motivationalCount });
+    if (meta && meetsThreshold && !postEl.querySelector('.x-jev-badge')) {
+      if (!postEl.hasAttribute('data-jev-counted')) {
+        postEl.setAttribute('data-jev-counted', 'true');
+        if (label === 'self-improvement / motivational') {
+          motivationalCount++;
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ motivationalCount });
+          }
+        } else if (label === 'meme / humor / satire') {
+          memeCount++;
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ memeCount });
+          }
+        } else if (label === 'deep dive / technical breakdown / industry insider') {
+          deepDiveCount++;
+          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            chrome.storage.local.set({ deepDiveCount });
+          }
         }
-      } else if (label === 'meme / humor / satire') {
-        memeCount++;
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-          chrome.storage.local.set({ memeCount });
-        }
-      } else if (label === 'deep dive / technical breakdown / industry insider') {
-        deepDiveCount++;
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-          chrome.storage.local.set({ deepDiveCount });
-        }
+        updatePill();
       }
-      updatePill();
 
       const badge = document.createElement('div');
       badge.className = 'x-jev-badge';
@@ -669,9 +694,16 @@
       badge.style.color = meta.color;
       badge.title = `${meta.desc} (Confidence: ${Math.round(confidence * 100)}%)`;
 
-      const pct = Math.round(confidence * 100);
-      badge.innerHTML = `<span>${meta.text}</span><span class="x-jev-confidence">${pct}%</span>`;
+      const textSpan = document.createElement('span');
+      textSpan.textContent = meta.text;
+      const confSpan = document.createElement('span');
+      confSpan.className = 'x-jev-confidence';
+      confSpan.textContent = `${Math.round(confidence * 100)}%`;
+
+      badge.appendChild(textSpan);
+      badge.appendChild(confSpan);
       parentContainer.insertBefore(badge, textEl);
+      postEl.setAttribute('data-jev-handled', 'true');
     }
   }
 

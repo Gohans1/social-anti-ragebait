@@ -61,6 +61,38 @@
     /(\b(woman|women|girl|girls|female|lady|ladies|bikini|cleavage|swimwear|selfie|thirst\s*trap|goon|gooning|onlyfans|fansly)\b|phụ nữ|con gái|cô gái|gái xinh|nữ sinh|hot girl|mặc hở|khoe thân|áo tắm|nội y|gái|mlem)/i;
 
   const css = `
+    .x-jev-badge {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      padding: 3px 10px !important;
+      border-radius: 9999px !important;
+      font-size: 11.5px !important;
+      font-weight: 600 !important;
+      letter-spacing: 0.02em !important;
+      margin: 4px 0 8px 0 !important;
+      border: 1px solid !important;
+      width: fit-content !important;
+      user-select: none !important;
+      transition: all 0.2s ease !important;
+      cursor: help !important;
+      line-height: 1.2 !important;
+      z-index: 10 !important;
+      position: relative !important;
+      filter: none !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    }
+    .x-jev-badge:hover {
+      filter: brightness(1.2) !important;
+      transform: translateY(-1px) !important;
+    }
+    .x-jev-confidence {
+      font-size: 10px !important;
+      opacity: 0.85 !important;
+      font-weight: 500 !important;
+    }
     [data-monk-blocked="true"]:not(.monk-revealed) img:not([alt*="avatar"]):not([alt*="profile"]):not([src*="profile_images"]),
     [data-monk-blocked="true"]:not(.monk-revealed) video {
       filter: blur(28px) grayscale(60%) !important;
@@ -753,14 +785,20 @@
     }
 
     // 5. CURATED CATEGORY BADGES
-    if (label === 'other / casual discussion') return;
+    if (label === 'other / casual discussion') {
+      postEl.setAttribute('data-jev-handled', 'true');
+      return;
+    }
 
     const meta = BADGE_MAP[label];
-    if (meta && !postEl.querySelector('.x-jev-badge')) {
-      if (label === 'self-improvement / motivational') motivationalCount++;
-      else if (label === 'meme / humor / satire') memeCount++;
-      else if (label === 'deep dive / technical breakdown / industry insider') deepDiveCount++;
-      updatePill();
+    if (meta && confidence >= CONFIG.confidenceThreshold && !postEl.querySelector('.x-jev-badge')) {
+      if (!postEl.hasAttribute('data-jev-counted')) {
+        postEl.setAttribute('data-jev-counted', 'true');
+        if (label === 'self-improvement / motivational') motivationalCount++;
+        else if (label === 'meme / humor / satire') memeCount++;
+        else if (label === 'deep dive / technical breakdown / industry insider') deepDiveCount++;
+        updatePill();
+      }
 
       const badge = document.createElement('div');
       badge.className = 'x-jev-badge';
@@ -769,9 +807,16 @@
       badge.style.color = meta.color;
       badge.title = `${meta.desc} (Confidence: ${Math.round(confidence * 100)}%)`;
 
-      const pct = Math.round(confidence * 100);
-      badge.innerHTML = `<span>${meta.text}</span><span class="x-jev-confidence">${pct}%</span>`;
+      const textSpan = document.createElement('span');
+      textSpan.textContent = meta.text;
+      const confSpan = document.createElement('span');
+      confSpan.className = 'x-jev-confidence';
+      confSpan.textContent = `${Math.round(confidence * 100)}%`;
+
+      badge.appendChild(textSpan);
+      badge.appendChild(confSpan);
       parentContainer.insertBefore(badge, textEl);
+      postEl.setAttribute('data-jev-handled', 'true');
     }
   }
 
@@ -1365,6 +1410,8 @@
           }
 
           cont.setAttribute('data-jev-scanned', 'true');
+          scannedCount++;
+          updatePill();
           const cleanText = targetItem.text;
           if (textCache.has(cleanText)) {
             renderClassification({ postEl: cont, text: cleanText, textEl: targetItem.el }, textCache.get(cleanText));
@@ -1387,6 +1434,8 @@
           text = text.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
           if (text.length >= 2) {
             post.setAttribute('data-jev-scanned', 'true');
+            scannedCount++;
+            updatePill();
             if (textCache.has(text)) {
               renderClassification({ postEl: post, text, textEl: msgEl }, textCache.get(text));
             } else {
@@ -1408,6 +1457,8 @@
           text = text.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
           if (text.length >= 2) {
             post.setAttribute('data-jev-scanned', 'true');
+            scannedCount++;
+            updatePill();
             if (textCache.has(text)) {
               renderClassification({ postEl: post, text, textEl }, textCache.get(text));
             } else {

@@ -141,5 +141,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (memeCounter) memeCounter.textContent = '0';
     if (deepDiveCounter) deepDiveCounter.textContent = '0';
     if (monkCounter) monkCounter.textContent = '0';
+
+    chrome.tabs.query({}, (tabs) => {
+      if (tabs) {
+        tabs.forEach((tab) => {
+          chrome.tabs.sendMessage(tab.id, { type: 'RESET_STATS' }).catch(() => {});
+        });
+      }
+    });
   });
 });

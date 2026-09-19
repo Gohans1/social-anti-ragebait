@@ -55,6 +55,22 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
     }
   });
 
+  test("Badge logic: suppresses badge for 'other / casual discussion'", () => {
+    function shouldRenderBadge(label, confidence, threshold) {
+      if (label === 'other / casual discussion') return false;
+      const meta = BADGE_MAP[label];
+      if (!meta) return false;
+      return confidence >= threshold;
+    }
+
+    expect(shouldRenderBadge('other / casual discussion', 0.99, 0.30)).toBe(false);
+    expect(shouldRenderBadge('self-improvement / motivational', 0.85, 0.30)).toBe(true);
+    expect(shouldRenderBadge('self-improvement / motivational', 0.20, 0.30)).toBe(false);
+    expect(shouldRenderBadge('meme / humor / satire', 0.75, 0.50)).toBe(true);
+    expect(shouldRenderBadge('meme / humor / satire', 0.40, 0.50)).toBe(false);
+    expect(shouldRenderBadge('deep dive / technical breakdown / industry insider', 0.90, 0.35)).toBe(true);
+  });
+
   test("Live classifier.dev API correctly maps samples to the 4 categories", async () => {
     const inputs = [
       "Kỷ luật thép mỗi ngày dậy 5h sáng chạy bộ và thiền định",
@@ -77,11 +93,6 @@ describe("Custom 4-Filter Classifier Taxonomy", () => {
     const data = await res.json();
     expect(data.results).toBeDefined();
     expect(data.results.length).toBe(4);
-
-    console.log("Test Results from Jev AI:");
-    data.results.forEach((r, idx) => {
-      console.log(`- [${inputs[idx]}] -> ${r.label} (${Math.round(r.confidence * 100)}%)`);
-    });
 
     expect(data.results[0].label).toBe("self-improvement / motivational");
     expect(data.results[1].label).toBe("meme / humor / satire");
