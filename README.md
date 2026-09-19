@@ -16,7 +16,7 @@ English & Tiếng Việt supported natively out-of-the-box.
   - 💡 **Informative**: Educational insights, objective facts, tutorial guides.
   - 💬 **Discussion / Casual**: Everyday personal thoughts and neutral conversations.
 * **Auto-Blur for Rage Bait**: Posts flagged as Rage Bait (confidence $\ge 65\%$) are automatically blurred with a clean warning banner and a one-click *"Reveal post"* toggle.
-* **Multi-Platform Support**: Works seamlessly on **𝕏 (Twitter)**, **🧵 Threads (`threads.net`)**, and **📘 Facebook (`facebook.com`)**.
+* **Multi-Platform Support**: Works seamlessly on **𝕏 (Twitter)**, **🧵 Threads (`threads.com` & `threads.net`)**, and **📘 Facebook (`facebook.com`)**.
 * **Multilingual Out-of-the-Box**: Tested and validated on English and Vietnamese internet culture (drama, *"phốt"*, chửi bới, giật tít, toxic replies).
 * **Zero API Key & Zero Signup**: Direct inference via `classifier.dev` (Jev fast-tier model) in ~250ms with zero server cost or user tracking.
 * **Floating Control Widget**: Interactive on-screen widget displaying real-time ON/OFF state and a counter of blocked toxic posts.
@@ -33,7 +33,7 @@ You can install this tool either as a **Chrome Extension** or a **Tampermonkey U
 2. Open Google Chrome (or Brave / Edge) and navigate to `chrome://extensions`.
 3. Enable **Developer mode** in the top right corner.
 4. Click **Load unpacked** and select the folder containing this repository.
-5. Visit [x.com](https://x.com), [threads.net](https://threads.net), or [facebook.com](https://facebook.com) to enjoy a ragebait-free feed!
+5. Visit [threads.com](https://threads.com), [threads.net](https://threads.net), [x.com](https://x.com), or [facebook.com](https://facebook.com) to enjoy a ragebait-free feed!
 
 ### Option 2: Tampermonkey Userscript
 

@@ -28,14 +28,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     chrome.storage.local.set(config);
 
-    // Send message to all tabs
-    chrome.tabs.query({ url: ['https://x.com/*', 'https://twitter.com/*'] }, (tabs) => {
-      tabs.forEach((tab) => {
-        chrome.tabs.sendMessage(tab.id, {
-          type: 'UPDATE_CONFIG',
-          config: config,
-        }).catch(() => {});
-      });
+    // Send message to all supported social media tabs
+    const targetUrlPatterns = [
+      '*://*.threads.net/*',
+      '*://threads.net/*',
+      '*://*.threads.com/*',
+      '*://threads.com/*',
+      '*://*.x.com/*',
+      '*://x.com/*',
+      '*://*.twitter.com/*',
+      '*://twitter.com/*',
+      '*://*.facebook.com/*',
+      '*://facebook.com/*',
+      '*://*.fb.com/*',
+    ];
+
+    chrome.tabs.query({ url: targetUrlPatterns }, (tabs) => {
+      if (tabs) {
+        tabs.forEach((tab) => {
+          chrome.tabs.sendMessage(tab.id, {
+            type: 'UPDATE_CONFIG',
+            config: config,
+          }).catch(() => {});
+        });
+      }
     });
   }
 

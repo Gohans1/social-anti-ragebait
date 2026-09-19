@@ -1,4 +1,4 @@
-// Universal Social Anti-Ragebait (X, Threads, Facebook) Powered by Jev
+// Universal Social Anti-Ragebait (Threads, X, Facebook) Powered by Jev
 (function () {
   'use strict';
 
@@ -98,11 +98,11 @@
   let queue = [];
   let debounceTimer = null;
 
-  // Detect Active Platform
+  // Detect Active Platform (Threads.com, Threads.net, X, Facebook)
   function getPlatform() {
-    const host = window.location.hostname;
-    if (host.includes('threads.net')) return 'threads';
-    if (host.includes('facebook.com')) return 'facebook';
+    const host = window.location.hostname.toLowerCase();
+    if (host.includes('threads.net') || host.includes('threads.com')) return 'threads';
+    if (host.includes('facebook.com') || host.includes('fb.com')) return 'facebook';
     return 'x';
   }
 
@@ -123,7 +123,17 @@
     updatePill();
     applyCurrentStateToDOM();
   });
-  document.body.appendChild(pill);
+
+  function initPill() {
+    if (document.body && !document.querySelector('.x-jev-floating-pill')) {
+      document.body.appendChild(pill);
+    }
+  }
+  if (document.body) {
+    initPill();
+  } else {
+    document.addEventListener('DOMContentLoaded', initPill);
+  }
 
   function applyCurrentStateToDOM() {
     document.querySelectorAll('[data-jev-rage="true"]').forEach((post) => {
@@ -139,14 +149,49 @@
     });
   }
 
-  // Call Jev API
+  // Call Jev API: Route via background service worker to bypass page CSP on Threads/Facebook
   async function callJevBatch(inputs) {
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      return new Promise((resolve) => {
+        try {
+          chrome.runtime.sendMessage(
+            {
+              type: 'CLASSIFY_BATCH',
+              payload: {
+                labels: LABELS,
+                inputs: inputs,
+                instructions: INSTRUCTIONS,
+              },
+            },
+            (response) => {
+              if (chrome.runtime.lastError) {
+                console.warn('[Anti-Ragebait] Extension background worker error, falling back:', chrome.runtime.lastError.message);
+                directFetch(inputs).then(resolve);
+              } else if (response && response.success) {
+                resolve(response.results || []);
+              } else {
+                console.warn('[Anti-Ragebait] Background classify failed:', response?.error);
+                directFetch(inputs).then(resolve);
+              }
+            }
+          );
+        } catch (e) {
+          console.warn('[Anti-Ragebait] SendMessage exception:', e);
+          directFetch(inputs).then(resolve);
+        }
+      });
+    }
+    return directFetch(inputs);
+  }
+
+  // Direct fetch fallback
+  async function directFetch(inputs) {
     try {
       const res = await fetch(config.apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'social-anti-ragebait/1.0',
+          'User-Agent': 'social-anti-ragebait/1.2',
         },
         body: JSON.stringify({
           labels: LABELS,
@@ -157,13 +202,18 @@
       const data = await res.json();
       return data.results || [];
     } catch (e) {
-      console.warn('[Anti-Ragebait] Jev fetch error:', e);
+      console.warn('[Anti-Ragebait] Direct fetch failed (CSP restriction on this domain):', e);
       return [];
     }
   }
 
   function renderClassification(item, res) {
     const { postEl, textEl } = item;
+    if (!textEl || !textEl.parentElement) return;
+
+    // Prevent duplicate badges
+    if (postEl.querySelector('.x-jev-badge')) return;
+
     const label = res.label;
     const confidence = res.confidence || 0;
     const meta = BADGE_MAP[label] || BADGE_MAP['casual discussion / personal'];
@@ -191,30 +241,30 @@
 
       textEl.setAttribute('data-jev-content', 'true');
 
-      const warningBox = document.createElement('div');
-      warningBox.className = 'x-jev-warning-box';
-      warningBox.innerHTML = `
-        <span class="x-jev-warning-text">🛡️ <b>Rage Bait Warning:</b> This post is engineered to provoke anger and farm drama.</span>
-      `;
+      if (!postEl.querySelector('.x-jev-warning-box')) {
+        const warningBox = document.createElement('div');
+        warningBox.className = 'x-jev-warning-box';
+        warningBox.innerHTML = `
+          <span class="x-jev-warning-text">🛡️ <b>Rage Bait Warning:</b> This post is engineered to provoke anger and farm drama.</span>
+        `;
 
-      const revealBtn = document.createElement('button');
-      revealBtn.className = 'x-jev-reveal-btn';
-      revealBtn.textContent = 'Reveal post';
-      revealBtn.onclick = (e) => {
-        e.stopPropagation();
-        textEl.classList.toggle('x-jev-blurred-content');
-        revealBtn.textContent = textEl.classList.contains('x-jev-blurred-content')
-          ? 'Reveal post'
-          : 'Re-blur';
-      };
+        const revealBtn = document.createElement('button');
+        revealBtn.className = 'x-jev-reveal-btn';
+        revealBtn.textContent = 'Reveal post';
+        revealBtn.onclick = (e) => {
+          e.stopPropagation();
+          textEl.classList.toggle('x-jev-blurred-content');
+          revealBtn.textContent = textEl.classList.contains('x-jev-blurred-content')
+            ? 'Reveal post'
+            : 'Re-blur';
+        };
 
-      warningBox.appendChild(revealBtn);
-      parentContainer.insertBefore(warningBox, textEl);
+        warningBox.appendChild(revealBtn);
+        parentContainer.insertBefore(warningBox, textEl);
+      }
 
       if (config.autoBlurEnabled) {
         textEl.classList.add('x-jev-blurred-content');
-      } else {
-        warningBox.style.display = 'none';
       }
     }
   }
@@ -251,11 +301,69 @@
     }
   }
 
-  // --- MULTI-PLATFORM SCANNER (X, THREADS, FACEBOOK) ---
+  // --- MULTI-PLATFORM SCANNER (THREADS.COM / THREADS.NET, X, FACEBOOK) ---
   function scanPosts() {
     const platform = getPlatform();
 
-    if (platform === 'x') {
+    if (platform === 'threads') {
+      // Threads (threads.com & threads.net)
+      const postContainers = new Set();
+
+      // Selector 1: Containers marked by Threads pressable or article tags
+      document.querySelectorAll('div[data-pressable-container="true"], article').forEach((el) => {
+        if (!el.hasAttribute('data-jev-scanned')) postContainers.add(el);
+      });
+
+      // Selector 2: Anchor links pointing to /post/ permalinks
+      document.querySelectorAll('a[href*="/post/"]').forEach((link) => {
+        let container = link.closest('div[data-pressable-container="true"]') || link.closest('article');
+        if (!container) {
+          // Walk up to find post card container with action buttons and text
+          let curr = link.parentElement;
+          let depth = 0;
+          while (curr && curr !== document.body && depth < 8) {
+            const svgs = curr.querySelectorAll('svg').length;
+            const hasText = curr.querySelector('span[dir="auto"], div[dir="auto"]');
+            if (svgs >= 2 && hasText) {
+              container = curr;
+              break;
+            }
+            curr = curr.parentElement;
+            depth++;
+          }
+        }
+        if (container && !container.hasAttribute('data-jev-scanned')) {
+          postContainers.add(container);
+        }
+      });
+
+      postContainers.forEach((post) => {
+        post.setAttribute('data-jev-scanned', 'true');
+
+        const textEls = post.querySelectorAll('span[dir="auto"], div[dir="auto"]');
+        let longestTextEl = null;
+        let maxLen = 0;
+
+        textEls.forEach((el) => {
+          if (el.closest('button') || el.closest('time') || el.classList.contains('x-jev-badge')) return;
+          const t = el.innerText.trim();
+
+          // Skip metrics, handles, timestamps
+          if (t.length < 15) return;
+          if (/^\d+(\.\d+)?(k|m)?\s*(likes?|replies?|views?|lượt thích|câu trả lời|bình luận|chia sẻ)$/i.test(t)) return;
+          if (/^(\d+\s*(s|m|h|d|w|giây|phút|giờ|ngày|tuần)|just now|vừa xong)$/i.test(t)) return;
+
+          if (t.length > maxLen) {
+            maxLen = t.length;
+            longestTextEl = el;
+          }
+        });
+
+        if (longestTextEl && maxLen >= 15) {
+          queue.push({ postEl: post, text: longestTextEl.innerText.trim(), textEl: longestTextEl });
+        }
+      });
+    } else if (platform === 'x') {
       // X (Twitter)
       document.querySelectorAll('article[data-testid="tweet"]:not([data-jev-scanned])').forEach((post) => {
         post.setAttribute('data-jev-scanned', 'true');
@@ -265,26 +373,8 @@
           if (text.length >= 15) queue.push({ postEl: post, text, textEl });
         }
       });
-    } else if (platform === 'threads') {
-      // Threads (Instagram Threads)
-      document.querySelectorAll('div[data-pressable-container="true"]:not([data-jev-scanned]), article:not([data-jev-scanned])').forEach((post) => {
-        post.setAttribute('data-jev-scanned', 'true');
-        const textEls = post.querySelectorAll('span[dir="auto"], div[dir="auto"]');
-        let longestTextEl = null;
-        let maxLen = 0;
-        textEls.forEach((el) => {
-          const t = el.innerText.trim();
-          if (t.length > maxLen && !/^\d+(\.\d+)?(k|m)?\s*(likes?|replies?|views?)$/i.test(t)) {
-            maxLen = t.length;
-            longestTextEl = el;
-          }
-        });
-        if (longestTextEl && maxLen >= 15) {
-          queue.push({ postEl: post, text: longestTextEl.innerText.trim(), textEl: longestTextEl });
-        }
-      });
     } else if (platform === 'facebook') {
-      // Facebook News Feed & Groups
+      // Facebook Feed & Groups
       document.querySelectorAll('div[data-pagelet^="FeedUnit_"]:not([data-jev-scanned]), div[role="article"]:not([data-jev-scanned])').forEach((post) => {
         post.setAttribute('data-jev-scanned', 'true');
         const msgEl = post.querySelector('div[data-ad-rendering-role="story_message"], div[data-ad-preview="message"]') ||
@@ -305,8 +395,19 @@
   }
 
   const observer = new MutationObserver(() => scanPosts());
-  observer.observe(document.body, { childList: true, subtree: true });
 
-  scanPosts();
-  console.log(`[Social Anti-Ragebait] Active on ${getPlatform().toUpperCase()} with multilingual Jev model 🛡️`);
+  function initObserver() {
+    if (document.body) {
+      observer.observe(document.body, { childList: true, subtree: true });
+      scanPosts();
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        observer.observe(document.body, { childList: true, subtree: true });
+        scanPosts();
+      });
+    }
+  }
+
+  initObserver();
+  console.log(`[Social Anti-Ragebait] Active on ${getPlatform().toUpperCase()} (${window.location.hostname}) with Jev model 🛡️`);
 })();

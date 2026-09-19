@@ -1,16 +1,20 @@
 // ==UserScript==
-// @name         Social Anti-Ragebait & Emotion Predictor (X, Threads, Facebook)
+// @name         Social Anti-Ragebait & Emotion Predictor (Threads, X, Facebook)
 // @namespace    https://classifier.dev/
-// @version      1.1.0
-// @description  Predicts emotional intent & automatically blurs rage-bait posts on X (Twitter), Threads, and Facebook in English & Vietnamese using Jev
+// @version      1.2.0
+// @description  Predicts emotional intent & automatically blurs rage-bait posts on Threads (threads.com / threads.net), X (Twitter), and Facebook in English & Vietnamese using Jev
 // @author       Antigravity
-// @match        https://x.com/*
-// @match        https://twitter.com/*
-// @match        https://threads.net/*
-// @match        https://www.threads.net/*
-// @match        https://facebook.com/*
-// @match        https://www.facebook.com/*
-// @match        https://web.facebook.com/*
+// @match        *://*.threads.com/*
+// @match        *://threads.com/*
+// @match        *://*.threads.net/*
+// @match        *://threads.net/*
+// @match        *://*.x.com/*
+// @match        *://x.com/*
+// @match        *://*.twitter.com/*
+// @match        *://twitter.com/*
+// @match        *://*.facebook.com/*
+// @match        *://facebook.com/*
+// @match        *://*.fb.com/*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_addStyle
 // @connect      classifier.dev
@@ -152,65 +156,60 @@
       cursor: pointer;
       font-size: 11.5px;
       font-weight: 600;
-      transition: background 0.2s;
     }
     .x-jev-reveal-btn:hover {
       background: rgba(239, 68, 68, 0.45);
     }
     .x-jev-floating-pill {
       position: fixed;
-      bottom: 24px;
-      right: 24px;
+      bottom: 20px;
+      right: 20px;
       z-index: 999999;
-      background: rgba(15, 23, 42, 0.88);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(15, 23, 42, 0.9);
       color: #e2e8f0;
       padding: 8px 14px;
       border-radius: 9999px;
       font-size: 12px;
       font-weight: 600;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.1);
       cursor: pointer;
+      user-select: none;
       transition: all 0.2s ease;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     .x-jev-floating-pill:hover {
-      transform: scale(1.03);
-      border-color: rgba(239, 68, 68, 0.6);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.5);
     }
   `;
 
   if (typeof GM_addStyle !== 'undefined') {
     GM_addStyle(css);
   } else {
-    const s = document.createElement('style');
-    s.textContent = css;
-    document.head.appendChild(s);
+    const styleEl = document.createElement('style');
+    styleEl.textContent = css;
+    document.head.appendChild(styleEl);
   }
 
-  const textCache = new Map();
-  let queue = [];
-  let debounceTimer = null;
-  let blockedCount = 0;
-
+  // --- PLATFORM DETECTION ---
   function getPlatform() {
-    const host = window.location.hostname;
-    if (host.includes('threads.net')) return 'threads';
-    if (host.includes('facebook.com')) return 'facebook';
+    const host = window.location.hostname.toLowerCase();
+    if (host.includes('threads.net') || host.includes('threads.com')) return 'threads';
+    if (host.includes('facebook.com') || host.includes('fb.com')) return 'facebook';
     return 'x';
   }
 
+  let blockedCount = 0;
   const pill = document.createElement('div');
   pill.className = 'x-jev-floating-pill';
   function updatePill() {
-    const platform = getPlatform().toUpperCase();
-    pill.innerHTML = `🛡️ ${platform} Anti-Ragebait: <span style="color:${CONFIG.autoBlurEnabled ? '#4ade80' : '#94a3b8'}">${CONFIG.autoBlurEnabled ? 'ON' : 'OFF'}</span> | Blocked: <span style="color:#f87171">${blockedCount}</span>`;
+    const pName = getPlatform().toUpperCase();
+    pill.innerHTML = `🛡️ ${pName} Anti-Rage: <span style="color:${CONFIG.autoBlurEnabled ? '#4ade80' : '#94a3b8'}">${CONFIG.autoBlurEnabled ? 'ON' : 'OFF'}</span> | Blocked: <span style="color:#f87171">${blockedCount}</span>`;
   }
   updatePill();
-  pill.title = 'Click to toggle Rage Bait auto-blur on this page';
+  pill.title = 'Click to toggle auto-blur on this platform';
   pill.addEventListener('click', () => {
     CONFIG.autoBlurEnabled = !CONFIG.autoBlurEnabled;
     updatePill();
@@ -226,35 +225,50 @@
       }
     });
   });
-  document.body.appendChild(pill);
 
-  async function callJevBatch(inputs) {
-    const payload = JSON.stringify({
-      labels: LABELS,
-      inputs: inputs,
-      instructions: INSTRUCTIONS,
-    });
+  function initPill() {
+    if (document.body && !document.querySelector('.x-jev-floating-pill')) {
+      document.body.appendChild(pill);
+    }
+  }
+  if (document.body) {
+    initPill();
+  } else {
+    document.addEventListener('DOMContentLoaded', initPill);
+  }
 
+  const textCache = new Map();
+  let queue = [];
+  let debounceTimer = null;
+
+  function callJevBatch(inputs) {
     return new Promise((resolve) => {
-      const sendReq = typeof GM_xmlhttpRequest !== 'undefined'
-        ? GM_xmlhttpRequest
-        : (opts) => {
-            fetch(opts.url, {
-              method: opts.method,
-              headers: opts.headers,
-              body: opts.data,
-            })
-              .then((r) => r.json())
-              .then((d) => opts.onload({ responseText: JSON.stringify(d) }))
-              .catch((e) => opts.onerror(e));
-          };
+      const payload = JSON.stringify({
+        labels: LABELS,
+        inputs: inputs,
+        instructions: INSTRUCTIONS,
+      });
+
+      const sendReq =
+        typeof GM_xmlhttpRequest !== 'undefined'
+          ? GM_xmlhttpRequest
+          : function (opts) {
+              fetch(opts.url, {
+                method: opts.method,
+                headers: opts.headers,
+                body: opts.data,
+              })
+                .then((res) => res.json())
+                .then((data) => opts.onload({ responseText: JSON.stringify(data) }))
+                .catch((err) => opts.onerror(err));
+            };
 
       sendReq({
         method: 'POST',
         url: CONFIG.apiEndpoint,
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'social-anti-ragebait/1.0',
+          'User-Agent': 'social-anti-ragebait/1.2',
         },
         data: payload,
         onload: function (response) {
@@ -276,6 +290,9 @@
 
   function renderClassification(item, res) {
     const { postEl, textEl } = item;
+    if (!textEl || !textEl.parentElement) return;
+    if (postEl.querySelector('.x-jev-badge')) return;
+
     const label = res.label;
     const confidence = res.confidence || 0;
     const meta = BADGE_MAP[label] || BADGE_MAP['casual discussion / personal'];
@@ -300,30 +317,30 @@
 
       textEl.setAttribute('data-jev-content', 'true');
 
-      const warningBox = document.createElement('div');
-      warningBox.className = 'x-jev-warning-box';
-      warningBox.innerHTML = `
-        <span>🛡️ <b>Rage Bait Warning:</b> This post is engineered to provoke anger and farm drama.</span>
-      `;
+      if (!postEl.querySelector('.x-jev-warning-box')) {
+        const warningBox = document.createElement('div');
+        warningBox.className = 'x-jev-warning-box';
+        warningBox.innerHTML = `
+          <span>🛡️ <b>Rage Bait Warning:</b> This post is engineered to provoke anger and farm drama.</span>
+        `;
 
-      const revealBtn = document.createElement('button');
-      revealBtn.className = 'x-jev-reveal-btn';
-      revealBtn.textContent = 'Reveal post';
-      revealBtn.onclick = (e) => {
-        e.stopPropagation();
-        textEl.classList.toggle('x-jev-blurred-content');
-        revealBtn.textContent = textEl.classList.contains('x-jev-blurred-content')
-          ? 'Reveal post'
-          : 'Re-blur';
-      };
+        const revealBtn = document.createElement('button');
+        revealBtn.className = 'x-jev-reveal-btn';
+        revealBtn.textContent = 'Reveal post';
+        revealBtn.onclick = (e) => {
+          e.stopPropagation();
+          textEl.classList.toggle('x-jev-blurred-content');
+          revealBtn.textContent = textEl.classList.contains('x-jev-blurred-content')
+            ? 'Reveal post'
+            : 'Re-blur';
+        };
 
-      warningBox.appendChild(revealBtn);
-      parentContainer.insertBefore(warningBox, textEl);
+        warningBox.appendChild(revealBtn);
+        parentContainer.insertBefore(warningBox, textEl);
+      }
 
       if (CONFIG.autoBlurEnabled) {
         textEl.classList.add('x-jev-blurred-content');
-      } else {
-        warningBox.style.display = 'none';
       }
     }
   }
@@ -363,30 +380,66 @@
   function scanPosts() {
     const platform = getPlatform();
 
-    if (platform === 'x') {
+    if (platform === 'threads') {
+      const postContainers = new Set();
+
+      document.querySelectorAll('div[data-pressable-container="true"], article').forEach((el) => {
+        if (!el.hasAttribute('data-jev-scanned')) postContainers.add(el);
+      });
+
+      document.querySelectorAll('a[href*="/post/"]').forEach((link) => {
+        let container = link.closest('div[data-pressable-container="true"]') || link.closest('article');
+        if (!container) {
+          let curr = link.parentElement;
+          let depth = 0;
+          while (curr && curr !== document.body && depth < 8) {
+            const svgs = curr.querySelectorAll('svg').length;
+            const hasText = curr.querySelector('span[dir="auto"], div[dir="auto"]');
+            if (svgs >= 2 && hasText) {
+              container = curr;
+              break;
+            }
+            curr = curr.parentElement;
+            depth++;
+          }
+        }
+        if (container && !container.hasAttribute('data-jev-scanned')) {
+          postContainers.add(container);
+        }
+      });
+
+      postContainers.forEach((post) => {
+        post.setAttribute('data-jev-scanned', 'true');
+
+        const textEls = post.querySelectorAll('span[dir="auto"], div[dir="auto"]');
+        let longestTextEl = null;
+        let maxLen = 0;
+
+        textEls.forEach((el) => {
+          if (el.closest('button') || el.closest('time') || el.classList.contains('x-jev-badge')) return;
+          const t = el.innerText.trim();
+
+          if (t.length < 15) return;
+          if (/^\d+(\.\d+)?(k|m)?\s*(likes?|replies?|views?|lượt thích|câu trả lời|bình luận|chia sẻ)$/i.test(t)) return;
+          if (/^(\d+\s*(s|m|h|d|w|giây|phút|giờ|ngày|tuần)|just now|vừa xong)$/i.test(t)) return;
+
+          if (t.length > maxLen) {
+            maxLen = t.length;
+            longestTextEl = el;
+          }
+        });
+
+        if (longestTextEl && maxLen >= 15) {
+          queue.push({ postEl: post, text: longestTextEl.innerText.trim(), textEl: longestTextEl });
+        }
+      });
+    } else if (platform === 'x') {
       document.querySelectorAll('article[data-testid="tweet"]:not([data-jev-scanned])').forEach((post) => {
         post.setAttribute('data-jev-scanned', 'true');
         const textEl = post.querySelector('div[data-testid="tweetText"]');
         if (textEl) {
           const text = textEl.innerText.trim();
           if (text.length >= 15) queue.push({ postEl: post, text, textEl });
-        }
-      });
-    } else if (platform === 'threads') {
-      document.querySelectorAll('div[data-pressable-container="true"]:not([data-jev-scanned]), article:not([data-jev-scanned])').forEach((post) => {
-        post.setAttribute('data-jev-scanned', 'true');
-        const textEls = post.querySelectorAll('span[dir="auto"], div[dir="auto"]');
-        let longestTextEl = null;
-        let maxLen = 0;
-        textEls.forEach((el) => {
-          const t = el.innerText.trim();
-          if (t.length > maxLen && !/^\d+(\.\d+)?(k|m)?\s*(likes?|replies?|views?)$/i.test(t)) {
-            maxLen = t.length;
-            longestTextEl = el;
-          }
-        });
-        if (longestTextEl && maxLen >= 15) {
-          queue.push({ postEl: post, text: longestTextEl.innerText.trim(), textEl: longestTextEl });
         }
       });
     } else if (platform === 'facebook') {
@@ -410,7 +463,19 @@
   }
 
   const observer = new MutationObserver(() => scanPosts());
-  observer.observe(document.body, { childList: true, subtree: true });
 
-  scanPosts();
+  function initObserver() {
+    if (document.body) {
+      observer.observe(document.body, { childList: true, subtree: true });
+      scanPosts();
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        observer.observe(document.body, { childList: true, subtree: true });
+        scanPosts();
+      });
+    }
+  }
+
+  initObserver();
+  console.log(`[Social Anti-Ragebait Userscript] Active on ${getPlatform().toUpperCase()} (${window.location.hostname}) 🛡️`);
 })();
