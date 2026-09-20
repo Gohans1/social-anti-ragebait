@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bản Thiết Kế Vercel Badge & Anti-Ragebait - 21/09/2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      font-size: 18px; /* Base 18px = 1rem */
+      --bg: #000000;
+      --surface: #0a0a0a;
+      --surface-2: #141414;
+      --border: #262626;
+      --border-focus: #555555;
+      --text: #ededed;
+      --text-bright: #ffffff;
+      --text-sub: #a1a1aa;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'Geist Mono', monospace;
+      --accent-red: #ef4444;
+      --accent-green: #22c55e;
+      --accent-blue: #0070f3;
+      --accent-orange: #f97316;
+      --accent-yellow: #eab308;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      padding: 2rem 1rem 6rem;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 80rem;
+      margin: 0 auto;
+    }
+
+    /* Header & Navigation */
+    header {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+    }
+
+    .brand-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text-bright);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .brand-badge {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text-bright);
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      letter-spacing: 0;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+
+    .tab-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-sub);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 0.6rem 1.25rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tab-btn:hover {
+      border-color: var(--border-focus);
+      color: var(--text-bright);
+    }
+
+    .tab-btn.active {
+      background: var(--text-bright);
+      color: var(--bg);
+      border-color: var(--text-bright);
+    }
+
+    /* Callout */
+    .callout-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .callout-box {
+      max-width: 40rem;
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent-blue);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    .callout-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text-bright);
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.01em;
+    }
+
+    .callout-desc {
+      font-size: 0.95rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* Tabs Content */
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Cards Layout */
+    .card-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .spec-card {
+      background: var(--surface);
+      border-radius: 8px;
+      min-height: 20rem;
+      padding: 1rem 1.25rem 3rem;
+      position: relative;
+      overflow: visible;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .card-slider {
+      border: 2px solid #ffffff;
+    }
+
+    .card-before {
+      border: 2px solid var(--accent-red);
+    }
+
+    .card-after {
+      border: 2px solid var(--accent-green);
+    }
+
+    .card-header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-bright);
+    }
+
+    .card-badge-pill {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .pill-red {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--accent-red);
+      color: #fca5a5;
+    }
+
+    .pill-green {
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid var(--accent-green);
+      color: #86efac;
+    }
+
+    .pill-white {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid #ffffff;
+      color: #ffffff;
+    }
+
+    /* Direct Annotations */
+    .annotation-box {
+      border: 2px dashed transparent;
+      position: relative;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .diff-active .annotation-box.ann-red {
+      border-color: var(--accent-red);
+      background: rgba(239, 68, 68, 0.05);
+    }
+
+    .diff-active .annotation-box.ann-green {
+      border-color: var(--accent-green);
+      background: rgba(34, 197, 94, 0.05);
+    }
+
+    .annotation-tag {
+      position: absolute;
+      top: -0.75rem;
+      right: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      display: none;
+      z-index: 20;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.8);
+      white-space: nowrap;
+    }
+
+    .diff-active .annotation-box.ann-red .annotation-tag {
+      display: block;
+      background: var(--accent-red);
+      color: #ffffff;
+    }
+
+    .diff-active .annotation-box.ann-green .annotation-tag {
+      display: block;
+      background: var(--accent-green);
+      color: #000000;
+    }
+
+    /* Swipe Diff Comparison Slider */
+    .comparison-container {
+      position: relative;
+      width: 100%;
+      min-height: 22rem;
+      border-radius: 6px;
+      background: #000000;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .slide-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      padding: 1.25rem;
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+
+    .slide-layer * {
+      pointer-events: auto;
+    }
+
+    .slide-before-layer {
+      z-index: 10;
+      clip-path: polygon(0 0, var(--slider-pos, 50%) 0, var(--slider-pos, 50%) 100%, 0 100%);
+      background: #060606;
+      border-right: 2px solid #ffffff;
+    }
+
+    .slide-after-layer {
+      z-index: 5;
+      background: #000000;
+    }
+
+    .slider-divider-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: var(--slider-pos, 50%);
+      width: 2px;
+      background: #ffffff;
+      z-index: 15;
+      pointer-events: none;
+      transform: translateX(-50%);
+    }
+
+    .slider-handle-control {
+      position: absolute;
+      top: 50%;
+      left: var(--slider-pos, 50%);
+      width: 2.4rem;
+      height: 2.4rem;
+      background: #ffffff;
+      color: #000000;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.9rem;
+      cursor: ew-resize;
+      z-index: 25;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8), 0 0 0 2px var(--border);
+    }
+
+    .slider-banner-badge {
+      position: absolute;
+      bottom: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      z-index: 12;
+    }
+
+    .slider-banner-left {
+      left: 0.75rem;
+      background: var(--accent-red);
+      color: #ffffff;
+    }
+
+    .slider-banner-right {
+      right: 0.75rem;
+      background: var(--accent-green);
+      color: #000000;
+    }
+
+    /* Mock Social Post Styles */
+    .mock-post {
+      background: #000000;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.25rem;
+      max-width: 44rem;
+      margin: 0 auto;
+    }
+
+    .mock-author-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .mock-avatar {
+      width: 2.4rem;
+      height: 2.4rem;
+      border-radius: 50%;
+      background: #222222;
+      border: 1px solid #333333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #ededed;
+    }
+
+    .mock-author-meta {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mock-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-bright);
+    }
+
+    .mock-handle {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text-sub);
+    }
+
+    .mock-content {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+
+    /* Real Badge Visuals: Old vs Vercel */
+    .legacy-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      line-height: 1.2;
+    }
+
+    .legacy-discussion {
+      background: rgba(100, 116, 139, 0.25);
+      border: 1px solid #64748b;
+      color: #cbd5e1;
+    }
+
+    .legacy-motivational {
+      background: rgba(245, 158, 11, 0.22);
+      border: 1px solid #f59e0b;
+      color: #fbbf24;
+    }
+
+    .legacy-teardown {
+      background: rgba(99, 102, 241, 0.25);
+      border: 1px solid #6366f1;
+      color: #a5b4fc;
+    }
+
+    .vercel-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      background: #000000;
+      border: 1px solid #262626;
+      color: #ededed;
+      margin-bottom: 0.75rem;
+      line-height: 1.2;
+      transition: all 0.15s ease;
+      cursor: default;
+    }
+
+    .vercel-badge:hover {
+      border-color: #444444;
+      background: #0a0a0a;
+    }
+
+    .vercel-confidence {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-sub);
+      font-weight: 500;
+      margin-left: 0.15rem;
+    }
+
+    /* Floating Pill Visual */
+    .mock-pill {
+      background: rgba(0, 0, 0, 0.95);
+      border: 1px solid #262626;
+      color: #ededed;
+      padding: 0.45rem 0.9rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7);
+    }
+
+    .mock-pill-mono {
+      font-family: var(--font-mono);
+      color: var(--text-bright);
+    }
+
+    /* Explain Layout: 2 Columns */
+    .explain-section {
+      display: flex;
+      flex-direction: column;
+      gap: 3rem;
+    }
+
+    .explain-row {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 2.5rem;
+    }
+
+    .explain-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .explain-left {
+      width: 30rem;
+      flex-shrink: 0;
+    }
+
+    .explain-right {
+      width: 48rem;
+      flex-grow: 1;
+    }
+
+    .step-tag {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+      display: inline-block;
+    }
+
+    .explain-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text-bright);
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+
+    .explain-p {
+      font-size: 0.95rem;
+      color: var(--text);
+      line-height: 1.6;
+      margin-bottom: 0.75rem;
+    }
+
+    .code-box {
+      background: #080808;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: #d4d4d8;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+
+    .code-box pre {
+      white-space: pre;
+      font-family: inherit;
+    }
+
+    .diff-add {
+      color: #4ade80;
+      background: rgba(34, 197, 94, 0.12);
+      display: block;
+      margin: 0 -1.25rem;
+      padding: 0.15rem 1.25rem;
+    }
+
+    .diff-del {
+      color: #f87171;
+      background: rgba(239, 68, 68, 0.12);
+      display: block;
+      margin: 0 -1.25rem;
+      padding: 0.15rem 1.25rem;
+    }
+
+    /* Fixed Inspector Toggle */
+    .inspector-toggle-btn {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--text-bright);
+      color: var(--bg);
+      border: 1px solid #ffffff;
+      border-radius: 9999px;
+      padding: 0.65rem 1.25rem;
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      font-weight: 700;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+      cursor: pointer;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .inspector-toggle-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(255,255,255,0.25);
+    }
+
+    .inspector-state {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      background: #000000;
+      color: #ffffff;
+    }
+
+    /* Responsive */
+    @media (max-width: 64rem) {
+      .explain-row {
+        flex-direction: column;
+      }
+      .explain-left, .explain-right {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body class="diff-active">
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <div class="brand-title">
+        <span>🛡️ Vercel Badge & Anti-Ragebait Architecture</span>
+        <span class="brand-badge">v2.4.0-VERCEL</span>
+      </div>
+      <p style="color: var(--text-sub); font-size: 0.95rem;">
+        Báo cáo kiểm thử & tài liệu so sánh trực quan kiến trúc badge 1 từ tiếng Anh chuẩn mực Vercel Design System.
+      </p>
+
+      <!-- Navigation Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('summarize')">
+          <span>📊</span> Tóm Lược (Summarize)
+        </button>
+        <button class="tab-btn" onclick="switchTab('explain')">
+          <span>🔍</span> Giải Thích Chi Tiết (Explain)
+        </button>
+      </div>
+    </header>
+
+    <!-- Tab 1: Summarize -->
+    <div id="tab-summarize" class="tab-content active">
+
+      <!-- Callout Center -->
+      <div class="callout-wrapper">
+        <div class="callout-box">
+          <div class="callout-title">🗣️ TÓM LƯỢC & Ý CHÍNH 🗣️</div>
+          <div class="callout-desc">
+            Đã thanh trừng toàn bộ tiếng Việt lai căng và emoji rác trên badge; ép sạch về đúng <b>1 từ tiếng Anh duy nhất</b> (`Casual`, `Motivational`, `Teardown`, `Wholesome`, `Doom`, `FOMO`, `Meme`), bú trọn <b>Vercel Monochrome Design</b> viền 4px siêu tối giản và đạt 22/22 bài test xanh rờn!
+          </div>
+        </div>
+      </div>
+
+      <div class="card-grid">
+
+        <!-- Card 1: Slider Swipe Diff (White Border) -->
+        <div class="spec-card card-slider">
+          <div class="card-header-bar">
+            <div class="card-title">
+              <span>1. So Sánh Trực Quan Drag & Drop (Swipe Diff)</span>
+            </div>
+            <span class="card-badge-pill pill-white">Kéo thanh trượt để so sánh</span>
+          </div>
+
+          <div class="comparison-container" id="swipeContainer">
+            <!-- After Layer (Underneath, Full Width) -->
+            <div class="slide-layer slide-after-layer">
+              <div class="mock-post">
+                <div class="mock-author-row">
+                  <div class="mock-avatar">JN</div>
+                  <div class="mock-author-meta">
+                    <span class="mock-name">Jeff Na</span>
+                    <span class="mock-handle">@jeffna1 • 15m</span>
+                  </div>
+                </div>
+
+                <!-- Annotation After -->
+                <div class="annotation-box ann-green" style="display:inline-block; margin-bottom: 0.5rem; padding: 0.2rem 0.4rem;">
+                  <span class="annotation-tag">BẢN MỚI (VERCEL STYLE)</span>
+                  <div class="vercel-badge">
+                    <span>Casual</span>
+                    <span class="vercel-confidence">92%</span>
+                  </div>
+                </div>
+
+                <div class="mock-content">
+                  Hôm nay thời tiết đẹp vãi anh em ơi, ngồi code CSS Vercel ngắm mây trôi tự nhiên thấy đời bình yên hẳn ra =)))
+                </div>
+
+                <div class="annotation-box ann-green" style="display:inline-block; padding: 0.2rem 0.4rem;">
+                  <span class="annotation-tag">FLOATING STATUS PILL</span>
+                  <div class="mock-pill">
+                    <span>X: <span class="mock-pill-mono">ON</span></span>
+                    <span>|</span>
+                    <span>Scanned: <span class="mock-pill-mono">14</span></span>
+                    <span>|</span>
+                    <span>Casual: <span class="mock-pill-mono">1</span></span>
+                  </div>
+                </div>
+              </div>
+              <span class="slider-banner-badge slider-banner-right">BẢN MỚI (AFTER): 1 TỪ TIẾNG ANH + 4PX RADIUS</span>
+            </div>
+
+            <!-- Before Layer (Top, Clipped) -->
+            <div class="slide-layer slide-before-layer" id="beforeLayer">
+              <div class="mock-post">
+                <div class="mock-author-row">
+                  <div class="mock-avatar">JN</div>
+                  <div class="mock-author-meta">
+                    <span class="mock-name">Jeff Na</span>
+                    <span class="mock-handle">@jeffna1 • 15m</span>
+                  </div>
+                </div>
+
+                <!-- Annotation Before -->
+                <div class="annotation-box ann-red" style="display:inline-block; margin-bottom: 0.5rem; padding: 0.2rem 0.4rem;">
+                  <span class="annotation-tag">BẢN CŨ (LỖI GIAO DIỆN)</span>
+                  <div class="legacy-badge legacy-discussion">
+                    <span>💬 Thảo luận / Khác</span>
+                    <span style="font-family: var(--font-mono); font-size: 0.7rem; font-weight:700;">92%</span>
+                  </div>
+                </div>
+
+                <div class="mock-content">
+                  Hôm nay thời tiết đẹp vãi anh em ơi, ngồi code CSS Vercel ngắm mây trôi tự nhiên thấy đời bình yên hẳn ra =)))
+                </div>
+
+                <div class="annotation-box ann-red" style="display:inline-block; padding: 0.2rem 0.4rem;">
+                  <span class="annotation-tag">EMOJI CŨ RỜM RÀ</span>
+                  <div class="legacy-badge" style="background: rgba(15,23,42,0.9); border: 1px solid rgba(255,255,255,0.15); color: #fff;">
+                    <span>🛡️ X: ON | 👁️ Scanned: 14 | 💬 Casual: 1</span>
+                  </div>
+                </div>
+              </div>
+              <span class="slider-banner-badge slider-banner-left">BẢN CŨ (BEFORE): TIẾNG VIỆT + EMOJI + 9999PX PILL</span>
+            </div>
+
+            <!-- Draggable Divider -->
+            <div class="slider-divider-line" id="dividerLine"></div>
+            <div class="slider-handle-control" id="dragHandle">‹ ›</div>
+          </div>
+        </div>
+
+        <!-- Card 2: Before Only (Red Border) -->
+        <div class="spec-card card-before">
+          <div class="card-header-bar">
+            <div class="card-title">
+              <span>2. Bản Cũ (Before Only) - Rườm Rà, Lẫn Tiếng Việt & Emoji Sến</span>
+            </div>
+            <span class="card-badge-pill pill-red">Lỗi & Thiếu Đồng Bộ</span>
+          </div>
+
+          <div class="mock-post">
+            <div class="mock-author-row">
+              <div class="mock-avatar" style="background: #3f1212; border-color: #ef4444; color: #fca5a5;">OLD</div>
+              <div class="mock-author-meta">
+                <span class="mock-name">Feed Simulator (Trước Khi Fix)</span>
+                <span class="mock-handle">@legacy_feed • Cũ</span>
+              </div>
+            </div>
+
+            <!-- Annotations -->
+            <div class="annotation-box ann-red" style="display:flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; padding: 0.5rem;">
+              <span class="annotation-tag">CÁC BADGE CŨ (VI PHẠM VERCEL DESIGN)</span>
+              <div class="legacy-badge legacy-discussion">💬 Thảo luận / Khác 92%</div>
+              <div class="legacy-badge legacy-motivational">🌱 Động lực / Mindset 85%</div>
+              <div class="legacy-badge legacy-teardown">🔬 Mổ xẻ / Deep Dive 96%</div>
+            </div>
+
+            <div class="mock-content">
+              • Badge bị bo tròn dạng viên thuốc 9999px lòe loẹt, màu sắc gradient/translucent xanh đỏ tím vàng.<br>
+              • Tiếng Việt kèm dấu gạch chéo dài dòng: "Mổ xẻ / Deep Dive", "Thảo luận / Khác".<br>
+              • Dính 1 lồn emoji rác: 🌱, 🎭, 🔬, 🌿, ⚠️, ⚡, 💬 cắm thẳng vào badge và thanh status.
+            </div>
+
+            <div class="annotation-box ann-red" style="display:inline-block; padding: 0.4rem;">
+              <span class="annotation-tag">STATUS PILL CŨ</span>
+              <div style="background: rgba(15, 23, 42, 0.94); border: 1.5px solid rgba(255,255,255,0.15); border-radius: 9999px; padding: 0.4rem 0.8rem; font-size: 0.75rem; color: #cbd5e1;">
+                🛡️ X: ON | 👁️ Scanned: 14 | 💬 Casual: 1
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: After Only (Green Border) -->
+        <div class="spec-card card-after">
+          <div class="card-header-bar">
+            <div class="card-title">
+              <span>3. Bản Mới (After Only) - Chuẩn Khắc Khổ Vercel Monochrome</span>
+            </div>
+            <span class="card-badge-pill pill-green">Đã Approve 100%</span>
+          </div>
+
+          <div class="mock-post">
+            <div class="mock-author-row">
+              <div class="mock-avatar" style="background: #0f2e1b; border-color: #22c55e; color: #86efac;">NEW</div>
+              <div class="mock-author-meta">
+                <span class="mock-name">Feed Simulator (Sau Khi Refactor)</span>
+                <span class="mock-handle">@vercel_feed • Hoàn hảo</span>
+              </div>
+            </div>
+
+            <!-- Annotations -->
+            <div class="annotation-box ann-green" style="display:flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; padding: 0.5rem;">
+              <span class="annotation-tag">BADGE MỚI: 1 TỪ TIẾNG ANH + MONOCHROME 4PX</span>
+              <div class="vercel-badge"><span>Casual</span><span class="vercel-confidence">92%</span></div>
+              <div class="vercel-badge"><span>Motivational</span><span class="vercel-confidence">85%</span></div>
+              <div class="vercel-badge"><span>Teardown</span><span class="vercel-confidence">96%</span></div>
+              <div class="vercel-badge"><span>Wholesome</span><span class="vercel-confidence">90%</span></div>
+              <div class="vercel-badge"><span>Doom</span><span class="vercel-confidence">88%</span></div>
+              <div class="vercel-badge"><span>FOMO</span><span class="vercel-confidence">94%</span></div>
+              <div class="vercel-badge"><span>Meme</span><span class="vercel-confidence">99%</span></div>
+            </div>
+
+            <div class="mock-content">
+              • Đúng 1 từ tiếng Anh (Single-word English ONLY), không tiếng Việt, không emoji, không dấu gạch chéo.<br>
+              • Nền đen kịt <code>#000000</code>, viền thanh thoát <code>#262626</code>, chữ <code>#ededed</code>, chỉ số phụ bằng <code>Geist Mono</code>.<br>
+              • Bán kính chuẩn mực <b>4px</b> (bãi bỏ hoàn toàn viên thuốc 9999px theo mục <i>Reject generated-design reflexes</i> của <code>DESIGN.md</code>).
+            </div>
+
+            <div class="annotation-box ann-green" style="display:inline-block; padding: 0.4rem;">
+              <span class="annotation-tag">STATUS PILL VERCEL CHUẨN</span>
+              <div class="mock-pill">
+                <span>X: <span class="mock-pill-mono">ON</span></span>
+                <span>|</span>
+                <span>Scanned: <span class="mock-pill-mono">14</span></span>
+                <span>|</span>
+                <span>Teardown: <span class="mock-pill-mono">1</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Tab 2: Explain (2 Columns Zoom-in) -->
+    <div id="tab-explain" class="tab-content">
+      <div class="explain-section">
+
+        <!-- 1. Folder & File Level -->
+        <div class="explain-row">
+          <div class="explain-left">
+            <span class="step-tag">TẦNG 1: FOLDER & ARCHITECTURE</span>
+            <h3 class="explain-title">Đồng Bộ Toàn Diện Cấu Trúc File</h3>
+            <p class="explain-p">
+              Bố m đã kiểm soát và đồng bộ cấu trúc từ Chrome Extension đến Tampermonkey Userscript và file test runner của Bun.
+            </p>
+            <p class="explain-p">
+              Tất cả các file đều bú chung hệ thống token Vercel, đảm bảo không có bất kì sự phân mảnh nào giữa các nền tảng chạy script.
+            </p>
+          </div>
+          <div class="explain-right">
+            <div class="code-box">
+<pre>social-anti-ragebait/
+├── content.js                     # Content script: catalog 1 từ tiếng Anh, DOM badge, SVG focus icon
+├── content.css                    # Scoped styles: badge 4px, palette monochrome #000000/#262626
+├── social-anti-ragebait.user.js   # Userscript: port full styles Monk Mode, Scam & Rage boxes từ content.css
+├── popup.html                     # Popup UI: 12 thẻ stats 1 từ tiếng Anh, khôi phục checked toggles
+├── popup.js                       # Logic popup: fallbacks an toàn, bỏ emoji chip
+├── features_showcase.html         # Vercel Report showcase: vbg-custom-sim-badge 4px
+└── test/
+    └── classifier.test.js         # Bun test suite: regex /^[A-Za-z]+$/ và fetchWithRetry an toàn</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. File & Component Level -->
+        <div class="explain-row">
+          <div class="explain-left">
+            <span class="step-tag">TẦNG 2: COMPONENT & DOM STRUCTURE</span>
+            <h3 class="explain-title">Cấu Trúc DOM Của Badge & Warning Boxes</h3>
+            <p class="explain-p">
+              Badge được tái cấu trúc thành component tối giản: thẻ span text + thẻ span confidence dùng Geist Mono.
+            </p>
+            <p class="explain-p">
+              Monk Mode và Scam Warning box cũng được cấu trúc thành 2 tầng rõ rệt: icon + tiêu đề đậm + mô tả chi tiết, dùng chung class CSS.
+            </p>
+          </div>
+          <div class="explain-right">
+            <div class="code-box">
+<pre class="diff-block">
+  // Component Badge Mới Trong content.js & userscript:
+  &lt;div class="x-jev-badge" data-jev-badge-category="deep dive / technical breakdown / industry insider"&gt;
+<span class="diff-del">-   &lt;span&gt;🔬 Mổ xẻ / Deep Dive&lt;/span&gt;</span>
+<span class="diff-add">+   &lt;span&gt;Teardown&lt;/span&gt;</span>
+    &lt;span class="x-jev-confidence"&gt;92%&lt;/span&gt;
+  &lt;/div&gt;
+
+  // Seeding Collapsed Bar Đã Đồng Bộ Handler:
+  &lt;div class="x-jev-seeding-collapsed"&gt;
+    &lt;div class="x-jev-seeding-label"&gt;
+<span class="diff-del">-     &lt;span&gt;🧹&lt;/span&gt;</span>
+      &lt;span&gt;Collapsed suspected &lt;b&gt;Seeding / Bot&lt;/b&gt; comment (85%)&lt;/span&gt;
+    &lt;/div&gt;
+<span class="diff-add">+   &lt;span class="x-jev-expand-icon"&gt;View comment ▾&lt;/span&gt;</span>
+  &lt;/div&gt;</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Function & Call Tree Level -->
+        <div class="explain-row">
+          <div class="explain-left">
+            <span class="step-tag">TẦNG 3: CALL TREE & PIPELINE</span>
+            <h3 class="explain-title">Luồng Xử Lý Phân Loại & Gán Badge</h3>
+            <p class="explain-p">
+              Khi quét bài viết, luồng chạy qua <code>checkAndApplyMonkMode</code>, gửi batch lên API classifier.dev, nhận scores và dispatch qua <code>renderClassification</code>.
+            </p>
+            <p class="explain-p">
+              Hàm <code>getDisplayLabelName</code> chịu trách nhiệm chuẩn hóa tên sang đúng 1 từ tiếng Anh trước khi nhét vào DOM.
+            </p>
+          </div>
+          <div class="explain-right">
+            <div class="code-box">
+<pre>scheduleScan (150ms debounce)
+  └── scanAndProcess()
+        ├── checkAndApplyMonkMode(postEl) -> nếu dính goon-bait: ẩn media, render .x-monk-warning-box
+        ├── extractContent(postEl) -> textCache deduplication
+        └── flushQueue (80ms batch)
+              └── sendToClassifierAPI() -> fetchWithRetry / classifier.dev
+                    └── renderClassification(item, res)
+                          ├── [Priority 1] Scam check -> .x-jev-scam-box
+                          ├── [Priority 2] Rage check -> .x-jev-warning-box
+                          ├── [Priority 3] Seeding check -> .x-jev-seeding-collapsed
+                          └── [Badges] selectMultiBadges()
+                                ├── filter(score >= confidenceThreshold)
+                                ├── sortDescending()
+                                ├── slice(0, 4) -> Top 4 Badges Max
+                                └── badge.append(getDisplayLabelName(label))</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Algorithm & Test Logic Level -->
+        <div class="explain-row">
+          <div class="explain-left">
+            <span class="step-tag">TẦNG 4: ALGORITHM & TEST GATING</span>
+            <h3 class="explain-title">Thuật Toán Kiểm Tra Regex & Retry An Toàn</h3>
+            <p class="explain-p">
+              Bổ sung test assertion bắt buộc: tất cả các label đều phải thỏa mãn regex <code>/^[A-Za-z]+$/</code> (chỉ gồm các chữ cái tiếng Anh, không chứa dấu cách hay ký tự lạ).
+            </p>
+            <p class="explain-p">
+              Bọc cơ chế <code>fetchWithRetry</code> với AbortController để đảm bảo test suite chạy trên Bun luôn luôn ổn định và không bao giờ bị timeout mạng.
+            </p>
+          </div>
+          <div class="explain-right">
+            <div class="code-box">
+<pre class="diff-block">
+  // Thuật toán kiểm tra 1 từ tiếng Anh trong test/classifier.test.js:
+  test("Taxonomy structure has all 7 labels with corresponding badges", () => {
+    expect(LABELS.length).toBe(7);
+    for (const label of LABELS) {
+      expect(BADGE_MAP[label]).toBeDefined();
+<span class="diff-add">+     // Bắt buộc 1 từ tiếng Anh duy nhất: không khoảng trắng, không tiếng Việt, không emoji</span>
+<span class="diff-add">+     expect(BADGE_MAP[label].text).toMatch(/^[A-Za-z]+$/);</span>
+    }
+  });
+
+  // Helper fetchWithRetry:
+  async function fetchWithRetry(url, options, retries = 3) {
+    for (let i = 0; i &lt;= retries; i++) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 12000);
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timer);
+        if (res.ok) return res;
+      } catch (err) {
+        if (i === retries) throw err;
+        await new Promise(r => setTimeout(r, 600));
+      }
+    }
+  }</pre>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Inspector Toggle Button -->
+  <button class="inspector-toggle-btn" id="inspectorBtn" onclick="toggleInspector()">
+    <span>🔍 Check Diff</span>
+    <span class="inspector-state" id="inspectorState">ON</span>
+  </button>
+
+  <script>
+    // Tab Switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+      if (tabId === 'summarize') {
+        document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+        document.getElementById('tab-summarize').classList.add('active');
+      } else {
+        document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+        document.getElementById('tab-explain').classList.add('active');
+      }
+    }
+
+    // Inspector Toggle
+    function toggleInspector() {
+      const body = document.body;
+      const stateEl = document.getElementById('inspectorState');
+      body.classList.toggle('diff-active');
+      const isActive = body.classList.contains('diff-active');
+      stateEl.textContent = isActive ? 'ON' : 'OFF';
+      stateEl.style.background = isActive ? '#000000' : '#ef4444';
+    }
+
+    // Comparison Slider Dragging
+    const container = document.getElementById('swipeContainer');
+    const beforeLayer = document.getElementById('beforeLayer');
+    const dividerLine = document.getElementById('dividerLine');
+    const dragHandle = document.getElementById('dragHandle');
+    let isDragging = false;
+
+    function setSliderPosition(x) {
+      const rect = container.getBoundingClientRect();
+      let pos = (x - rect.left) / rect.width;
+      if (pos < 0.05) pos = 0.05;
+      if (pos > 0.95) pos = 0.95;
+      const pct = (pos * 100).toFixed(2) + '%';
+      container.style.setProperty('--slider-pos', pct);
+    }
+
+    dragHandle.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      e.preventDefault();
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      setSliderPosition(e.clientX);
+    });
+
+    // Touch support for mobile
+    dragHandle.addEventListener('touchstart', (e) => {
+      isDragging = true;
+    });
+
+    window.addEventListener('touchend', () => {
+      isDragging = false;
+    });
+
+    window.addEventListener('touchmove', (e) => {
+      if (!isDragging || !e.touches[0]) return;
+      setSliderPosition(e.touches[0].clientX);
+    });
+
+    // Default position 50%
+    container.style.setProperty('--slider-pos', '50%');
+  </script>
+</body>
+</html>
