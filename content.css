@@ -85,8 +85,6 @@
 .x-jev-revealed .x-jev-blurred-content,
 .x-jev-unblurred,
 [data-jev-revealed="true"],
-[data-jev-revealed="true"][data-jev-blur-item="true"],
-[data-jev-revealed="true"] [data-jev-blur-item="true"],
 [data-jev-revealed="true"] span,
 [data-jev-revealed="true"] div,
 [data-jev-revealed="true"] img,

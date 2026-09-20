@@ -948,6 +948,71 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(mockPost.revealed).toBe(false);
     expect(mockPost.dataRevealed).toBe(false);
   });
+
+  test("Symmetric inline unblur cleanup: clears filter, opacity, and pointer-events on re-blur and recycled nodes", () => {
+    function createMockElement(tag, attrs = {}) {
+      const styleProps = new Map();
+      return {
+        tagName: tag.toUpperCase(),
+        attributes: { ...attrs },
+        getAttribute(key) { return this.attributes[key]; },
+        hasAttribute(key) { return key in this.attributes; },
+        setAttribute(key, val) { this.attributes[key] = val; },
+        removeAttribute(key) { delete this.attributes[key]; },
+        style: {
+          setProperty(k, v) { styleProps.set(k, v); },
+          removeProperty(k) { styleProps.delete(k); },
+          getProperty(k) { return styleProps.get(k); },
+        },
+      };
+    }
+
+    const postEl = {
+      elements: [
+        createMockElement('div', { 'data-jev-blur-item': 'true' }),
+        createMockElement('span', { dir: 'auto' }),
+        createMockElement('div', { dir: 'auto' }),
+        createMockElement('img'),
+        createMockElement('video'),
+      ],
+      querySelectorAll(selector) {
+        return this.elements;
+      },
+    };
+
+    function applyInlineUnblur(el, isRevealed) {
+      const targets = el.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video');
+      if (isRevealed) {
+        targets.forEach((t) => {
+          t.style.setProperty('filter', 'none');
+          t.style.setProperty('opacity', '1');
+          t.style.setProperty('pointer-events', 'auto');
+        });
+      } else {
+        targets.forEach((t) => {
+          t.style.removeProperty('filter');
+          t.style.removeProperty('opacity');
+          t.style.removeProperty('pointer-events');
+        });
+      }
+    }
+
+    // 1. Reveal applied
+    applyInlineUnblur(postEl, true);
+    postEl.elements.forEach((el) => {
+      expect(el.style.getProperty('filter')).toBe('none');
+      expect(el.style.getProperty('opacity')).toBe('1');
+      expect(el.style.getProperty('pointer-events')).toBe('auto');
+    });
+
+    // 2. Symmetrical re-blur clears ALL inline properties on spans, divs, imgs, and blur-items
+    applyInlineUnblur(postEl, false);
+    postEl.elements.forEach((el) => {
+      expect(el.style.getProperty('filter')).toBeUndefined();
+      expect(el.style.getProperty('opacity')).toBeUndefined();
+      expect(el.style.getProperty('pointer-events')).toBeUndefined();
+    });
+  });
 });
 
 

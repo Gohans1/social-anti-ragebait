@@ -1022,6 +1022,23 @@
     });
   }
 
+  function applyInlineUnblur(postEl, isRevealed) {
+    const targets = postEl.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video');
+    if (isRevealed) {
+      targets.forEach((el) => {
+        el.style.setProperty('filter', 'none', 'important');
+        el.style.setProperty('opacity', '1', 'important');
+        el.style.setProperty('pointer-events', 'auto', 'important');
+      });
+    } else {
+      targets.forEach((el) => {
+        el.style.removeProperty('filter');
+        el.style.removeProperty('opacity');
+        el.style.removeProperty('pointer-events');
+      });
+    }
+  }
+
   function getPostTagKey(label) {
     if (label === 'self-improvement / motivational') return 'motivational';
     if (label === 'meme / humor / satire') return 'meme';
@@ -1188,20 +1205,12 @@
           if (isRevealed) {
             postEl.setAttribute('data-jev-revealed', 'true');
             postEl.setAttribute('data-user-revealed', 'true');
-            postEl.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
-              el.style.setProperty('filter', 'none', 'important');
-              el.style.setProperty('opacity', '1', 'important');
-              el.style.setProperty('pointer-events', 'auto', 'important');
-            });
+            applyInlineUnblur(postEl, true);
             btn.textContent = 'Ẩn lại';
           } else {
             postEl.removeAttribute('data-jev-revealed');
             postEl.removeAttribute('data-user-revealed');
-            postEl.querySelectorAll('[data-jev-blur-item="true"]').forEach((el) => {
-              el.style.removeProperty('filter');
-              el.style.removeProperty('opacity');
-              el.style.removeProperty('pointer-events');
-            });
+            applyInlineUnblur(postEl, false);
             btn.textContent = 'Xem bài viết';
           }
         };
@@ -1215,27 +1224,20 @@
         postEl.classList.add('x-jev-revealed');
         postEl.setAttribute('data-jev-revealed', 'true');
         postEl.setAttribute('data-user-revealed', 'true');
-        postEl.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
-          el.style.setProperty('filter', 'none', 'important');
-          el.style.setProperty('opacity', '1', 'important');
-          el.style.setProperty('pointer-events', 'auto', 'important');
-        });
+        applyInlineUnblur(postEl, true);
         const scamBtn = postEl.querySelector('.x-jev-scam-box .x-jev-reveal-btn');
         if (scamBtn) scamBtn.textContent = 'Ẩn lại';
       } else if (config.blockScamsEnabled) {
         postEl.classList.remove('x-jev-revealed');
         postEl.removeAttribute('data-jev-revealed');
         postEl.removeAttribute('data-user-revealed');
+        applyInlineUnblur(postEl, false);
         const scamBtn = postEl.querySelector('.x-jev-scam-box .x-jev-reveal-btn');
         if (scamBtn) scamBtn.textContent = 'Xem bài viết';
       } else {
         postEl.classList.add('x-jev-revealed');
         postEl.setAttribute('data-jev-revealed', 'true');
-        postEl.querySelectorAll('[data-jev-blur-item="true"]').forEach((el) => {
-          el.style.setProperty('filter', 'none', 'important');
-          el.style.setProperty('opacity', '1', 'important');
-          el.style.setProperty('pointer-events', 'auto', 'important');
-        });
+        applyInlineUnblur(postEl, true);
       }
       checkAndApplyFocusCollapse(postEl, textEl, 'scam / fraudulent scheme');
       return;
@@ -1290,20 +1292,12 @@
           if (isRevealed) {
             postEl.setAttribute('data-jev-revealed', 'true');
             postEl.setAttribute('data-user-revealed', 'true');
-            postEl.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
-              el.style.setProperty('filter', 'none', 'important');
-              el.style.setProperty('opacity', '1', 'important');
-              el.style.setProperty('pointer-events', 'auto', 'important');
-            });
+            applyInlineUnblur(postEl, true);
             revealBtn.textContent = 'Re-blur';
           } else {
             postEl.removeAttribute('data-jev-revealed');
             postEl.removeAttribute('data-user-revealed');
-            postEl.querySelectorAll('[data-jev-blur-item="true"]').forEach((el) => {
-              el.style.removeProperty('filter');
-              el.style.removeProperty('opacity');
-              el.style.removeProperty('pointer-events');
-            });
+            applyInlineUnblur(postEl, false);
             revealBtn.textContent = 'Reveal post';
           }
         };
@@ -1317,27 +1311,20 @@
         postEl.classList.add('x-jev-revealed');
         postEl.setAttribute('data-jev-revealed', 'true');
         postEl.setAttribute('data-user-revealed', 'true');
-        postEl.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
-          el.style.setProperty('filter', 'none', 'important');
-          el.style.setProperty('opacity', '1', 'important');
-          el.style.setProperty('pointer-events', 'auto', 'important');
-        });
+        applyInlineUnblur(postEl, true);
         const rBtn = postEl.querySelector('.x-jev-warning-box .x-jev-reveal-btn');
         if (rBtn) rBtn.textContent = 'Re-blur';
       } else if (config.autoBlurRageEnabled) {
         postEl.classList.remove('x-jev-revealed');
         postEl.removeAttribute('data-jev-revealed');
         postEl.removeAttribute('data-user-revealed');
+        applyInlineUnblur(postEl, false);
         const rBtn = postEl.querySelector('.x-jev-warning-box .x-jev-reveal-btn');
         if (rBtn) rBtn.textContent = 'Reveal post';
       } else {
         postEl.classList.add('x-jev-revealed');
         postEl.setAttribute('data-jev-revealed', 'true');
-        postEl.querySelectorAll('[data-jev-blur-item="true"]').forEach((el) => {
-          el.style.setProperty('filter', 'none', 'important');
-          el.style.setProperty('opacity', '1', 'important');
-          el.style.setProperty('pointer-events', 'auto', 'important');
-        });
+        applyInlineUnblur(postEl, true);
       }
       checkAndApplyFocusCollapse(postEl, textEl, 'rage bait / toxic / hostile / dismissive negativity');
       return;

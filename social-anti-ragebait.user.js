@@ -362,8 +362,6 @@
     .x-jev-revealed .x-jev-blurred-content,
     .x-jev-unblurred,
     [data-jev-revealed="true"],
-    [data-jev-revealed="true"][data-jev-blur-item="true"],
-    [data-jev-revealed="true"] [data-jev-blur-item="true"],
     [data-jev-revealed="true"] span,
     [data-jev-revealed="true"] div,
     [data-jev-revealed="true"] img,
@@ -1297,6 +1295,23 @@
     });
   }
 
+  function applyInlineUnblur(postEl, isRevealed) {
+    const targets = postEl.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video');
+    if (isRevealed) {
+      targets.forEach((el) => {
+        el.style.setProperty('filter', 'none', 'important');
+        el.style.setProperty('opacity', '1', 'important');
+        el.style.setProperty('pointer-events', 'auto', 'important');
+      });
+    } else {
+      targets.forEach((el) => {
+        el.style.removeProperty('filter');
+        el.style.removeProperty('opacity');
+        el.style.removeProperty('pointer-events');
+      });
+    }
+  }
+
   function renderClassification(item, res) {
     const { postEl, textEl } = item;
     if (!textEl || !textEl.parentElement) return;
@@ -1351,20 +1366,12 @@
           if (isRevealed) {
             postEl.setAttribute('data-jev-revealed', 'true');
             postEl.setAttribute('data-user-revealed', 'true');
-            postEl.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
-              el.style.setProperty('filter', 'none', 'important');
-              el.style.setProperty('opacity', '1', 'important');
-              el.style.setProperty('pointer-events', 'auto', 'important');
-            });
+            applyInlineUnblur(postEl, true);
             btn.textContent = 'Ẩn lại';
           } else {
             postEl.removeAttribute('data-jev-revealed');
             postEl.removeAttribute('data-user-revealed');
-            postEl.querySelectorAll('[data-jev-blur-item="true"]').forEach((el) => {
-              el.style.removeProperty('filter');
-              el.style.removeProperty('opacity');
-              el.style.removeProperty('pointer-events');
-            });
+            applyInlineUnblur(postEl, false);
             btn.textContent = 'Xem bài viết';
           }
         };
@@ -1377,27 +1384,20 @@
         postEl.classList.add('x-jev-revealed');
         postEl.setAttribute('data-jev-revealed', 'true');
         postEl.setAttribute('data-user-revealed', 'true');
-        postEl.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
-          el.style.setProperty('filter', 'none', 'important');
-          el.style.setProperty('opacity', '1', 'important');
-          el.style.setProperty('pointer-events', 'auto', 'important');
-        });
+        applyInlineUnblur(postEl, true);
         const scamBtn = postEl.querySelector('.x-jev-scam-box .x-jev-reveal-btn');
         if (scamBtn) scamBtn.textContent = 'Ẩn lại';
       } else if (CONFIG.blockScamsEnabled) {
         postEl.classList.remove('x-jev-revealed');
         postEl.removeAttribute('data-jev-revealed');
         postEl.removeAttribute('data-user-revealed');
+        applyInlineUnblur(postEl, false);
         const scamBtn = postEl.querySelector('.x-jev-scam-box .x-jev-reveal-btn');
         if (scamBtn) scamBtn.textContent = 'Xem bài viết';
       } else {
         postEl.classList.add('x-jev-revealed');
         postEl.setAttribute('data-jev-revealed', 'true');
-        postEl.querySelectorAll('[data-jev-blur-item="true"]').forEach((el) => {
-          el.style.setProperty('filter', 'none', 'important');
-          el.style.setProperty('opacity', '1', 'important');
-          el.style.setProperty('pointer-events', 'auto', 'important');
-        });
+        applyInlineUnblur(postEl, true);
       }
       checkAndApplyFocusCollapse(postEl, textEl, 'scam / fraudulent scheme');
       return;
@@ -1454,20 +1454,12 @@
           if (isRevealed) {
             postEl.setAttribute('data-jev-revealed', 'true');
             postEl.setAttribute('data-user-revealed', 'true');
-            postEl.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
-              el.style.setProperty('filter', 'none', 'important');
-              el.style.setProperty('opacity', '1', 'important');
-              el.style.setProperty('pointer-events', 'auto', 'important');
-            });
+            applyInlineUnblur(postEl, true);
             btn.textContent = 'Ẩn lại';
           } else {
             postEl.removeAttribute('data-jev-revealed');
             postEl.removeAttribute('data-user-revealed');
-            postEl.querySelectorAll('[data-jev-blur-item="true"]').forEach((el) => {
-              el.style.removeProperty('filter');
-              el.style.removeProperty('opacity');
-              el.style.removeProperty('pointer-events');
-            });
+            applyInlineUnblur(postEl, false);
             btn.textContent = 'Hiện nội dung';
           }
         };
@@ -1481,27 +1473,20 @@
         postEl.classList.add('x-jev-revealed');
         postEl.setAttribute('data-jev-revealed', 'true');
         postEl.setAttribute('data-user-revealed', 'true');
-        postEl.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
-          el.style.setProperty('filter', 'none', 'important');
-          el.style.setProperty('opacity', '1', 'important');
-          el.style.setProperty('pointer-events', 'auto', 'important');
-        });
+        applyInlineUnblur(postEl, true);
         const rBtn = postEl.querySelector('.x-jev-warning-box .x-jev-reveal-btn');
         if (rBtn) rBtn.textContent = 'Ẩn lại';
       } else if (CONFIG.autoBlurRageEnabled) {
         postEl.classList.remove('x-jev-revealed');
         postEl.removeAttribute('data-jev-revealed');
         postEl.removeAttribute('data-user-revealed');
+        applyInlineUnblur(postEl, false);
         const rBtn = postEl.querySelector('.x-jev-warning-box .x-jev-reveal-btn');
         if (rBtn) rBtn.textContent = 'Hiện nội dung';
       } else {
         postEl.classList.add('x-jev-revealed');
         postEl.setAttribute('data-jev-revealed', 'true');
-        postEl.querySelectorAll('[data-jev-blur-item="true"]').forEach((el) => {
-          el.style.setProperty('filter', 'none', 'important');
-          el.style.setProperty('opacity', '1', 'important');
-          el.style.setProperty('pointer-events', 'auto', 'important');
-        });
+        applyInlineUnblur(postEl, true);
       }
       checkAndApplyFocusCollapse(postEl, textEl, 'rage bait / toxic / hostile / dismissive negativity');
       return;
