@@ -879,5 +879,75 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(child.classList.contains('x-jev-revealed')).toBe(false);
     expect(parent.classList.contains('x-jev-revealed')).toBe(false);
   });
+
+  test("Virtual scroll persistence: revealedTexts prevents auto-re-blur on re-scan / re-render", () => {
+    const revealedTexts = new Set();
+    const mockPost = {
+      revealed: false,
+      dataRevealed: false,
+      btnText: 'Reveal post',
+    };
+
+    const postText = "Toxic inflammatory rage bait post content";
+
+    function mockSyncReveal(isRevealed, text) {
+      if (text) {
+        if (isRevealed) revealedTexts.add(text);
+        else revealedTexts.delete(text);
+      }
+      mockPost.revealed = isRevealed;
+      mockPost.dataRevealed = isRevealed;
+      mockPost.btnText = isRevealed ? 'Re-blur' : 'Reveal post';
+    }
+
+    function mockReScanRender(text, config = { autoBlurRageEnabled: true }) {
+      const isRageRevealedByUser = revealedTexts.has(text);
+      if (isRageRevealedByUser) {
+        mockPost.revealed = true;
+        mockPost.dataRevealed = true;
+        mockPost.btnText = 'Re-blur';
+      } else if (config.autoBlurRageEnabled) {
+        mockPost.revealed = false;
+        mockPost.dataRevealed = false;
+        mockPost.btnText = 'Reveal post';
+      } else {
+        mockPost.revealed = true;
+        mockPost.dataRevealed = true;
+      }
+    }
+
+    // Initial state: blurred
+    mockReScanRender(postText);
+    expect(mockPost.revealed).toBe(false);
+    expect(mockPost.dataRevealed).toBe(false);
+    expect(mockPost.btnText).toBe('Reveal post');
+
+    // User clicks "Reveal post"
+    mockSyncReveal(true, postText);
+    expect(revealedTexts.has(postText)).toBe(true);
+    expect(mockPost.revealed).toBe(true);
+    expect(mockPost.dataRevealed).toBe(true);
+    expect(mockPost.btnText).toBe('Re-blur');
+
+    // Virtual scroll triggers: element unmounts/remounts or re-scans with autoBlurRageEnabled=true
+    mockReScanRender(postText, { autoBlurRageEnabled: true });
+    // Must REMAIN revealed because user explicitly revealed it!
+    expect(mockPost.revealed).toBe(true);
+    expect(mockPost.dataRevealed).toBe(true);
+    expect(mockPost.btnText).toBe('Re-blur');
+
+    // User clicks "Re-blur"
+    mockSyncReveal(false, postText);
+    expect(revealedTexts.has(postText)).toBe(false);
+    expect(mockPost.revealed).toBe(false);
+    expect(mockPost.dataRevealed).toBe(false);
+    expect(mockPost.btnText).toBe('Reveal post');
+
+    // Re-scan after re-blur keeps it blurred
+    mockReScanRender(postText, { autoBlurRageEnabled: true });
+    expect(mockPost.revealed).toBe(false);
+    expect(mockPost.dataRevealed).toBe(false);
+  });
 });
+
 

@@ -72,6 +72,10 @@
 }
 
 /* Restored clean state when user clicks 'Reveal post' or disables blur */
+[data-jev-revealed="true"] [data-jev-blur-item="true"],
+[data-jev-revealed="true"][data-jev-blur-item="true"],
+[data-jev-rage="true"][data-jev-revealed="true"] [data-jev-blur-item="true"],
+[data-jev-scam="true"][data-jev-revealed="true"] [data-jev-blur-item="true"],
 [data-jev-rage="true"].x-jev-revealed [data-jev-blur-item="true"],
 [data-jev-scam="true"].x-jev-revealed [data-jev-blur-item="true"],
 .x-jev-revealed,
