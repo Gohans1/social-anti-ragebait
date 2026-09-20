@@ -137,11 +137,11 @@
     .vbg-custom-sim-badge {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       font-size: var(--vbg-type-metadata);
       font-weight: var(--vbg-weight-medium);
       padding: 2px 8px;
-      border-radius: var(--vbg-radius-small);
+      border-radius: 9999px;
       border: 1px solid var(--vbg-border-default);
       background: var(--vbg-surface-primary);
       color: var(--vbg-text-primary);
@@ -400,7 +400,7 @@
         <!-- Taxonomy Badges -->
         <section class="vbg-section">
           <h2 class="vbg-heading-20">Multi-Label Classification & Custom Taxonomy</h2>
-          <p>Classifies valuable posts and tags them with curated badges: Motivational, Meme, Deep Dive, Wholesome, Doom, FOMO, or user-defined custom labels.</p>
+          <p>Classifies valuable posts and tags them with curated badges: Motivational, Meme, Teardown, Wholesome, Doom, FOMO, or user-defined custom labels.</p>
 
           <div class="vbg-split" data-ratio="equal" style="margin-top: var(--vbg-space-4);">
             <div>
@@ -414,8 +414,8 @@
               <p class="vbg-label" style="color: var(--vbg-color-success); margin-bottom: var(--vbg-space-2);">After Filtering • Categorized Badges</p>
               <div class="vbg-custom-sim-post">
                 <div class="vbg-custom-sim-badge-container">
-                  <span class="vbg-custom-sim-badge">🔬 Deep Dive <span class="vbg-custom-sim-badge-confidence">96%</span></span>
-                  <span class="vbg-custom-sim-badge">🌱 Motivational <span class="vbg-custom-sim-badge-confidence">91%</span></span>
+                  <span class="vbg-custom-sim-badge">Teardown <span class="vbg-custom-sim-badge-confidence">96%</span></span>
+                  <span class="vbg-custom-sim-badge">Motivational <span class="vbg-custom-sim-badge-confidence">91%</span></span>
                 </div>
                 <div class="vbg-custom-sim-author"><code>@tech_insider</code> • 2h ago</div>
                 <p>Detailed architectural analysis on database latency optimization when scaling beyond 10M daily requests...</p>
@@ -451,8 +451,8 @@
           <pre class="vbg-custom-code-block">&lt;FeedContainer&gt;
   &lt;PostElement data-jev-handled="true"&gt;
     &lt;BadgeContainer class="x-jev-badge-container"&gt;
-      &lt;Badge class="x-jev-badge"&gt; 🌱 Motivational &lt;span class="x-jev-confidence"&gt;95%&lt;/span&gt; &lt;/Badge&gt;
-      &lt;Badge class="x-jev-badge"&gt; 🔬 Deep Dive &lt;span class="x-jev-confidence"&gt;92%&lt;/span&gt; &lt;/Badge&gt;
+      &lt;Badge class="x-jev-badge"&gt; Motivational &lt;span class="x-jev-confidence"&gt;95%&lt;/span&gt; &lt;/Badge&gt;
+      &lt;Badge class="x-jev-badge"&gt; Teardown &lt;span class="x-jev-confidence"&gt;92%&lt;/span&gt; &lt;/Badge&gt;
     &lt;/BadgeContainer&gt;
     
     &lt;WarningBox class="x-jev-warning-box | x-jev-scam-box | x-monk-warning-box"&gt;
@@ -533,25 +533,25 @@
                 <tr>
                   <th scope="row"><code>motivational / mindset</code></th>
                   <td>Personal growth, discipline, constructive mindset</td>
-                  <td>Attaches 🌱 badge with confidence percentage</td>
+                  <td>Attaches Motivational badge with confidence percentage</td>
                   <td class="vbg-numeric">3</td>
                 </tr>
                 <tr>
                   <th scope="row"><code>deep dive / breakdown</code></th>
                   <td>Technical breakdowns, domain teardowns, insider analysis</td>
-                  <td>Attaches 🔬 badge with confidence percentage</td>
+                  <td>Attaches Teardown badge with confidence percentage</td>
                   <td class="vbg-numeric">3</td>
                 </tr>
                 <tr>
                   <th scope="row"><code>meme / entertainment</code></th>
                   <td>Lighthearted jokes, humor, playful memes</td>
-                  <td>Attaches 🎭 badge with confidence percentage</td>
+                  <td>Attaches Meme badge with confidence percentage</td>
                   <td class="vbg-numeric">3</td>
                 </tr>
                 <tr>
                   <th scope="row"><code>wholesome / positive</code></th>
                   <td>Heartwarming, uplifting, constructive stories</td>
-                  <td>Attaches 🌿 badge with confidence percentage</td>
+                  <td>Attaches Wholesome badge with confidence percentage</td>
                   <td class="vbg-numeric">3</td>
                 </tr>
               </tbody>

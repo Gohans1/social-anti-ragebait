@@ -102,19 +102,21 @@
       margin: 0 !important;
     }
     .x-jev-badge {
-      display: inline-flex;
+      display: inline-flex !important;
       align-items: center !important;
-      gap: 6px !important;
-      padding: 3px 10px !important;
+      gap: 5px !important;
+      padding: 2px 8px !important;
       border-radius: 9999px !important;
-      font-size: 11.5px !important;
-      font-weight: 600 !important;
-      letter-spacing: 0.02em !important;
+      font-size: 11px !important;
+      font-weight: 500 !important;
+      letter-spacing: -0.01em !important;
       margin: 4px 0 8px 0 !important;
-      border: 1px solid !important;
+      border: 1px solid var(--badge-border, #262626) !important;
+      background: var(--badge-bg, #000000) !important;
+      color: var(--badge-color, #ededed) !important;
       width: fit-content !important;
       user-select: none !important;
-      transition: all 0.2s ease !important;
+      transition: border-color 0.15s ease, background-color 0.15s ease !important;
       cursor: help !important;
       line-height: 1.2 !important;
       z-index: 10 !important;
@@ -122,19 +124,22 @@
       filter: none !important;
       opacity: 1 !important;
       pointer-events: auto !important;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+      box-shadow: none !important;
+      font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     }
     .x-jev-badge:hover {
-      filter: brightness(1.2) !important;
-      transform: translateY(-1px) !important;
+      border-color: #444444 !important;
+      background: #0a0a0a !important;
     }
     .x-jev-badge.x-jev-hidden {
       display: none !important;
     }
     .x-jev-confidence {
+      font-family: "Geist Mono", monospace !important;
       font-size: 10px !important;
-      opacity: 0.85 !important;
+      color: #737373 !important;
       font-weight: 500 !important;
+      margin-left: 2px !important;
     }
     [data-monk-blocked="true"]:not(.monk-revealed):not([data-monk-revealed="true"]) img:not([alt*="avatar"]):not([alt*="profile"]):not([src*="profile_images"]),
     [data-monk-blocked="true"]:not(.monk-revealed):not([data-monk-revealed="true"]) video,
@@ -613,77 +618,77 @@
       configKey: 'filterMotivationalEnabled',
       instruction: 'personal growth, discipline, fitness, productivity lessons, inspiring mindsets, self-help, stoicism.',
       badge: {
-        text: '🌱 Motivational / Mindset',
+        text: 'Motivational',
         desc: 'Personal growth, productivity, and constructive mindset',
-        bg: 'rgba(245, 158, 11, 0.18)',
-        border: '#f59e0b',
-        color: '#fbbf24',
+        bg: '#000000',
+        border: '#262626',
+        color: '#ededed',
       },
     },
     'meme / humor / satire': {
       configKey: 'filterMemeEnabled',
       instruction: 'lighthearted jokes, funny memes, sarcastic humor, parody, troll posts.',
       badge: {
-        text: '🎭 Meme / Entertainment',
+        text: 'Meme',
         desc: 'Humor, memes, satire, and playful wit',
-        bg: 'rgba(236, 72, 153, 0.18)',
-        border: '#ec4899',
-        color: '#f472b6',
+        bg: '#000000',
+        border: '#262626',
+        color: '#ededed',
       },
     },
     'deep dive / technical breakdown / industry insider': {
       configKey: 'filterDeepDiveEnabled',
       instruction: 'in-depth technical threads, architectural teardowns, insider industry analysis, comprehensive teardowns of complex problems.',
       badge: {
-        text: '🔬 Deep Dive / Teardown',
+        text: 'Teardown',
         desc: 'Detailed domain teardown, insider analysis, or technical deep dive',
-        bg: 'rgba(99, 102, 241, 0.2)',
-        border: '#6366f1',
-        color: '#818cf8',
+        bg: '#000000',
+        border: '#262626',
+        color: '#ededed',
       },
     },
     'wholesome / positive': {
       configKey: 'filterWholesomeEnabled',
       instruction: 'uplifting, heartwarming, kind, peaceful, constructive positive stories, wholesome moments.',
       badge: {
-        text: '🌿 Wholesome / Positive',
+        text: 'Wholesome',
         desc: 'Uplifting, heartwarming, and constructive positive content',
-        bg: 'rgba(16, 185, 129, 0.18)',
-        border: '#10b981',
-        color: '#34d399',
+        bg: '#000000',
+        border: '#262626',
+        color: '#ededed',
       },
     },
     'fearmongering / doom': {
       configKey: 'filterDoomEnabled',
       instruction: 'alarming, sensationalized bad news, apocalyptic anxiety, catastrophic predictions, fearmongering.',
       badge: {
-        text: '⚠️ Doom / Alarmism',
+        text: 'Doom',
         desc: 'Sensationalized bad news, existential threat, or doom anxiety',
-        bg: 'rgba(249, 115, 22, 0.18)',
-        border: '#f97316',
-        color: '#fb923c',
+        bg: '#000000',
+        border: '#262626',
+        color: '#ededed',
       },
     },
     'fomo / hype': {
       configKey: 'filterFomoEnabled',
       instruction: 'exaggerated financial hype, crypto shill, urgency to buy, get-rich-quick, fear of missing out.',
       badge: {
-        text: '⚡ FOMO / Hype',
+        text: 'FOMO',
         desc: 'Hyperbolic hype, get-rich-quick claims, or unrealistic promises',
-        bg: 'rgba(234, 179, 8, 0.18)',
-        border: '#eab308',
-        color: '#fde047',
+        bg: '#000000',
+        border: '#262626',
+        color: '#ededed',
       },
     },
     'other / casual discussion': {
       configKey: 'filterCasualEnabled',
       countKey: 'casualCount',
       badge: {
-        text: '💬 Discussion / Casual',
+        text: 'Casual',
         desc: 'Everyday casual talk or general conversation',
-        bg: 'rgba(100, 116, 139, 0.15)',
-        border: '#64748b',
-        color: '#94a3b8',
+        bg: '#000000',
+        border: '#262626',
+        color: '#ededed',
       },
       instruction: 'everyday personal chatter, news, generic talk, or any content that does not fit the other categories.',
     },
@@ -830,39 +835,39 @@
     initPill();
     const pName = getPlatform().toUpperCase();
     const parts = [
-      `🛡️ ${pName}: <span style="color:#ededed; font-family:'Geist Mono',monospace;">ON</span>`,
-      `👁️ Scanned: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${scannedCount}</span>`,
+      `${pName}: <span style="color:#ededed; font-family:'Geist Mono',monospace;">ON</span>`,
+      `Scanned: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${scannedCount}</span>`,
     ];
-    if (CONFIG.focusModeEnabled) {
-      parts.push(`<span class="x-jev-pill-focus-toggle" title="Click to toggle Focus Feed Mode" style="cursor:pointer;">🎯 Focus: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${focusCollapsedCount}</span></span>`);
+    if (CONFIG.focusModeEnabled && focusCollapsedCount > 0) {
+      parts.push(`<span class="x-jev-pill-focus-toggle" title="Click to toggle Focus Feed Mode" style="cursor:pointer;">Focus: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${focusCollapsedCount}</span></span>`);
     }
     if (CONFIG.autoBlurRageEnabled) {
-      parts.push(`🚨 Rage: <span style="color:#ef4444; font-family:'Geist Mono',monospace;">${blockedRageCount}</span>`);
+      parts.push(`Rage: <span style="color:#ef4444; font-family:'Geist Mono',monospace;">${blockedRageCount}</span>`);
     }
     if (CONFIG.filterMotivationalEnabled !== false && motivationalCount > 0) {
-      parts.push(`🌱 Motivational: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${motivationalCount}</span>`);
+      parts.push(`Motivational: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${motivationalCount}</span>`);
     }
     if (CONFIG.filterMemeEnabled !== false && memeCount > 0) {
-      parts.push(`🎭 Meme: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${memeCount}</span>`);
+      parts.push(`Meme: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${memeCount}</span>`);
     }
     if (CONFIG.filterDeepDiveEnabled !== false && deepDiveCount > 0) {
-      parts.push(`🔬 Deep Dive: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${deepDiveCount}</span>`);
+      parts.push(`Teardown: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${deepDiveCount}</span>`);
     }
     if (CONFIG.filterWholesomeEnabled !== false && wholesomeCount > 0) {
-      parts.push(`🌿 Wholesome: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${wholesomeCount}</span>`);
+      parts.push(`Wholesome: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${wholesomeCount}</span>`);
     }
     if (CONFIG.filterDoomEnabled !== false && doomCount > 0) {
-      parts.push(`⚠️ Doom: <span style="color:#fb923c; font-family:'Geist Mono',monospace;">${doomCount}</span>`);
+      parts.push(`Doom: <span style="color:#fb923c; font-family:'Geist Mono',monospace;">${doomCount}</span>`);
     }
     if (CONFIG.filterFomoEnabled !== false && fomoCount > 0) {
-      parts.push(`⚡ FOMO: <span style="color:#fde047; font-family:'Geist Mono',monospace;">${fomoCount}</span>`);
+      parts.push(`FOMO: <span style="color:#fde047; font-family:'Geist Mono',monospace;">${fomoCount}</span>`);
     }
     if (CONFIG.filterCasualEnabled !== false && casualCount > 0) {
-      parts.push(`💬 Casual: <span style="color:#888888; font-family:'Geist Mono',monospace;">${casualCount}</span>`);
+      parts.push(`Casual: <span style="color:#888888; font-family:'Geist Mono',monospace;">${casualCount}</span>`);
     }
     const hasActiveCustom = Array.isArray(CONFIG.customLabels) && CONFIG.customLabels.some((c) => (c && typeof c === 'object' ? c.enabled !== false : Boolean(c)));
     if (hasActiveCustom && customCount > 0) {
-      parts.push(`🏷️ Custom: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${customCount}</span>`);
+      parts.push(`Custom: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${customCount}</span>`);
     }
     pillStats.innerHTML = parts.join(' | ');
   }
@@ -1050,13 +1055,13 @@
   function getDisplayLabelName(label) {
     if (label === 'self-improvement / motivational') return 'Motivational';
     if (label === 'meme / humor / satire') return 'Meme';
-    if (label === 'deep dive / technical breakdown / industry insider') return 'Deep Dive';
+    if (label === 'deep dive / technical breakdown / industry insider') return 'Teardown';
     if (label === 'wholesome / positive') return 'Wholesome';
     if (label === 'fearmongering / doom') return 'Doom';
     if (label === 'fomo / hype') return 'FOMO';
     if (label === 'other / casual discussion') return 'Casual';
     if (label === 'scam / fraudulent scheme') return 'Scam';
-    if (label === 'rage bait / toxic / hostile / dismissive negativity') return 'Rage Bait';
+    if (label === 'rage bait / toxic / hostile / dismissive negativity') return 'Rage';
     if (label === 'bot seeding / affiliate spam / fake review') return 'Seeding';
     return label || 'Other';
   }
@@ -1093,7 +1098,9 @@
     infoDiv.className = 'x-jev-focus-info';
 
     const iconSpan = document.createElement('span');
-    iconSpan.textContent = '🎯';
+    iconSpan.style.display = 'inline-flex';
+    iconSpan.style.alignItems = 'center';
+    iconSpan.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>';
 
     const textSpan = document.createElement('span');
     textSpan.textContent = 'Off-topic (Focus Mode): ';
@@ -1585,11 +1592,11 @@
           isCustom = true;
           const displayName = typeof customFound === 'object' ? customFound.name : customFound;
           customMeta = {
-            text: `🏷️ ${displayName}`,
+            text: displayName,
             desc: `Custom label: ${displayName}`,
-            bg: 'rgba(168, 85, 247, 0.18)',
-            border: '#a855f7',
-            color: '#c084fc',
+            bg: '#000000',
+            border: '#262626',
+            color: '#ededed',
           };
         }
       }

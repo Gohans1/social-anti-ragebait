@@ -328,10 +328,10 @@
       configKey: 'filterMotivationalEnabled',
       instruction: 'personal growth, discipline, fitness, productivity lessons, inspiring mindsets, self-help, stoicism.',
       badge: {
-        text: '🌱 Motivational / Mindset',
+        text: 'Motivational',
         desc: 'Personal growth, productivity, and constructive mindset',
-        bg: '#0a0a0a',
-        border: '#2e2e2e',
+        bg: '#000000',
+        border: '#262626',
         color: '#ededed',
       },
     },
@@ -339,10 +339,10 @@
       configKey: 'filterMemeEnabled',
       instruction: 'lighthearted jokes, funny memes, sarcastic humor, parody, troll posts.',
       badge: {
-        text: '🎭 Meme / Entertainment',
+        text: 'Meme',
         desc: 'Humor, memes, satire, and playful wit',
-        bg: '#0a0a0a',
-        border: '#2e2e2e',
+        bg: '#000000',
+        border: '#262626',
         color: '#ededed',
       },
     },
@@ -350,10 +350,10 @@
       configKey: 'filterDeepDiveEnabled',
       instruction: 'in-depth technical threads, architectural teardowns, insider industry analysis, comprehensive teardowns of complex problems.',
       badge: {
-        text: '🔬 Deep Dive / Teardown',
+        text: 'Teardown',
         desc: 'Detailed domain teardown, insider analysis, or technical deep dive',
-        bg: '#0a0a0a',
-        border: '#2e2e2e',
+        bg: '#000000',
+        border: '#262626',
         color: '#ededed',
       },
     },
@@ -361,10 +361,10 @@
       configKey: 'filterWholesomeEnabled',
       instruction: 'uplifting, heartwarming, kind, peaceful, constructive positive stories, wholesome moments.',
       badge: {
-        text: '🌿 Wholesome / Positive',
+        text: 'Wholesome',
         desc: 'Uplifting, heartwarming, and constructive positive content',
-        bg: '#0a0a0a',
-        border: '#2e2e2e',
+        bg: '#000000',
+        border: '#262626',
         color: '#ededed',
       },
     },
@@ -372,22 +372,22 @@
       configKey: 'filterDoomEnabled',
       instruction: 'alarming, sensationalized bad news, apocalyptic anxiety, catastrophic predictions, fearmongering.',
       badge: {
-        text: '⚠️ Doom / Alarmism',
+        text: 'Doom',
         desc: 'Sensationalized bad news, existential threat, or doom anxiety',
-        bg: '#0a0a0a',
-        border: '#3d2010',
-        color: '#fb923c',
+        bg: '#000000',
+        border: '#262626',
+        color: '#ededed',
       },
     },
     'fomo / hype': {
       configKey: 'filterFomoEnabled',
       countKey: 'fomoCount',
       badge: {
-        text: '⚡ FOMO / Hype',
+        text: 'FOMO',
         desc: 'Hyperbolic hype, get-rich-quick claims, or unrealistic promises',
-        bg: '#0a0a0a',
-        border: '#383010',
-        color: '#fde047',
+        bg: '#000000',
+        border: '#262626',
+        color: '#ededed',
       },
       instruction: 'exaggerated breakthrough hype, urgency inducing claims, overnight wealth promises, or artificial urgency.',
     },
@@ -395,11 +395,11 @@
       configKey: 'filterCasualEnabled',
       countKey: 'casualCount',
       badge: {
-        text: '💬 Discussion / Casual',
+        text: 'Casual',
         desc: 'Everyday casual talk or general conversation',
-        bg: '#0a0a0a',
+        bg: '#000000',
         border: '#262626',
-        color: '#888888',
+        color: '#ededed',
       },
       instruction: 'everyday personal chatter, news, generic talk, or any content that does not fit the other categories.',
     },
@@ -557,39 +557,39 @@
     initPill();
     const pName = getPlatform().toUpperCase();
     const parts = [
-      `🛡️ ${pName}: <span style="color:#ededed; font-family:'Geist Mono',monospace;">ON</span>`,
-      `👁️ Scanned: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${scannedCount}</span>`,
+      `${pName}: <span style="color:#ededed; font-family:'Geist Mono',monospace;">ON</span>`,
+      `Scanned: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${scannedCount}</span>`,
     ];
-    if (config.focusModeEnabled) {
-      parts.push(`<span class="x-jev-pill-focus-toggle" title="Click to toggle Focus Feed Mode" style="cursor:pointer;">🎯 Focus: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${focusCollapsedCount}</span></span>`);
+    if (config.focusModeEnabled && focusCollapsedCount > 0) {
+      parts.push(`<span class="x-jev-pill-focus-toggle" title="Click to toggle Focus Feed Mode" style="cursor:pointer;">Focus: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${focusCollapsedCount}</span></span>`);
     }
     if (config.autoBlurRageEnabled) {
-      parts.push(`🚨 Rage: <span style="color:#ef4444; font-family:'Geist Mono',monospace;">${blockedRageCount}</span>`);
+      parts.push(`Rage: <span style="color:#ef4444; font-family:'Geist Mono',monospace;">${blockedRageCount}</span>`);
     }
     if (config.filterMotivationalEnabled !== false && motivationalCount > 0) {
-      parts.push(`🌱 Motivational: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${motivationalCount}</span>`);
+      parts.push(`Motivational: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${motivationalCount}</span>`);
     }
     if (config.filterMemeEnabled !== false && memeCount > 0) {
-      parts.push(`🎭 Meme: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${memeCount}</span>`);
+      parts.push(`Meme: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${memeCount}</span>`);
     }
     if (config.filterDeepDiveEnabled !== false && deepDiveCount > 0) {
-      parts.push(`🔬 Deep Dive: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${deepDiveCount}</span>`);
+      parts.push(`Teardown: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${deepDiveCount}</span>`);
     }
     if (config.filterWholesomeEnabled !== false && wholesomeCount > 0) {
-      parts.push(`🌿 Wholesome: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${wholesomeCount}</span>`);
+      parts.push(`Wholesome: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${wholesomeCount}</span>`);
     }
     if (config.filterDoomEnabled !== false && doomCount > 0) {
-      parts.push(`⚠️ Doom: <span style="color:#fb923c; font-family:'Geist Mono',monospace;">${doomCount}</span>`);
+      parts.push(`Doom: <span style="color:#fb923c; font-family:'Geist Mono',monospace;">${doomCount}</span>`);
     }
     if (config.filterFomoEnabled !== false && fomoCount > 0) {
-      parts.push(`⚡ FOMO: <span style="color:#fde047; font-family:'Geist Mono',monospace;">${fomoCount}</span>`);
+      parts.push(`FOMO: <span style="color:#fde047; font-family:'Geist Mono',monospace;">${fomoCount}</span>`);
     }
     if (config.filterCasualEnabled !== false && casualCount > 0) {
-      parts.push(`💬 Casual: <span style="color:#888888; font-family:'Geist Mono',monospace;">${casualCount}</span>`);
+      parts.push(`Casual: <span style="color:#888888; font-family:'Geist Mono',monospace;">${casualCount}</span>`);
     }
     const hasActiveCustom = Array.isArray(config.customLabels) && config.customLabels.some((c) => (c && typeof c === 'object' ? c.enabled !== false : Boolean(c)));
     if (hasActiveCustom && customCount > 0) {
-      parts.push(`🏷️ Custom: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${customCount}</span>`);
+      parts.push(`Custom: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${customCount}</span>`);
     }
     pillStats.innerHTML = parts.join(' | ');
   }
@@ -1068,13 +1068,13 @@
   function getDisplayLabelName(label) {
     if (label === 'self-improvement / motivational') return 'Motivational';
     if (label === 'meme / humor / satire') return 'Meme';
-    if (label === 'deep dive / technical breakdown / industry insider') return 'Deep Dive';
+    if (label === 'deep dive / technical breakdown / industry insider') return 'Teardown';
     if (label === 'wholesome / positive') return 'Wholesome';
     if (label === 'fearmongering / doom') return 'Doom';
     if (label === 'fomo / hype') return 'FOMO';
     if (label === 'other / casual discussion') return 'Casual';
     if (label === 'scam / fraudulent scheme') return 'Scam';
-    if (label === 'rage bait / toxic / hostile / dismissive negativity') return 'Rage Bait';
+    if (label === 'rage bait / toxic / hostile / dismissive negativity') return 'Rage';
     if (label === 'bot seeding / affiliate spam / fake review') return 'Seeding';
     return label || 'Other';
   }
@@ -1111,7 +1111,9 @@
     infoDiv.className = 'x-jev-focus-info';
 
     const iconSpan = document.createElement('span');
-    iconSpan.textContent = '🎯';
+    iconSpan.style.display = 'inline-flex';
+    iconSpan.style.alignItems = 'center';
+    iconSpan.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>';
 
     const textSpan = document.createElement('span');
     textSpan.textContent = 'Off-topic (Focus Mode): ';
@@ -1443,10 +1445,10 @@
           isCustom = true;
           const displayName = typeof customFound === 'object' ? customFound.name : customFound;
           customMeta = {
-            text: `🏷️ ${displayName}`,
+            text: displayName,
             desc: `Custom label: ${displayName}`,
-            bg: '#0a0a0a',
-            border: '#2e2e2e',
+            bg: '#000000',
+            border: '#262626',
             color: '#ededed',
           };
         }
