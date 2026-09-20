@@ -1737,9 +1737,9 @@
         const badge = document.createElement('div');
         badge.className = 'x-jev-badge';
         badge.setAttribute('data-jev-badge-category', label);
-        badge.style.setProperty('--badge-bg', meta.bg);
-        badge.style.setProperty('--badge-border', meta.border);
-        badge.style.setProperty('--badge-color', meta.color);
+        badge.style.setProperty('--badge-bg', meta.bg || '#000000');
+        badge.style.setProperty('--badge-border', meta.border || '#262626');
+        badge.style.setProperty('--badge-color', meta.color || '#ededed');
         badge.title = `${meta.desc} (Confidence: ${Math.round(score * 100)}%)`;
 
         const textSpan = document.createElement('span');

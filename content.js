@@ -1525,12 +1525,9 @@
         const badge = document.createElement('div');
         badge.className = 'x-jev-badge';
         badge.setAttribute('data-jev-badge-category', label);
-        badge.style.setProperty('--badge-bg', meta.bg || '#0a0a0a');
-        badge.style.setProperty('--badge-border', meta.border || '#2e2e2e');
+        badge.style.setProperty('--badge-bg', meta.bg || '#000000');
+        badge.style.setProperty('--badge-border', meta.border || '#262626');
         badge.style.setProperty('--badge-color', meta.color || '#ededed');
-        badge.style.backgroundColor = meta.bg;
-        badge.style.borderColor = meta.border;
-        badge.style.color = meta.color;
         badge.title = `${meta.desc} (Confidence: ${Math.round(score * 100)}%)`;
 
         const textSpan = document.createElement('span');
