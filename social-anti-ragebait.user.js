@@ -172,30 +172,59 @@
       display: none !important;
     }
     .x-monk-warning-box {
-      background: rgba(15, 23, 42, 0.9) !important;
-      border: 1.5px solid #0ea5e9 !important;
-      border-radius: 10px !important;
-      padding: 8px 14px !important;
+      background: #0a0a0a !important;
+      border: 1px solid #262626 !important;
+      border-left: 3px solid #0070f3 !important;
+      border-radius: 6px !important;
+      padding: 8px 12px !important;
       margin: 6px 0 10px 0 !important;
       display: flex !important;
       align-items: center !important;
       justify-content: space-between !important;
+      gap: 12px !important;
       font-size: 12px !important;
-      color: #38bdf8 !important;
+      color: #ededed !important;
       z-index: 99 !important;
-      box-sizing: border-box !important;
+      position: relative !important;
       width: 100% !important;
+      box-sizing: border-box !important;
+      filter: none !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     }
+
+    .x-monk-warning-text {
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      font-weight: 500 !important;
+      color: #ededed !important;
+      line-height: 1.3 !important;
+    }
+
     .x-monk-reveal-btn {
-      background: #0284c7 !important;
-      border: none !important;
-      color: #fff !important;
-      padding: 5px 12px !important;
-      border-radius: 6px !important;
+      background: #ededed !important;
+      border: 1px solid #ededed !important;
+      color: #000000 !important;
+      padding: 4px 10px !important;
+      border-radius: 4px !important;
       cursor: pointer !important;
-      font-size: 11.5px !important;
-      font-weight: 700 !important;
+      font-family: "Geist", sans-serif !important;
+      font-size: 11px !important;
+      font-weight: 500 !important;
+      white-space: nowrap !important;
+      transition: background 0.15s ease !important;
+      filter: none !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
     }
+
+    .x-monk-reveal-btn:hover {
+      background: #ffffff !important;
+      border-color: #ffffff !important;
+    }
+
     [data-monk-reels-blocked="true"]:not(.monk-revealed) video,
     [data-monk-reels-blocked="true"]:not(.monk-revealed) img,
     [data-monk-tray-blocked="true"]:not(.monk-revealed) video,
@@ -219,96 +248,118 @@
       width: 100% !important;
       height: 100% !important;
       min-height: 240px !important;
-      background: rgba(9, 13, 22, 0.94) !important;
-      backdrop-filter: blur(25px) !important;
-      -webkit-backdrop-filter: blur(25px) !important;
+      background: rgba(0, 0, 0, 0.92) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
       z-index: 999999 !important;
       padding: 24px !important;
       box-sizing: border-box !important;
+      filter: none !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
     }
     [data-monk-reels-blocked="true"].monk-revealed .x-monk-reels-overlay {
       display: none !important;
     }
     .x-monk-reels-card {
       max-width: 360px !important;
-      background: rgba(15, 23, 42, 0.96) !important;
-      border: 1.5px solid rgba(56, 189, 248, 0.5) !important;
-      border-radius: 16px !important;
-      padding: 22px 20px !important;
+      background: #0a0a0a !important;
+      border: 1px solid #262626 !important;
+      border-radius: 8px !important;
+      padding: 24px 20px !important;
       text-align: center !important;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7) !important;
-      color: #f8fafc !important;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8) !important;
+      color: #ededed !important;
+      font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     }
     .x-monk-reels-icon {
-      font-size: 38px !important;
+      font-size: 32px !important;
       margin-bottom: 10px !important;
       line-height: 1 !important;
     }
     .x-monk-reels-title {
       font-size: 15px !important;
-      font-weight: 700 !important;
-      color: #38bdf8 !important;
+      font-weight: 600 !important;
+      color: #ffffff !important;
       margin-bottom: 6px !important;
     }
     .x-monk-reels-desc {
       font-size: 12px !important;
-      color: #94a3b8 !important;
+      color: #888888 !important;
       line-height: 1.45 !important;
       margin-bottom: 16px !important;
     }
     .x-monk-reels-actions {
       display: flex !important;
-      gap: 10px !important;
+      gap: 8px !important;
       justify-content: center !important;
     }
     .x-monk-btn-reveal {
-      background: #0284c7 !important;
-      color: #ffffff !important;
-      border: none !important;
-      border-radius: 8px !important;
-      padding: 8px 16px !important;
-      font-size: 12.5px !important;
-      font-weight: 700 !important;
+      background: #ededed !important;
+      color: #000000 !important;
+      border: 1px solid #ededed !important;
+      border-radius: 4px !important;
+      padding: 6px 14px !important;
+      font-size: 11.5px !important;
+      font-weight: 500 !important;
       cursor: pointer !important;
+      transition: background 0.15s ease !important;
+    }
+    .x-monk-btn-reveal:hover {
+      background: #ffffff !important;
+      border-color: #ffffff !important;
     }
     .x-monk-btn-close {
-      background: rgba(239, 68, 68, 0.18) !important;
-      color: #fca5a5 !important;
-      border: 1px solid rgba(239, 68, 68, 0.4) !important;
-      border-radius: 8px !important;
-      padding: 8px 16px !important;
-      font-size: 12.5px !important;
-      font-weight: 700 !important;
+      background: #141414 !important;
+      color: #ededed !important;
+      border: 1px solid #2e2e2e !important;
+      border-radius: 4px !important;
+      padding: 6px 14px !important;
+      font-size: 11.5px !important;
+      font-weight: 500 !important;
       cursor: pointer !important;
+      transition: border-color 0.15s ease !important;
+    }
+    .x-monk-btn-close:hover {
+      border-color: #555555 !important;
     }
     .x-monk-btn-home {
-      background: rgba(255, 255, 255, 0.12) !important;
-      color: #f1f5f9 !important;
-      border: 1px solid rgba(255, 255, 255, 0.22) !important;
-      border-radius: 8px !important;
-      padding: 8px 16px !important;
-      font-size: 12.5px !important;
-      font-weight: 700 !important;
+      background: #141414 !important;
+      color: #ededed !important;
+      border: 1px solid #2e2e2e !important;
+      border-radius: 4px !important;
+      padding: 6px 14px !important;
+      font-size: 11.5px !important;
+      font-weight: 500 !important;
       cursor: pointer !important;
+      transition: border-color 0.15s ease !important;
+    }
+    .x-monk-btn-home:hover {
+      border-color: #555555 !important;
     }
     .x-monk-re-blur-floating {
       position: absolute !important;
       top: 14px !important;
       left: 14px !important;
       z-index: 999999 !important;
-      background: rgba(15, 23, 42, 0.88) !important;
-      border: 1px solid rgba(56, 189, 248, 0.6) !important;
-      color: #38bdf8 !important;
-      padding: 6px 12px !important;
-      border-radius: 20px !important;
-      font-size: 11.5px !important;
-      font-weight: 700 !important;
+      background: rgba(0, 0, 0, 0.9) !important;
+      border: 1px solid #2e2e2e !important;
+      color: #ededed !important;
+      padding: 4px 10px !important;
+      border-radius: 4px !important;
+      font-size: 11px !important;
+      font-weight: 500 !important;
       cursor: pointer !important;
       backdrop-filter: blur(8px) !important;
       display: none;
+      font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+    }
+    .x-monk-re-blur-floating:hover {
+      border-color: #555555 !important;
     }
     [data-monk-reels-blocked="true"].monk-revealed .x-monk-re-blur-floating {
       display: flex !important;
@@ -316,15 +367,16 @@
       gap: 6px !important;
     }
     .x-monk-tray-banner {
-      background: linear-gradient(90deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 58, 138, 0.9) 100%) !important;
-      border: 1.5px solid rgba(56, 189, 248, 0.4) !important;
-      border-radius: 10px !important;
-      padding: 10px 14px !important;
-      margin: 10px 0 !important;
+      background: #0a0a0a !important;
+      border: 1px solid #262626 !important;
+      border-radius: 6px !important;
+      padding: 8px 12px !important;
+      margin: 8px 0 !important;
       display: flex !important;
       align-items: center !important;
       justify-content: space-between !important;
-      color: #f8fafc !important;
+      color: #ededed !important;
+      font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
       z-index: 10 !important;
       position: relative !important;
       box-sizing: border-box !important;
@@ -333,19 +385,24 @@
     .x-monk-tray-content {
       display: flex !important;
       align-items: center !important;
-      gap: 10px !important;
-      font-size: 12.5px !important;
+      gap: 8px !important;
+      font-size: 12px !important;
     }
     .x-monk-tray-toggle {
-      background: #0284c7 !important;
-      color: #fff !important;
-      border: none !important;
-      border-radius: 6px !important;
-      padding: 6px 14px !important;
-      font-size: 11.5px !important;
-      font-weight: 700 !important;
+      background: #ededed !important;
+      color: #000000 !important;
+      border: 1px solid #ededed !important;
+      border-radius: 4px !important;
+      padding: 4px 10px !important;
+      font-size: 11px !important;
+      font-weight: 500 !important;
       cursor: pointer !important;
       flex-shrink: 0 !important;
+      transition: background 0.15s ease !important;
+    }
+    .x-monk-tray-toggle:hover {
+      background: #ffffff !important;
+      border-color: #ffffff !important;
     }
     [data-jev-rage="true"]:not(.x-jev-revealed):not([data-jev-revealed="true"]) [data-jev-blur-item="true"],
     [data-jev-scam="true"]:not(.x-jev-revealed):not([data-jev-revealed="true"]) [data-jev-blur-item="true"],
@@ -1274,9 +1331,12 @@
         const box = document.createElement('div');
         box.className = 'x-monk-warning-box';
         box.innerHTML = `
-          <div>
-            <b>🧘 Monk Mode: Media hidden to preserve focus.</b>
-            <div style="font-size:10.5px;opacity:0.9;">${detectedReason}</div>
+          <div class="x-monk-warning-text">
+            <span>🧘</span>
+            <div>
+              <b>Monk Mode: Media hidden to maintain focus.</b>
+              <div style="font-size:10.5px;font-weight:400;opacity:0.9;margin-top:1px;">${detectedReason}</div>
+            </div>
           </div>
         `;
         const btn = document.createElement('button');
@@ -1464,9 +1524,12 @@
         box.className = 'x-jev-scam-box';
         const pct = Math.round(scamScore * 100);
         box.innerHTML = `
-          <div>
-            <b>🛑 Scam / Deceptive Scheme Warning (${pct}%):</b>
-            <div style="font-size:11px;opacity:0.9;">Suspicious financial scheme, unrealistic income promises, or deceptive links.</div>
+          <div class="x-jev-scam-text">
+            <span>🛑</span>
+            <div>
+              <b>Scam / Deceptive Scheme Warning (${pct}%):</b>
+              <div style="font-size:11px;font-weight:400;opacity:0.9;margin-top:2px;">Suspicious financial scheme, unrealistic income promises, or deceptive links.</div>
+            </div>
           </div>
         `;
         const btn = document.createElement('button');
