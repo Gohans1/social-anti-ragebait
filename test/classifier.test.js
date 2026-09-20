@@ -1,6 +1,22 @@
 import { expect, test, describe } from "bun:test";
 
 describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
+  async function fetchWithRetry(url, options, retries = 3) {
+    for (let i = 0; i <= retries; i++) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 12000);
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timer);
+        if (res.ok) return res;
+      } catch (err) {
+        if (i === retries) throw err;
+        await new Promise((r) => setTimeout(r, 600));
+      }
+    }
+    throw new Error(`Failed to fetch from ${url} after ${retries} retries`);
+  }
+
   const LABELS = [
     'self-improvement / motivational',
     'meme / humor / satire',
@@ -131,7 +147,7 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
       "Coin này sắp list Binance x100 lần ngay trong đêm nay múc gấp kẻo lỡ cơ hội đổi đời"
     ];
 
-    const res = await fetch("https://classifier.dev", {
+    const res = await fetchWithRetry("https://classifier.dev", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -512,7 +528,7 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     const customPrompt = 'Classify social media content: 1. "anime": content specifically discussing, focused on, or related to anime. 2. "other / casual discussion": everyday chatter.';
     const post = "Tập mới nhất của Jujutsu Kaisen Gojo đánh nhau với Sukuna animation đỉnh vcl";
 
-    const res = await fetch("https://classifier.dev", {
+    const res = await fetchWithRetry("https://classifier.dev", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -532,7 +548,7 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     const toxicPost = "Bọn này toàn lũ ngu dốt thất bại ăn bám xã hội biến đi cho rảnh mắt";
 
     // 1. When rage-bait label is included in API call
-    const resWithRage = await fetch("https://classifier.dev", {
+    const resWithRage = await fetchWithRetry("https://classifier.dev", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -551,7 +567,7 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(dataWithRage.results[0].label).toBe("rage bait / toxic / hostile / dismissive negativity");
 
     // 2. When rage-bait is disabled (excluded from API call payload)
-    const resWithoutRage = await fetch("https://classifier.dev", {
+    const resWithoutRage = await fetchWithRetry("https://classifier.dev", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -644,7 +660,7 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
 
   test("Live classifier.dev API multi-label returns array of labels and independent scores", async () => {
     const input = "Bài viết phân tích chuyên sâu kiến trúc microservices và kèm meme lập trình hài hước";
-    const res = await fetch("https://classifier.dev", {
+    const res = await fetchWithRetry("https://classifier.dev", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

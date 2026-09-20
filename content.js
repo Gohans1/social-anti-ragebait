@@ -1306,7 +1306,13 @@
         warningBox.className = 'x-jev-warning-box';
         const pct = Math.round(rageScore * 100);
         warningBox.innerHTML = `
-          <span class="x-jev-warning-text">🛡️ <b>Rage / Toxic Warning (${pct}%):</b> Potentially hostile, outrage-inducing, or toxic content blurred.</span>
+          <div class="x-jev-warning-text">
+            <span>🛡️</span>
+            <div>
+              <b>Rage / Toxic Warning (${pct}%):</b>
+              <div style="font-size:11px;font-weight:400;opacity:0.9;margin-top:2px;">Potentially hostile, outrage-inducing, or toxic content blurred.</div>
+            </div>
+          </div>
         `;
 
         const revealBtn = document.createElement('button');
