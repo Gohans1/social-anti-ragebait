@@ -399,87 +399,164 @@
     body.x-jev-disable-all-blur .x-jev-scam-box {
       display: none !important;
     }
+    /* --- Rage Bait Warning Box --- */
     .x-jev-warning-box {
-      background: rgba(239, 68, 68, 0.16) !important;
-      border: 1.5px dashed #ef4444 !important;
-      border-radius: 10px !important;
-      padding: 8px 14px !important;
-      margin: 6px 0 10px 0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-      font-size: 12.5px !important;
-      color: #ef4444 !important;
-      width: 100% !important;
-      box-sizing: border-box !important;
-    }
-    .x-jev-scam-box {
-      background: rgba(220, 38, 38, 0.18) !important;
-      border: 1.5px dashed #dc2626 !important;
-      border-radius: 10px !important;
-      padding: 9px 14px !important;
-      margin: 6px 0 10px 0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-      font-size: 12.5px !important;
-      color: #f87171 !important;
-      width: 100% !important;
-      box-sizing: border-box !important;
-    }
-    .x-jev-reveal-btn {
-      background: #ef4444 !important;
-      border: none !important;
-      color: #ffffff !important;
-      padding: 5px 14px !important;
+      background: #0a0a0a !important;
+      border: 1px solid #262626 !important;
+      border-left: 3px solid #ef4444 !important;
       border-radius: 6px !important;
-      cursor: pointer !important;
+      padding: 8px 12px !important;
+      margin: 6px 0 10px 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
       font-size: 12px !important;
-      font-weight: 700 !important;
+      color: #ededed !important;
+      z-index: 99 !important;
+      position: relative !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      filter: none !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     }
+
+    .x-jev-warning-text {
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      font-weight: 500 !important;
+      color: #ededed !important;
+      line-height: 1.3 !important;
+    }
+
+    /* --- Scam & Fraud Warning Box --- */
+    .x-jev-scam-box {
+      background: #0a0a0a !important;
+      border: 1px solid #262626 !important;
+      border-left: 3px solid #f97316 !important;
+      border-radius: 6px !important;
+      padding: 8px 12px !important;
+      margin: 6px 0 10px 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
+      font-size: 12px !important;
+      color: #ededed !important;
+      z-index: 99 !important;
+      position: relative !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      filter: none !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+
+    .x-jev-scam-text {
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      font-weight: 500 !important;
+      color: #ededed !important;
+      line-height: 1.3 !important;
+    }
+
+    .x-jev-reveal-btn {
+      background: #ededed !important;
+      border: 1px solid #ededed !important;
+      color: #000000 !important;
+      padding: 4px 10px !important;
+      border-radius: 4px !important;
+      cursor: pointer !important;
+      font-family: "Geist", sans-serif !important;
+      font-size: 11px !important;
+      font-weight: 500 !important;
+      white-space: nowrap !important;
+      transition: background 0.15s ease !important;
+      filter: none !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      z-index: 100 !important;
+      position: relative !important;
+    }
+
+    .x-jev-reveal-btn:hover {
+      background: #ffffff !important;
+      border-color: #ffffff !important;
+    }
+
+    /* --- Collapsed Seeding Comment Bar --- */
     .x-jev-seeding-collapsed {
-      background: rgba(168, 85, 247, 0.12) !important;
-      border: 1px dashed rgba(168, 85, 247, 0.45) !important;
-      border-radius: 8px !important;
+      background: #0a0a0a !important;
+      border: 1px solid #222222 !important;
+      border-radius: 6px !important;
       padding: 6px 12px !important;
       margin: 4px 0 !important;
       display: flex !important;
       align-items: center !important;
       justify-content: space-between !important;
       font-size: 11.5px !important;
-      color: #c084fc !important;
+      color: #888888 !important;
       cursor: pointer !important;
+      user-select: none !important;
+      transition: border-color 0.15s ease !important;
       width: 100% !important;
       box-sizing: border-box !important;
+      font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     }
+
+    .x-jev-seeding-collapsed:hover {
+      border-color: #444444 !important;
+    }
+
+    .x-jev-seeding-label {
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      font-weight: 500 !important;
+    }
+
+    .x-jev-expand-icon {
+      font-family: "Geist Mono", monospace !important;
+      font-size: 10px !important;
+      font-weight: 500 !important;
+      color: #ededed !important;
+      background: #141414 !important;
+      border: 1px solid #262626 !important;
+      padding: 2px 6px !important;
+      border-radius: 4px !important;
+    }
+
     .x-jev-collapsed-body {
       display: none !important;
     }
+
     /* --- Focus Feed Mode: Collapsed Bar for Off-Topic Posts --- */
     .x-jev-focus-bar {
-      background: rgba(30, 41, 59, 0.5) !important;
-      border: 1px dashed rgba(148, 163, 184, 0.35) !important;
-      border-radius: 8px !important;
+      background: #0a0a0a !important;
+      border: 1px solid #222222 !important;
+      border-radius: 6px !important;
       padding: 6px 12px !important;
       margin: 4px 0 !important;
       display: flex !important;
       align-items: center !important;
       justify-content: space-between !important;
       font-size: 11.5px !important;
-      color: #94a3b8 !important;
+      color: #888888 !important;
       cursor: pointer !important;
       user-select: none !important;
-      transition: all 0.15s ease !important;
+      transition: border-color 0.15s ease !important;
       width: 100% !important;
       box-sizing: border-box !important;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+      font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     }
 
     .x-jev-focus-bar:hover {
-      background: rgba(30, 41, 59, 0.8) !important;
-      border-color: rgba(56, 189, 248, 0.6) !important;
-      color: #f1f5f9 !important;
-      transform: translateX(2px) !important;
+      border-color: #444444 !important;
     }
 
     .x-jev-focus-info {
@@ -490,17 +567,14 @@
     }
 
     .x-jev-focus-action {
-      font-size: 11px !important;
-      font-weight: 700 !important;
-      color: #38bdf8 !important;
-      background: rgba(56, 189, 248, 0.15) !important;
-      padding: 2px 8px !important;
+      font-family: "Geist Mono", monospace !important;
+      font-size: 10px !important;
+      font-weight: 500 !important;
+      color: #ededed !important;
+      background: #141414 !important;
+      border: 1px solid #262626 !important;
+      padding: 2px 6px !important;
       border-radius: 4px !important;
-      transition: background 0.15s ease !important;
-    }
-
-    .x-jev-focus-bar:hover .x-jev-focus-action {
-      background: rgba(56, 189, 248, 0.25) !important;
     }
 
     .x-jev-focus-collapsed-content {
@@ -524,16 +598,28 @@
       bottom: 24px !important;
       right: 24px !important;
       z-index: 999999 !important;
-      background: rgba(15, 23, 42, 0.94) !important;
-      color: #e2e8f0 !important;
-      padding: 8px 16px !important;
+      background: rgba(0, 0, 0, 0.9) !important;
+      color: #ededed !important;
+      padding: 6px 14px !important;
       border-radius: 9999px !important;
-      font-size: 12px !important;
-      font-weight: 600 !important;
+      font-size: 11.5px !important;
+      font-weight: 500 !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+      border: 1px solid #262626 !important;
+      display: flex;
+      align-items: center !important;
+      gap: 8px !important;
       cursor: pointer !important;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
-      border: 1px solid rgba(255,255,255,0.12) !important;
+      user-select: none !important;
+      transition: border-color 0.15s ease !important;
+      filter: none !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     }
+
     body.x-jev-hide-pill .x-jev-floating-pill,
     .x-jev-floating-pill.x-jev-pill-hidden,
     .x-jev-floating-pill[data-hidden="true"],
@@ -543,28 +629,32 @@
       pointer-events: none !important;
       visibility: hidden !important;
     }
+
+    .x-jev-floating-pill:hover {
+      border-color: #444444 !important;
+    }
+
     .x-jev-pill-close {
       display: inline-flex !important;
       align-items: center !important;
       justify-content: center !important;
-      margin-left: 8px !important;
-      padding: 2px 8px !important;
-      min-width: 18px !important;
-      min-height: 18px !important;
-      font-size: 13px !important;
-      font-weight: 800 !important;
-      color: #94a3b8 !important;
+      margin-left: 6px !important;
+      padding: 1px 4px !important;
+      font-size: 11px !important;
+      font-family: "Geist Mono", monospace !important;
+      font-weight: 500 !important;
+      color: #737373 !important;
       cursor: pointer !important;
-      border-radius: 9999px !important;
-      background: rgba(255, 255, 255, 0.12) !important;
+      border-radius: 3px !important;
+      background: transparent !important;
+      transition: color 0.15s ease !important;
       user-select: none !important;
       z-index: 1000000 !important;
       pointer-events: auto !important;
     }
+
     .x-jev-pill-close:hover {
       color: #ffffff !important;
-      background: #ef4444 !important;
-      transform: scale(1.15) !important;
     }
   `;
 
@@ -1647,9 +1737,9 @@
         const badge = document.createElement('div');
         badge.className = 'x-jev-badge';
         badge.setAttribute('data-jev-badge-category', label);
-        badge.style.backgroundColor = meta.bg;
-        badge.style.borderColor = meta.border;
-        badge.style.color = meta.color;
+        badge.style.setProperty('--badge-bg', meta.bg);
+        badge.style.setProperty('--badge-border', meta.border);
+        badge.style.setProperty('--badge-color', meta.color);
         badge.title = `${meta.desc} (Confidence: ${Math.round(score * 100)}%)`;
 
         const textSpan = document.createElement('span');

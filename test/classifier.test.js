@@ -86,6 +86,7 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
       expect(BADGE_MAP[label]).toBeDefined();
       expect(BADGE_MAP[label].text).toBeDefined();
       expect(BADGE_MAP[label].color).toBeDefined();
+      expect(BADGE_MAP[label].text).toMatch(/^[A-Za-z]+$/);
     }
   });
 
@@ -592,8 +593,10 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
       customCount++;
       const displayName = typeof customFound === 'object' ? customFound.name : customFound;
       return {
-        text: `🏷️ ${displayName}`,
-        bg: 'rgba(168, 85, 247, 0.18)',
+        text: displayName,
+        bg: '#000000',
+        border: '#262626',
+        color: '#ededed',
       };
     }
 
@@ -608,7 +611,7 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     // 3. 'anime' is enabled and confidence 0.85: succeeds, renders badge, increments counter
     const badge = processCustomClassification('anime', 0.85, 0.50);
     expect(badge).not.toBeNull();
-    expect(badge.text).toBe('🏷️ anime');
+    expect(badge.text).toBe('anime');
     expect(customCount).toBe(1);
 
     // 4. Test pill counter visibility logic with null-safety

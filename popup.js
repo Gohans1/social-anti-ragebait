@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
       labelText.style.fontWeight = '500';
       labelText.style.fontSize = '11px';
       labelText.style.fontFamily = "'Geist', sans-serif";
-      labelText.textContent = `🏷️ ${name}`;
+      labelText.textContent = name;
 
       const actions = document.createElement('div');
       actions.style.display = 'flex';
@@ -267,20 +267,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof res.filterCasualEnabled === 'boolean' && filterCasualToggle) {
         filterCasualToggle.checked = res.filterCasualEnabled;
       }
-      if (typeof res.monkModeEnabled === 'boolean') {
-        monkModeToggle.checked = res.monkModeEnabled;
+      if (monkModeToggle) {
+        monkModeToggle.checked = typeof res.monkModeEnabled === 'boolean' ? res.monkModeEnabled : true;
       }
-      if (typeof res.blockReelsEnabled === 'boolean') {
-        blockReelsToggle.checked = res.blockReelsEnabled;
+      if (blockReelsToggle) {
+        blockReelsToggle.checked = typeof res.blockReelsEnabled === 'boolean' ? res.blockReelsEnabled : true;
       }
-      if (typeof res.autoBlurRageEnabled === 'boolean') {
-        autoBlurRageToggle.checked = res.autoBlurRageEnabled;
+      if (autoBlurRageToggle) {
+        autoBlurRageToggle.checked = typeof res.autoBlurRageEnabled === 'boolean' ? res.autoBlurRageEnabled : true;
       }
-      if (typeof res.blockScamsEnabled === 'boolean') {
-        blockScamsToggle.checked = res.blockScamsEnabled;
+      if (blockScamsToggle) {
+        blockScamsToggle.checked = typeof res.blockScamsEnabled === 'boolean' ? res.blockScamsEnabled : true;
       }
-      if (typeof res.collapseSeedingEnabled === 'boolean') {
-        collapseSeedingToggle.checked = res.collapseSeedingEnabled;
+      if (collapseSeedingToggle) {
+        collapseSeedingToggle.checked = typeof res.collapseSeedingEnabled === 'boolean' ? res.collapseSeedingEnabled : true;
       }
       if (typeof res.hideFloatingPill === 'boolean') {
         hideFloatingPillToggle.checked = res.hideFloatingPill;
