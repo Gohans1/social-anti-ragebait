@@ -106,7 +106,7 @@
       align-items: center !important;
       gap: 5px !important;
       padding: 2px 8px !important;
-      border-radius: 9999px !important;
+      border-radius: 4px !important;
       font-size: 11px !important;
       font-weight: 500 !important;
       letter-spacing: -0.01em !important;
@@ -1628,14 +1628,17 @@
         bar.className = 'x-jev-seeding-collapsed';
         const pct = Math.round(seedingScore * 100);
         bar.innerHTML = `
-          <div>🧹 Collapsed suspected <b>Seeding / Bot</b> comment (${pct}%)</div>
-          <span style="font-size:11px;font-weight:700;">View comment ▾</span>
+          <div class="x-jev-seeding-label">
+            <span>Collapsed suspected <b>Seeding / Bot</b> comment (${pct}%)</span>
+          </div>
+          <span class="x-jev-expand-icon">View comment ▾</span>
         `;
         bar.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
           const isCollapsed = textEl.classList.toggle('x-jev-collapsed-body');
-          bar.querySelector('span').textContent = isCollapsed ? 'View comment ▾' : 'Collapse ▴';
+          const expandBtn = bar.querySelector('.x-jev-expand-icon');
+          if (expandBtn) expandBtn.textContent = isCollapsed ? 'View comment ▾' : 'Collapse ▴';
         };
         parentContainer.insertBefore(bar, textEl);
         if (CONFIG.collapseSeedingEnabled) {

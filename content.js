@@ -1386,7 +1386,6 @@
         const pct = Math.round(seedingScore * 100);
         bar.innerHTML = `
           <div class="x-jev-seeding-label">
-            <span>🧹</span>
             <span>Collapsed suspected <b>Seeding / Bot</b> comment (${pct}%)</span>
           </div>
           <span class="x-jev-expand-icon">View comment ▾</span>
@@ -1396,7 +1395,8 @@
           e.preventDefault();
           e.stopPropagation();
           const isCollapsed = textEl.classList.toggle('x-jev-collapsed-body');
-          bar.querySelector('.x-jev-expand-icon').textContent = isCollapsed ? 'View comment ▾' : 'Collapse ▴';
+          const expandBtn = bar.querySelector('.x-jev-expand-icon');
+          if (expandBtn) expandBtn.textContent = isCollapsed ? 'View comment ▾' : 'Collapse ▴';
         };
 
         parentContainer.insertBefore(bar, textEl);
