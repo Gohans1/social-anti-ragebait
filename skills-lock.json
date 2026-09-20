@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "skills": {
+    "bulk-classify": {
+      "source": "classifier.dev",
+      "sourceUrl": "https://classifier.dev",
+      "sourceType": "well-known",
+      "computedHash": "1a918885b5008a98a2f93dc0f6f1078a50a3e39b5ac98792fbd922f1dd603964",
+      "wellKnownDigest": "sha256:aab2e24fa24330aae555fbcd447c41d5501584da76ed01a262621cfaf4a65fe4"
+    }
+  }
+}

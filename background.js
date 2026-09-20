@@ -23,7 +23,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return false;
     }
 
-    console.log(`[Anti-Ragebait Background] 📡 Đang gửi ${inputs.length} mẫu text lên Jev (classifier.dev)...`);
+    console.log(`[Anti-Ragebait Background] 📡 Sending ${inputs.length} text samples to Jev (classifier.dev)...`);
 
     fetch(API_ENDPOINT, {
       method: 'POST',
@@ -47,7 +47,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return response.json();
       })
       .then((data) => {
-        console.log(`[Anti-Ragebait Background] ✅ Jev đã trả về kết quả cho ${data.results?.length} items.`);
+        console.log(`[Anti-Ragebait Background] ✅ Jev returned results for ${data.results?.length} items.`);
         sendResponse({ success: true, results: data.results || [] });
       })
       .catch((error) => {

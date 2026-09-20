@@ -2,7 +2,7 @@
 // @name         Social Shield All-in-One: Anti-Rage, Anti-Scam, Universal Reels & Monk Mode
 // @namespace    https://classifier.dev/
 // @version      2.3.0
-// @description  Tự động làm mờ rage-bait, chặn bài lừa đảo, thu gọn seeding và kích hoạt Monk Mode chặn ảnh/video phụ nữ & Reels/Shorts trên Instagram, YouTube, Facebook, Threads, X
+// @description  Automatically blurs rage-bait, blocks scam posts, collapses seeding comments, and activates Monk Mode to hide thirst traps & Reels/Shorts on Instagram, YouTube, Facebook, Threads, and X.
 // @author       Antigravity
 // @match        *://*.threads.com/*
 // @match        *://threads.com/*
@@ -613,8 +613,8 @@
       configKey: 'filterMotivationalEnabled',
       instruction: 'personal growth, discipline, fitness, productivity lessons, inspiring mindsets, self-help, stoicism.',
       badge: {
-        text: '🌱 Động lực / Mindset',
-        desc: 'Personal growth, productivity, and constructive mindset (Phát triển bản thân, động lực)',
+        text: '🌱 Motivational / Mindset',
+        desc: 'Personal growth, productivity, and constructive mindset',
         bg: 'rgba(245, 158, 11, 0.18)',
         border: '#f59e0b',
         color: '#fbbf24',
@@ -624,8 +624,8 @@
       configKey: 'filterMemeEnabled',
       instruction: 'lighthearted jokes, funny memes, sarcastic humor, parody, troll posts.',
       badge: {
-        text: '🎭 Meme / Giải trí',
-        desc: 'Humor, memes, satire, and playful wit (Hài hước, ảnh chế, troll vui)',
+        text: '🎭 Meme / Entertainment',
+        desc: 'Humor, memes, satire, and playful wit',
         bg: 'rgba(236, 72, 153, 0.18)',
         border: '#ec4899',
         color: '#f472b6',
@@ -635,8 +635,8 @@
       configKey: 'filterDeepDiveEnabled',
       instruction: 'in-depth technical threads, architectural teardowns, insider industry analysis, comprehensive teardowns of complex problems.',
       badge: {
-        text: '🔬 Mổ xẻ / Deep Dive',
-        desc: 'Detailed domain teardown, insider analysis, or technical deep dive (Phân tích chuyên sâu)',
+        text: '🔬 Deep Dive / Teardown',
+        desc: 'Detailed domain teardown, insider analysis, or technical deep dive',
         bg: 'rgba(99, 102, 241, 0.2)',
         border: '#6366f1',
         color: '#818cf8',
@@ -646,8 +646,8 @@
       configKey: 'filterWholesomeEnabled',
       instruction: 'uplifting, heartwarming, kind, peaceful, constructive positive stories, wholesome moments.',
       badge: {
-        text: '🌿 Wholesome / Tích cực',
-        desc: 'Uplifting, heartwarming, and constructive positive content (Ấm áp, tích cực)',
+        text: '🌿 Wholesome / Positive',
+        desc: 'Uplifting, heartwarming, and constructive positive content',
         bg: 'rgba(16, 185, 129, 0.18)',
         border: '#10b981',
         color: '#34d399',
@@ -657,8 +657,8 @@
       configKey: 'filterDoomEnabled',
       instruction: 'alarming, sensationalized bad news, apocalyptic anxiety, catastrophic predictions, fearmongering.',
       badge: {
-        text: '⚠️ Doom / Gieo rắc sợ hãi',
-        desc: 'Sensationalized bad news, existential threat, or doom anxiety (Gieo rắc sợ hãi / bi quan)',
+        text: '⚠️ Doom / Alarmism',
+        desc: 'Sensationalized bad news, existential threat, or doom anxiety',
         bg: 'rgba(249, 115, 22, 0.18)',
         border: '#f97316',
         color: '#fb923c',
@@ -669,7 +669,7 @@
       instruction: 'exaggerated financial hype, crypto shill, urgency to buy, get-rich-quick, fear of missing out.',
       badge: {
         text: '⚡ FOMO / Hype',
-        desc: 'Sensationalized hype, crypto shill, or fear of missing out (Thổi phồng, lùa gà fomo)',
+        desc: 'Hyperbolic hype, get-rich-quick claims, or unrealistic promises',
         bg: 'rgba(234, 179, 8, 0.18)',
         border: '#eab308',
         color: '#fde047',
@@ -679,8 +679,8 @@
       configKey: 'filterCasualEnabled',
       countKey: 'casualCount',
       badge: {
-        text: '💬 Thảo luận / Khác',
-        desc: 'Everyday casual talk or general post (Thảo luận bình thường)',
+        text: '💬 Discussion / Casual',
+        desc: 'Everyday casual talk or general conversation',
         bg: 'rgba(100, 116, 139, 0.15)',
         border: '#64748b',
         color: '#94a3b8',
@@ -778,7 +778,7 @@
 
   const pillClose = document.createElement('span');
   pillClose.className = 'x-jev-pill-close';
-  pillClose.title = 'Ẩn thanh trạng thái này';
+  pillClose.title = 'Hide floating status pill';
   pillClose.textContent = '✕';
   pill.appendChild(pillClose);
 
@@ -830,39 +830,39 @@
     initPill();
     const pName = getPlatform().toUpperCase();
     const parts = [
-      `🛡️ ${pName}: <span style="color:#4ade80">ON</span>`,
-      `👁️ Quét: <span style="color:#a5f3fc">${scannedCount}</span>`,
+      `🛡️ ${pName}: <span style="color:#ededed; font-family:'Geist Mono',monospace;">ON</span>`,
+      `👁️ Scanned: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${scannedCount}</span>`,
     ];
     if (CONFIG.focusModeEnabled) {
-      parts.push(`<span class="x-jev-pill-focus-toggle" title="Click để Bật/Tắt Focus Feed Mode" style="cursor:pointer;">🎯 Focus: <span style="color:#38bdf8">${focusCollapsedCount} thu gọn</span></span>`);
+      parts.push(`<span class="x-jev-pill-focus-toggle" title="Click to toggle Focus Feed Mode" style="cursor:pointer;">🎯 Focus: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${focusCollapsedCount}</span></span>`);
     }
     if (CONFIG.autoBlurRageEnabled) {
-      parts.push(`🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span>`);
+      parts.push(`🚨 Rage: <span style="color:#ef4444; font-family:'Geist Mono',monospace;">${blockedRageCount}</span>`);
     }
-    if (CONFIG.filterMotivationalEnabled !== false) {
-      parts.push(`🌱 Động lực: <span style="color:#fbbf24">${motivationalCount}</span>`);
+    if (CONFIG.filterMotivationalEnabled !== false && motivationalCount > 0) {
+      parts.push(`🌱 Motivational: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${motivationalCount}</span>`);
     }
-    if (CONFIG.filterMemeEnabled !== false) {
-      parts.push(`🎭 Meme: <span style="color:#f472b6">${memeCount}</span>`);
+    if (CONFIG.filterMemeEnabled !== false && memeCount > 0) {
+      parts.push(`🎭 Meme: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${memeCount}</span>`);
     }
-    if (CONFIG.filterDeepDiveEnabled !== false) {
-      parts.push(`🔬 Deep Dive: <span style="color:#818cf8">${deepDiveCount}</span>`);
+    if (CONFIG.filterDeepDiveEnabled !== false && deepDiveCount > 0) {
+      parts.push(`🔬 Deep Dive: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${deepDiveCount}</span>`);
     }
     if (CONFIG.filterWholesomeEnabled !== false && wholesomeCount > 0) {
-      parts.push(`🌿 Wholesome: <span style="color:#34d399">${wholesomeCount}</span>`);
+      parts.push(`🌿 Wholesome: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${wholesomeCount}</span>`);
     }
     if (CONFIG.filterDoomEnabled !== false && doomCount > 0) {
-      parts.push(`⚠️ Doom: <span style="color:#fb923c">${doomCount}</span>`);
+      parts.push(`⚠️ Doom: <span style="color:#fb923c; font-family:'Geist Mono',monospace;">${doomCount}</span>`);
     }
     if (CONFIG.filterFomoEnabled !== false && fomoCount > 0) {
-      parts.push(`⚡ FOMO: <span style="color:#fde047">${fomoCount}</span>`);
+      parts.push(`⚡ FOMO: <span style="color:#fde047; font-family:'Geist Mono',monospace;">${fomoCount}</span>`);
     }
     if (CONFIG.filterCasualEnabled !== false && casualCount > 0) {
-      parts.push(`💬 Thảo luận: <span style="color:#94a3b8">${casualCount}</span>`);
+      parts.push(`💬 Casual: <span style="color:#888888; font-family:'Geist Mono',monospace;">${casualCount}</span>`);
     }
     const hasActiveCustom = Array.isArray(CONFIG.customLabels) && CONFIG.customLabels.some((c) => (c && typeof c === 'object' ? c.enabled !== false : Boolean(c)));
     if (hasActiveCustom && customCount > 0) {
-      parts.push(`🏷️ Custom: <span style="color:#c084fc">${customCount}</span>`);
+      parts.push(`🏷️ Custom: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${customCount}</span>`);
     }
     pillStats.innerHTML = parts.join(' | ');
   }
@@ -1048,17 +1048,17 @@
   }
 
   function getDisplayLabelName(label) {
-    if (label === 'self-improvement / motivational') return 'Động lực';
+    if (label === 'self-improvement / motivational') return 'Motivational';
     if (label === 'meme / humor / satire') return 'Meme';
     if (label === 'deep dive / technical breakdown / industry insider') return 'Deep Dive';
     if (label === 'wholesome / positive') return 'Wholesome';
     if (label === 'fearmongering / doom') return 'Doom';
     if (label === 'fomo / hype') return 'FOMO';
-    if (label === 'other / casual discussion') return 'Thảo luận';
-    if (label === 'scam / fraudulent scheme') return 'Lừa đảo';
+    if (label === 'other / casual discussion') return 'Casual';
+    if (label === 'scam / fraudulent scheme') return 'Scam';
     if (label === 'rage bait / toxic / hostile / dismissive negativity') return 'Rage Bait';
     if (label === 'bot seeding / affiliate spam / fake review') return 'Seeding';
-    return label || 'Chủ đề khác';
+    return label || 'Other';
   }
 
   function isPostMatchingFocus(labels) {
@@ -1085,23 +1085,40 @@
     const labelList = Array.isArray(labels)
       ? labels
       : (typeof labels === 'string' ? labels.split('|') : []);
-    const displayTag = labelList.map((l) => getDisplayLabelName(l)).join(', ') || 'Chủ đề khác';
+    const displayTag = labelList.map((l) => getDisplayLabelName(l)).join(', ') || 'Other';
     const focusBar = document.createElement('div');
     focusBar.className = 'x-jev-focus-bar';
-    focusBar.innerHTML = `
-      <div class="x-jev-focus-info">
-        <span>🎯</span>
-        <span>Khác tag Focus: <b style="color:#e2e8f0;">${displayTag}</b></span>
-      </div>
-      <span class="x-jev-focus-action">Xem nội dung ▾</span>
-    `;
+
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'x-jev-focus-info';
+
+    const iconSpan = document.createElement('span');
+    iconSpan.textContent = '🎯';
+
+    const textSpan = document.createElement('span');
+    textSpan.textContent = 'Off-topic (Focus Mode): ';
+
+    const boldTag = document.createElement('b');
+    boldTag.style.color = '#ededed';
+    boldTag.textContent = displayTag;
+
+    textSpan.appendChild(boldTag);
+    infoDiv.appendChild(iconSpan);
+    infoDiv.appendChild(textSpan);
+
+    const actionSpan = document.createElement('span');
+    actionSpan.className = 'x-jev-focus-action';
+    actionSpan.textContent = 'View content ▾';
+
+    focusBar.appendChild(infoDiv);
+    focusBar.appendChild(actionSpan);
     focusBar.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       const isExpanded = postEl.classList.toggle('x-jev-focus-expanded');
       const actionBtn = focusBar.querySelector('.x-jev-focus-action');
       if (actionBtn) {
-        actionBtn.textContent = isExpanded ? 'Thu gọn ▴' : 'Xem nội dung ▾';
+        actionBtn.textContent = isExpanded ? 'Collapse ▴' : 'View content ▾';
       }
     });
     parentContainer.insertBefore(focusBar, textEl);
@@ -1142,13 +1159,13 @@
       const altText = (media.alt || '') + ' ' + (media.getAttribute('aria-label') || '') + ' ' + (media.title || '');
       if (WOMEN_OR_GOONBAIT_REGEX.test(altText)) {
         hasWomenMedia = true;
-        detectedReason = 'Ảnh/Video phụ nữ (Meta AI Alt-Tag)';
+        detectedReason = 'Female imagery detected (Meta AI Alt-Tag)';
       }
     });
 
     if (!hasWomenMedia && WOMEN_OR_GOONBAIT_REGEX.test(text)) {
       hasWomenMedia = true;
-      detectedReason = 'Goon-baiting / Thirst trap';
+      detectedReason = 'Goon-baiting / Thirst trap content';
     }
 
     if (hasWomenMedia) {
@@ -1161,13 +1178,13 @@
         box.className = 'x-monk-warning-box';
         box.innerHTML = `
           <div>
-            <b>🧘 Monk Mode: Đã che ảnh/video để giữ tập trung tuyệt đối.</b>
+            <b>🧘 Monk Mode: Media hidden to preserve focus.</b>
             <div style="font-size:10.5px;opacity:0.9;">${detectedReason}</div>
           </div>
         `;
         const btn = document.createElement('button');
         btn.className = 'x-monk-reveal-btn';
-        btn.textContent = 'Xem ảnh';
+        btn.textContent = 'Reveal media';
         btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1180,7 +1197,7 @@
               m.style.setProperty('opacity', '1', 'important');
               m.style.setProperty('pointer-events', 'auto', 'important');
             });
-            btn.textContent = 'Ẩn lại';
+            btn.textContent = 'Hide media';
           } else {
             postEl.removeAttribute('data-monk-revealed');
             postEl.removeAttribute('data-user-revealed');
@@ -1189,7 +1206,7 @@
               m.style.removeProperty('opacity');
               m.style.removeProperty('pointer-events');
             });
-            btn.textContent = 'Xem ảnh';
+            btn.textContent = 'Reveal media';
           }
         };
         box.appendChild(btn);
@@ -1351,13 +1368,13 @@
         const pct = Math.round(scamScore * 100);
         box.innerHTML = `
           <div>
-            <b>🛑 Cảnh báo Lừa đảo / Bẫy tài chính (${pct}%):</b>
-            <div style="font-size:11px;opacity:0.9;">Dấu hiệu: Hứa hẹn thu nhập bất thường, lùa gà crypto.</div>
+            <b>🛑 Scam / Deceptive Scheme Warning (${pct}%):</b>
+            <div style="font-size:11px;opacity:0.9;">Suspicious financial scheme, unrealistic income promises, or deceptive links.</div>
           </div>
         `;
         const btn = document.createElement('button');
         btn.className = 'x-jev-reveal-btn';
-        btn.textContent = 'Xem bài viết';
+        btn.textContent = 'Reveal post';
         btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1367,12 +1384,12 @@
             postEl.setAttribute('data-jev-revealed', 'true');
             postEl.setAttribute('data-user-revealed', 'true');
             applyInlineUnblur(postEl, true);
-            btn.textContent = 'Ẩn lại';
+            btn.textContent = 'Re-blur';
           } else {
             postEl.removeAttribute('data-jev-revealed');
             postEl.removeAttribute('data-user-revealed');
             applyInlineUnblur(postEl, false);
-            btn.textContent = 'Xem bài viết';
+            btn.textContent = 'Reveal post';
           }
         };
         box.appendChild(btn);
@@ -1386,14 +1403,14 @@
         postEl.setAttribute('data-user-revealed', 'true');
         applyInlineUnblur(postEl, true);
         const scamBtn = postEl.querySelector('.x-jev-scam-box .x-jev-reveal-btn');
-        if (scamBtn) scamBtn.textContent = 'Ẩn lại';
+        if (scamBtn) scamBtn.textContent = 'Re-blur';
       } else if (CONFIG.blockScamsEnabled) {
         postEl.classList.remove('x-jev-revealed');
         postEl.removeAttribute('data-jev-revealed');
         postEl.removeAttribute('data-user-revealed');
         applyInlineUnblur(postEl, false);
         const scamBtn = postEl.querySelector('.x-jev-scam-box .x-jev-reveal-btn');
-        if (scamBtn) scamBtn.textContent = 'Xem bài viết';
+        if (scamBtn) scamBtn.textContent = 'Reveal post';
       } else {
         postEl.classList.add('x-jev-revealed');
         postEl.setAttribute('data-jev-revealed', 'true');
@@ -1437,15 +1454,15 @@
           <div class="x-jev-warning-text">
             <span>🛡️</span>
             <div>
-              <b>Đã che nội dung Toxic / Rage-bait (${pct}%):</b>
-              <div style="font-size:11px;font-weight:400;opacity:0.9;margin-top:2px;">Nội dung có thể gây khó chịu, bực tức hoặc kích động tranh cãi.</div>
+              <b>Rage / Toxic Warning (${pct}%):</b>
+              <div style="font-size:11px;font-weight:400;opacity:0.9;margin-top:2px;">Potentially hostile, outrage-inducing, or toxic content blurred.</div>
             </div>
           </div>
         `;
 
         const btn = document.createElement('button');
         btn.className = 'x-jev-reveal-btn';
-        btn.textContent = 'Hiện nội dung';
+        btn.textContent = 'Reveal post';
         btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1455,12 +1472,12 @@
             postEl.setAttribute('data-jev-revealed', 'true');
             postEl.setAttribute('data-user-revealed', 'true');
             applyInlineUnblur(postEl, true);
-            btn.textContent = 'Ẩn lại';
+            btn.textContent = 'Re-blur';
           } else {
             postEl.removeAttribute('data-jev-revealed');
             postEl.removeAttribute('data-user-revealed');
             applyInlineUnblur(postEl, false);
-            btn.textContent = 'Hiện nội dung';
+            btn.textContent = 'Reveal post';
           }
         };
 
@@ -1475,14 +1492,14 @@
         postEl.setAttribute('data-user-revealed', 'true');
         applyInlineUnblur(postEl, true);
         const rBtn = postEl.querySelector('.x-jev-warning-box .x-jev-reveal-btn');
-        if (rBtn) rBtn.textContent = 'Ẩn lại';
+        if (rBtn) rBtn.textContent = 'Re-blur';
       } else if (CONFIG.autoBlurRageEnabled) {
         postEl.classList.remove('x-jev-revealed');
         postEl.removeAttribute('data-jev-revealed');
         postEl.removeAttribute('data-user-revealed');
         applyInlineUnblur(postEl, false);
         const rBtn = postEl.querySelector('.x-jev-warning-box .x-jev-reveal-btn');
-        if (rBtn) rBtn.textContent = 'Hiện nội dung';
+        if (rBtn) rBtn.textContent = 'Reveal post';
       } else {
         postEl.classList.add('x-jev-revealed');
         postEl.setAttribute('data-jev-revealed', 'true');
@@ -1514,14 +1531,14 @@
         bar.className = 'x-jev-seeding-collapsed';
         const pct = Math.round(seedingScore * 100);
         bar.innerHTML = `
-          <div>🧹 Đã thu gọn bình luận nghi vấn <b>Seeding / Clone</b> (${pct}%)</div>
-          <span style="font-size:11px;font-weight:700;">Xem nội dung ▾</span>
+          <div>🧹 Collapsed suspected <b>Seeding / Bot</b> comment (${pct}%)</div>
+          <span style="font-size:11px;font-weight:700;">View comment ▾</span>
         `;
         bar.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
           const isCollapsed = textEl.classList.toggle('x-jev-collapsed-body');
-          bar.querySelector('span').textContent = isCollapsed ? 'Xem nội dung ▾' : 'Thu gọn ▴';
+          bar.querySelector('span').textContent = isCollapsed ? 'View comment ▾' : 'Collapse ▴';
         };
         parentContainer.insertBefore(bar, textEl);
         if (CONFIG.collapseSeedingEnabled) {
@@ -1569,7 +1586,7 @@
           const displayName = typeof customFound === 'object' ? customFound.name : customFound;
           customMeta = {
             text: `🏷️ ${displayName}`,
-            desc: `Nhãn tùy chỉnh: ${displayName}`,
+            desc: `Custom label: ${displayName}`,
             bg: 'rgba(168, 85, 247, 0.18)',
             border: '#a855f7',
             color: '#c084fc',
@@ -1754,18 +1771,18 @@
           overlay.innerHTML = `
             <div class="x-monk-reels-card">
               <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Đã chặn Pop-up Reels Facebook</div>
-              <div class="x-monk-reels-desc">Thước phim ngắn đã được tạm dừng và làm mờ để bảo vệ sự tập trung tuyệt đối.</div>
+              <div class="x-monk-reels-title">Monk Mode: Blocked Facebook Reels Pop-up</div>
+              <div class="x-monk-reels-desc">Short-form video has been paused and blurred to preserve focus.</div>
               <div class="x-monk-reels-actions">
-                <button class="x-monk-btn-reveal">▶ Xem video</button>
-                <button class="x-monk-btn-close">✕ Đóng pop-up</button>
+                <button class="x-monk-btn-reveal">▶ Play video</button>
+                <button class="x-monk-btn-close">✕ Close pop-up</button>
               </div>
             </div>
           `;
 
           const floatingReblur = document.createElement('button');
           floatingReblur.className = 'x-monk-re-blur-floating';
-          floatingReblur.innerHTML = `<span>🧘</span><span>Ẩn lại Reels</span>`;
+          floatingReblur.innerHTML = `<span>🧘</span><span>Hide Reels</span>`;
           floatingReblur.onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1860,11 +1877,11 @@
             <div class="x-monk-tray-content">
               <span>🧘</span>
               <div>
-                <b>Monk Mode: Đã ẩn khu vực Thước phim (Reels) trên Bảng tin</b>
-                <div style="font-size:11px;opacity:0.85;margin-top:1px;">Duy trì sự tập trung, chống nghiện lướt video ngắn và dopamine độc hại.</div>
+                <b>Monk Mode: Hidden Reels tray from feed</b>
+                <div style="font-size:11px;opacity:0.85;margin-top:1px;">Maintain focus and prevent endless short-form video browsing.</div>
               </div>
             </div>
-            <button class="x-monk-tray-toggle">Xem Reels</button>
+            <button class="x-monk-tray-toggle">Show Reels</button>
           `;
 
           const toggleBtn = banner.querySelector('.x-monk-tray-toggle');
@@ -1872,7 +1889,7 @@
             e.preventDefault();
             e.stopPropagation();
             const isRevealed = tray.classList.toggle('monk-revealed');
-            toggleBtn.textContent = isRevealed ? 'Ẩn lại' : 'Xem Reels';
+            toggleBtn.textContent = isRevealed ? 'Hide Reels' : 'Show Reels';
           };
 
           tray.prepend(banner);
@@ -1896,10 +1913,10 @@
             overlay.innerHTML = `
               <div class="x-monk-reels-card">
                 <div class="x-monk-reels-icon">🧘</div>
-                <div class="x-monk-reels-title">Monk Mode: Đã chặn Reels Facebook</div>
-                <div class="x-monk-reels-desc">Thước phim ngắn đã được tạm dừng để bảo vệ sự tập trung tuyệt đối.</div>
+                <div class="x-monk-reels-title">Monk Mode: Blocked Facebook Reel</div>
+                <div class="x-monk-reels-desc">Short-form video has been paused to preserve focus.</div>
                 <div class="x-monk-reels-actions">
-                  <button class="x-monk-btn-reveal">▶ Xem video</button>
+                  <button class="x-monk-btn-reveal">▶ Play video</button>
                 </div>
               </div>
             `;
@@ -1948,11 +1965,11 @@
           overlay.innerHTML = `
             <div class="x-monk-reels-card">
               <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Đã chặn Instagram Reel</div>
-              <div class="x-monk-reels-desc">Thước phim ngắn đã được tạm dừng và làm mờ để bảo vệ sự tập trung tuyệt đối.</div>
+              <div class="x-monk-reels-title">Monk Mode: Blocked Instagram Reel</div>
+              <div class="x-monk-reels-desc">Short-form video has been paused and blurred to preserve focus.</div>
               <div class="x-monk-reels-actions">
-                <button class="x-monk-btn-reveal">▶ Xem Reel</button>
-                <button class="x-monk-btn-home">🏠 Về Trang chủ</button>
+                <button class="x-monk-btn-reveal">▶ Play Reel</button>
+                <button class="x-monk-btn-home">🏠 Return to Home</button>
               </div>
             </div>
           `;
@@ -2005,18 +2022,18 @@
           overlay.innerHTML = `
             <div class="x-monk-reels-card">
               <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Đã chặn Pop-up Reel Instagram</div>
-              <div class="x-monk-reels-desc">Thước phim ngắn đã được tạm dừng và làm mờ để bảo vệ sự tập trung.</div>
+              <div class="x-monk-reels-title">Monk Mode: Blocked Instagram Reel Pop-up</div>
+              <div class="x-monk-reels-desc">Short-form video has been paused and blurred to preserve focus.</div>
               <div class="x-monk-reels-actions">
-                <button class="x-monk-btn-reveal">▶ Xem Reel</button>
-                <button class="x-monk-btn-close">✕ Đóng pop-up</button>
+                <button class="x-monk-btn-reveal">▶ Play Reel</button>
+                <button class="x-monk-btn-close">✕ Close pop-up</button>
               </div>
             </div>
           `;
 
           const floatingReblur = document.createElement('button');
           floatingReblur.className = 'x-monk-re-blur-floating';
-          floatingReblur.innerHTML = `<span>🧘</span><span>Ẩn lại Reel</span>`;
+          floatingReblur.innerHTML = `<span>🧘</span><span>Hide Reel</span>`;
           floatingReblur.onclick = (e) => {
             e.preventDefault();
             dialog.classList.remove('monk-revealed');
@@ -2069,18 +2086,18 @@
             <div class="x-monk-warning-text">
               <span>🧘</span>
               <div>
-                <b>Monk Mode: Đã chặn Instagram Reel trên Bảng tin.</b>
-                <div style="font-size:10.5px;opacity:0.85;margin-top:1px;">Bảo vệ sự tập trung, chống nghiện lướt clip ngắn.</div>
+                <b>Monk Mode: Blocked Instagram Reel from feed.</b>
+                <div style="font-size:10.5px;opacity:0.85;margin-top:1px;">Protect focus and prevent endless short-form video browsing.</div>
               </div>
             </div>
           `;
           const btn = document.createElement('button');
           btn.className = 'x-monk-reveal-btn';
-          btn.textContent = 'Xem Reel';
+          btn.textContent = 'Play Reel';
           btn.onclick = (e) => {
             e.preventDefault();
             const isRev = article.classList.toggle('monk-revealed');
-            btn.textContent = isRev ? 'Ẩn lại' : 'Xem Reel';
+            btn.textContent = isRev ? 'Hide Reel' : 'Play Reel';
             videos.forEach((v) => { try { if (isRev) { v.muted = false; v.play(); } else { v.muted = true; v.pause(); } } catch (err) {} });
           };
           box.appendChild(btn);
@@ -2140,11 +2157,11 @@
           overlay.innerHTML = `
             <div class="x-monk-reels-card">
               <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Đã chặn YouTube Shorts</div>
-              <div class="x-monk-reels-desc">Video ngắn đã được tạm dừng và làm mờ để bảo vệ sự tập trung tuyệt đối.</div>
+              <div class="x-monk-reels-title">Monk Mode: Blocked YouTube Shorts</div>
+              <div class="x-monk-reels-desc">Short-form video has been paused and blurred to preserve focus.</div>
               <div class="x-monk-reels-actions">
-                <button class="x-monk-btn-reveal">▶ Xem Shorts</button>
-                <button class="x-monk-btn-home">🏠 Về Trang chủ</button>
+                <button class="x-monk-btn-reveal">▶ Play Shorts</button>
+                <button class="x-monk-btn-home">🏠 Return to Home</button>
               </div>
             </div>
           `;
@@ -2186,18 +2203,18 @@
           <div class="x-monk-tray-content">
             <span>🧘</span>
             <div>
-              <b>Monk Mode: Đã ẩn khu vực YouTube Shorts trên Bảng tin</b>
-              <div style="font-size:11px;opacity:0.85;margin-top:1px;">Duy trì sự tập trung, chống nghiện lướt video ngắn.</div>
+              <b>Monk Mode: Hidden YouTube Shorts shelf from feed</b>
+              <div style="font-size:11px;opacity:0.85;margin-top:1px;">Maintain focus and prevent endless short-form video browsing.</div>
             </div>
           </div>
-          <button class="x-monk-tray-toggle">Xem Shorts</button>
+          <button class="x-monk-tray-toggle">Show Shorts</button>
         `;
 
         const toggleBtn = banner.querySelector('.x-monk-tray-toggle');
         toggleBtn.onclick = (e) => {
           e.preventDefault();
           const isRevealed = shelf.classList.toggle('monk-revealed');
-          toggleBtn.textContent = isRevealed ? 'Ẩn lại' : 'Xem Shorts';
+          toggleBtn.textContent = isRevealed ? 'Hide Shorts' : 'Show Shorts';
         };
 
         shelf.prepend(banner);

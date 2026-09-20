@@ -328,54 +328,54 @@
       configKey: 'filterMotivationalEnabled',
       instruction: 'personal growth, discipline, fitness, productivity lessons, inspiring mindsets, self-help, stoicism.',
       badge: {
-        text: '🌱 Động lực / Mindset',
-        desc: 'Personal growth, productivity, and constructive mindset (Phát triển bản thân, động lực)',
-        bg: 'rgba(245, 158, 11, 0.18)',
-        border: '#f59e0b',
-        color: '#fbbf24',
+        text: '🌱 Motivational / Mindset',
+        desc: 'Personal growth, productivity, and constructive mindset',
+        bg: '#0a0a0a',
+        border: '#2e2e2e',
+        color: '#ededed',
       },
     },
     'meme / humor / satire': {
       configKey: 'filterMemeEnabled',
       instruction: 'lighthearted jokes, funny memes, sarcastic humor, parody, troll posts.',
       badge: {
-        text: '🎭 Meme / Giải trí',
-        desc: 'Humor, memes, satire, and playful wit (Hài hước, ảnh chế, troll vui)',
-        bg: 'rgba(236, 72, 153, 0.18)',
-        border: '#ec4899',
-        color: '#f472b6',
+        text: '🎭 Meme / Entertainment',
+        desc: 'Humor, memes, satire, and playful wit',
+        bg: '#0a0a0a',
+        border: '#2e2e2e',
+        color: '#ededed',
       },
     },
     'deep dive / technical breakdown / industry insider': {
       configKey: 'filterDeepDiveEnabled',
       instruction: 'in-depth technical threads, architectural teardowns, insider industry analysis, comprehensive teardowns of complex problems.',
       badge: {
-        text: '🔬 Mổ xẻ / Deep Dive',
-        desc: 'Detailed domain teardown, insider analysis, or technical deep dive (Phân tích chuyên sâu)',
-        bg: 'rgba(99, 102, 241, 0.2)',
-        border: '#6366f1',
-        color: '#818cf8',
+        text: '🔬 Deep Dive / Teardown',
+        desc: 'Detailed domain teardown, insider analysis, or technical deep dive',
+        bg: '#0a0a0a',
+        border: '#2e2e2e',
+        color: '#ededed',
       },
     },
     'wholesome / positive': {
       configKey: 'filterWholesomeEnabled',
       instruction: 'uplifting, heartwarming, kind, peaceful, constructive positive stories, wholesome moments.',
       badge: {
-        text: '🌿 Wholesome / Tích cực',
-        desc: 'Uplifting, heartwarming, and constructive positive content (Ấm áp, tích cực)',
-        bg: 'rgba(16, 185, 129, 0.18)',
-        border: '#10b981',
-        color: '#34d399',
+        text: '🌿 Wholesome / Positive',
+        desc: 'Uplifting, heartwarming, and constructive positive content',
+        bg: '#0a0a0a',
+        border: '#2e2e2e',
+        color: '#ededed',
       },
     },
     'fearmongering / doom': {
       configKey: 'filterDoomEnabled',
       instruction: 'alarming, sensationalized bad news, apocalyptic anxiety, catastrophic predictions, fearmongering.',
       badge: {
-        text: '⚠️ Doom / Gieo rắc sợ hãi',
-        desc: 'Sensationalized bad news, existential threat, or doom anxiety (Gieo rắc sợ hãi / bi quan)',
-        bg: 'rgba(249, 115, 22, 0.18)',
-        border: '#f97316',
+        text: '⚠️ Doom / Alarmism',
+        desc: 'Sensationalized bad news, existential threat, or doom anxiety',
+        bg: '#0a0a0a',
+        border: '#3d2010',
         color: '#fb923c',
       },
     },
@@ -384,9 +384,9 @@
       countKey: 'fomoCount',
       badge: {
         text: '⚡ FOMO / Hype',
-        desc: 'Hyperbolic hype, get-rich-quick claims (Lùa gà, thổi phồng ảo)',
-        bg: 'rgba(234, 179, 8, 0.15)',
-        border: '#eab308',
+        desc: 'Hyperbolic hype, get-rich-quick claims, or unrealistic promises',
+        bg: '#0a0a0a',
+        border: '#383010',
         color: '#fde047',
       },
       instruction: 'exaggerated breakthrough hype, urgency inducing claims, overnight wealth promises, or artificial urgency.',
@@ -395,11 +395,11 @@
       configKey: 'filterCasualEnabled',
       countKey: 'casualCount',
       badge: {
-        text: '💬 Thảo luận / Khác',
-        desc: 'Everyday casual talk or general post (Thảo luận bình thường)',
-        bg: 'rgba(100, 116, 139, 0.15)',
-        border: '#64748b',
-        color: '#94a3b8',
+        text: '💬 Discussion / Casual',
+        desc: 'Everyday casual talk or general conversation',
+        bg: '#0a0a0a',
+        border: '#262626',
+        color: '#888888',
       },
       instruction: 'everyday personal chatter, news, generic talk, or any content that does not fit the other categories.',
     },
@@ -486,7 +486,7 @@
   pillStats.className = 'x-jev-pill-stats';
   const pillClose = document.createElement('span');
   pillClose.className = 'x-jev-pill-close';
-  pillClose.title = 'Ẩn thanh trạng thái nổi này (bật lại trong popup)';
+  pillClose.title = 'Hide floating status pill (re-enable in popup)';
   pillClose.textContent = '✕';
   pill.appendChild(pillStats);
   pill.appendChild(pillClose);
@@ -557,39 +557,39 @@
     initPill();
     const pName = getPlatform().toUpperCase();
     const parts = [
-      `🛡️ ${pName}: <span style="color:#4ade80">ON</span>`,
-      `👁️ Quét: <span style="color:#a5f3fc">${scannedCount}</span>`,
+      `🛡️ ${pName}: <span style="color:#ededed; font-family:'Geist Mono',monospace;">ON</span>`,
+      `👁️ Scanned: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${scannedCount}</span>`,
     ];
     if (config.focusModeEnabled) {
-      parts.push(`🎯 Focus: <span style="color:#38bdf8">${focusCollapsedCount} thu gọn</span>`);
+      parts.push(`<span class="x-jev-pill-focus-toggle" title="Click to toggle Focus Feed Mode" style="cursor:pointer;">🎯 Focus: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${focusCollapsedCount}</span></span>`);
     }
     if (config.autoBlurRageEnabled) {
-      parts.push(`🚨 Rage: <span style="color:#f87171">${blockedRageCount}</span>`);
+      parts.push(`🚨 Rage: <span style="color:#ef4444; font-family:'Geist Mono',monospace;">${blockedRageCount}</span>`);
     }
-    if (config.filterMotivationalEnabled !== false) {
-      parts.push(`🌱 Động lực: <span style="color:#fbbf24">${motivationalCount}</span>`);
+    if (config.filterMotivationalEnabled !== false && motivationalCount > 0) {
+      parts.push(`🌱 Motivational: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${motivationalCount}</span>`);
     }
-    if (config.filterMemeEnabled !== false) {
-      parts.push(`🎭 Meme: <span style="color:#f472b6">${memeCount}</span>`);
+    if (config.filterMemeEnabled !== false && memeCount > 0) {
+      parts.push(`🎭 Meme: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${memeCount}</span>`);
     }
-    if (config.filterDeepDiveEnabled !== false) {
-      parts.push(`🔬 Deep Dive: <span style="color:#818cf8">${deepDiveCount}</span>`);
+    if (config.filterDeepDiveEnabled !== false && deepDiveCount > 0) {
+      parts.push(`🔬 Deep Dive: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${deepDiveCount}</span>`);
     }
     if (config.filterWholesomeEnabled !== false && wholesomeCount > 0) {
-      parts.push(`🌿 Wholesome: <span style="color:#34d399">${wholesomeCount}</span>`);
+      parts.push(`🌿 Wholesome: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${wholesomeCount}</span>`);
     }
     if (config.filterDoomEnabled !== false && doomCount > 0) {
-      parts.push(`⚠️ Doom: <span style="color:#fb923c">${doomCount}</span>`);
+      parts.push(`⚠️ Doom: <span style="color:#fb923c; font-family:'Geist Mono',monospace;">${doomCount}</span>`);
     }
     if (config.filterFomoEnabled !== false && fomoCount > 0) {
-      parts.push(`⚡ FOMO: <span style="color:#fde047">${fomoCount}</span>`);
+      parts.push(`⚡ FOMO: <span style="color:#fde047; font-family:'Geist Mono',monospace;">${fomoCount}</span>`);
     }
     if (config.filterCasualEnabled !== false && casualCount > 0) {
-      parts.push(`💬 Thảo luận: <span style="color:#94a3b8">${casualCount}</span>`);
+      parts.push(`💬 Casual: <span style="color:#888888; font-family:'Geist Mono',monospace;">${casualCount}</span>`);
     }
     const hasActiveCustom = Array.isArray(config.customLabels) && config.customLabels.some((c) => (c && typeof c === 'object' ? c.enabled !== false : Boolean(c)));
     if (hasActiveCustom && customCount > 0) {
-      parts.push(`🏷️ Custom: <span style="color:#c084fc">${customCount}</span>`);
+      parts.push(`🏷️ Custom: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${customCount}</span>`);
     }
     pillStats.innerHTML = parts.join(' | ');
   }
@@ -598,6 +598,15 @@
   pill.title = 'Social Shield: All-in-One Protection (Click to toggle master state)';
   pill.addEventListener('click', (e) => {
     if (e.target.closest('.x-jev-pill-close')) return;
+    if (e.target.closest('.x-jev-pill-focus-toggle')) {
+      config.focusModeEnabled = !config.focusModeEnabled;
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({ focusModeEnabled: config.focusModeEnabled });
+      }
+      updatePill();
+      applyStateToDOM();
+      return;
+    }
     const allOn = config.monkModeEnabled || config.autoBlurRageEnabled || config.blockScamsEnabled || config.collapseSeedingEnabled;
     config.monkModeEnabled = !allOn;
     config.autoBlurRageEnabled = !allOn;
@@ -840,14 +849,14 @@
       const altText = (media.alt || '') + ' ' + (media.getAttribute('aria-label') || '') + ' ' + (media.title || '');
       if (WOMEN_OR_GOONBAIT_REGEX.test(altText)) {
         hasWomenMedia = true;
-        detectedReason = 'Ảnh/Video phụ nữ (Meta AI Alt-Tag)';
+        detectedReason = 'Female imagery detected (Meta AI Alt-Tag)';
       }
     });
 
     // Also check if text caption has strong goon-bait signals
     if (!hasWomenMedia && WOMEN_OR_GOONBAIT_REGEX.test(text)) {
       hasWomenMedia = true;
-      detectedReason = 'Nội dung Goon-baiting / Thirst trap';
+      detectedReason = 'Goon-baiting / Thirst trap content';
     }
 
     if (hasWomenMedia) {
@@ -866,7 +875,7 @@
           <div class="x-monk-warning-text">
             <span>🧘</span>
             <div>
-              <b>Monk Mode: Đã che ảnh/video để giữ tập trung tuyệt đối.</b>
+              <b>Monk Mode: Media hidden to maintain focus.</b>
               <div style="font-size:10.5px;font-weight:400;opacity:0.9;margin-top:1px;">${detectedReason}</div>
             </div>
           </div>
@@ -874,7 +883,7 @@
 
         const btn = document.createElement('button');
         btn.className = 'x-monk-reveal-btn';
-        btn.textContent = 'Xem ảnh';
+        btn.textContent = 'Reveal media';
         btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -887,7 +896,7 @@
               m.style.setProperty('opacity', '1', 'important');
               m.style.setProperty('pointer-events', 'auto', 'important');
             });
-            btn.textContent = 'Ẩn lại';
+            btn.textContent = 'Hide media';
           } else {
             postEl.removeAttribute('data-monk-revealed');
             postEl.removeAttribute('data-user-revealed');
@@ -896,7 +905,7 @@
               m.style.removeProperty('opacity');
               m.style.removeProperty('pointer-events');
             });
-            btn.textContent = 'Xem ảnh';
+            btn.textContent = 'Reveal media';
           }
         };
 
@@ -926,7 +935,7 @@
       return inputs.map(() => ({ label: CATCH_ALL_LABEL, confidence: 1 }));
     }
 
-    console.log(`[Social Shield] 📡 Gửi ${inputs.length} mẫu text lên Jev AI (active labels: ${taxonomy.labels.length})...`);
+    console.log(`[Social Shield] 📡 Sending ${inputs.length} text samples to Jev AI (active labels: ${taxonomy.labels.length})...`);
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
       return new Promise((resolve) => {
         try {
@@ -944,7 +953,7 @@
                 console.warn('[Social Shield] Worker error, direct fetch fallback:', chrome.runtime.lastError.message);
                 directFetch(inputs, taxonomy).then(resolve);
               } else if (response && response.success) {
-                console.log(`[Social Shield] ✅ Nhận kết quả Jev cho ${response.results?.length} items.`);
+                console.log(`[Social Shield] ✅ Received Jev results for ${response.results?.length} items.`);
                 resolve(response.results || []);
               } else {
                 directFetch(inputs, taxonomy).then(resolve);
@@ -1057,17 +1066,17 @@
   }
 
   function getDisplayLabelName(label) {
-    if (label === 'self-improvement / motivational') return 'Động lực';
+    if (label === 'self-improvement / motivational') return 'Motivational';
     if (label === 'meme / humor / satire') return 'Meme';
     if (label === 'deep dive / technical breakdown / industry insider') return 'Deep Dive';
     if (label === 'wholesome / positive') return 'Wholesome';
     if (label === 'fearmongering / doom') return 'Doom';
     if (label === 'fomo / hype') return 'FOMO';
-    if (label === 'other / casual discussion') return 'Thảo luận';
-    if (label === 'scam / fraudulent scheme') return 'Lừa đảo';
+    if (label === 'other / casual discussion') return 'Casual';
+    if (label === 'scam / fraudulent scheme') return 'Scam';
     if (label === 'rage bait / toxic / hostile / dismissive negativity') return 'Rage Bait';
     if (label === 'bot seeding / affiliate spam / fake review') return 'Seeding';
-    return label || 'Chủ đề khác';
+    return label || 'Other';
   }
 
   function isPostMatchingFocus(labels) {
@@ -1094,23 +1103,40 @@
     const labelList = Array.isArray(labels)
       ? labels
       : (typeof labels === 'string' ? labels.split('|') : []);
-    const displayTag = labelList.map((l) => getDisplayLabelName(l)).join(', ') || 'Chủ đề khác';
+    const displayTag = labelList.map((l) => getDisplayLabelName(l)).join(', ') || 'Other';
     const focusBar = document.createElement('div');
     focusBar.className = 'x-jev-focus-bar';
-    focusBar.innerHTML = `
-      <div class="x-jev-focus-info">
-        <span>🎯</span>
-        <span>Khác tag Focus: <b style="color:#e2e8f0;">${displayTag}</b></span>
-      </div>
-      <span class="x-jev-focus-action">Xem nội dung ▾</span>
-    `;
+
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'x-jev-focus-info';
+
+    const iconSpan = document.createElement('span');
+    iconSpan.textContent = '🎯';
+
+    const textSpan = document.createElement('span');
+    textSpan.textContent = 'Off-topic (Focus Mode): ';
+
+    const boldTag = document.createElement('b');
+    boldTag.style.color = '#ededed';
+    boldTag.textContent = displayTag;
+
+    textSpan.appendChild(boldTag);
+    infoDiv.appendChild(iconSpan);
+    infoDiv.appendChild(textSpan);
+
+    const actionSpan = document.createElement('span');
+    actionSpan.className = 'x-jev-focus-action';
+    actionSpan.textContent = 'View content ▾';
+
+    focusBar.appendChild(infoDiv);
+    focusBar.appendChild(actionSpan);
     focusBar.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       const isExpanded = postEl.classList.toggle('x-jev-focus-expanded');
       const actionBtn = focusBar.querySelector('.x-jev-focus-action');
       if (actionBtn) {
-        actionBtn.textContent = isExpanded ? 'Thu gọn ▴' : 'Xem nội dung ▾';
+        actionBtn.textContent = isExpanded ? 'Collapse ▴' : 'View content ▾';
       }
     });
     parentContainer.insertBefore(focusBar, textEl);
@@ -1162,7 +1188,7 @@
     if (scamScore >= config.confidenceThreshold) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-scam', 'true');
-      console.info(`[Social Shield 🛑 CHẶN SCAM]`, item.text);
+      console.info(`[Social Shield 🛑 BLOCKED SCAM]`, item.text);
       blockedScamCount++;
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         chrome.storage.local.set({ blockedScamCount });
@@ -1188,15 +1214,15 @@
           <div class="x-jev-scam-text">
             <span>🛑</span>
             <div>
-              <b>Cảnh báo Lừa đảo / Bẫy tài chính (${pct}%):</b>
-              <div style="font-size:11px;font-weight:400;opacity:0.9;margin-top:2px;">Dấu hiệu: Hứa hẹn thu nhập bất thường, lùa gà crypto hoặc kéo nhóm kín.</div>
+              <b>Scam / Deceptive Scheme Warning (${pct}%):</b>
+              <div style="font-size:11px;font-weight:400;opacity:0.9;margin-top:2px;">Suspicious financial scheme, unrealistic income promises, or deceptive links.</div>
             </div>
           </div>
         `;
 
         const btn = document.createElement('button');
         btn.className = 'x-jev-reveal-btn';
-        btn.textContent = 'Xem bài viết';
+        btn.textContent = 'Reveal post';
         btn.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1206,12 +1232,12 @@
             postEl.setAttribute('data-jev-revealed', 'true');
             postEl.setAttribute('data-user-revealed', 'true');
             applyInlineUnblur(postEl, true);
-            btn.textContent = 'Ẩn lại';
+            btn.textContent = 'Re-blur';
           } else {
             postEl.removeAttribute('data-jev-revealed');
             postEl.removeAttribute('data-user-revealed');
             applyInlineUnblur(postEl, false);
-            btn.textContent = 'Xem bài viết';
+            btn.textContent = 'Reveal post';
           }
         };
 
@@ -1226,14 +1252,14 @@
         postEl.setAttribute('data-user-revealed', 'true');
         applyInlineUnblur(postEl, true);
         const scamBtn = postEl.querySelector('.x-jev-scam-box .x-jev-reveal-btn');
-        if (scamBtn) scamBtn.textContent = 'Ẩn lại';
+        if (scamBtn) scamBtn.textContent = 'Re-blur';
       } else if (config.blockScamsEnabled) {
         postEl.classList.remove('x-jev-revealed');
         postEl.removeAttribute('data-jev-revealed');
         postEl.removeAttribute('data-user-revealed');
         applyInlineUnblur(postEl, false);
         const scamBtn = postEl.querySelector('.x-jev-scam-box .x-jev-reveal-btn');
-        if (scamBtn) scamBtn.textContent = 'Xem bài viết';
+        if (scamBtn) scamBtn.textContent = 'Reveal post';
       } else {
         postEl.classList.add('x-jev-revealed');
         postEl.setAttribute('data-jev-revealed', 'true');
@@ -1250,7 +1276,7 @@
     if (rageScore >= config.confidenceThreshold) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-rage', 'true');
-      console.info(`[Social Shield 🚨 CHẶN RAGE BAIT / TOXIC]`, item.text);
+      console.info(`[Social Shield 🚨 BLOCKED RAGE BAIT / TOXIC]`, item.text);
       blockedRageCount++;
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         chrome.storage.local.set({ blockedRageCount });
@@ -1278,7 +1304,7 @@
         warningBox.className = 'x-jev-warning-box';
         const pct = Math.round(rageScore * 100);
         warningBox.innerHTML = `
-          <span class="x-jev-warning-text">🛡️ <b>Rage / Toxic Warning (${pct}%):</b> Bài viết / bình luận tiêu cực, công kích, vô bổ đã bị làm mờ.</span>
+          <span class="x-jev-warning-text">🛡️ <b>Rage / Toxic Warning (${pct}%):</b> Potentially hostile, outrage-inducing, or toxic content blurred.</span>
         `;
 
         const revealBtn = document.createElement('button');
@@ -1337,7 +1363,7 @@
     if (seedingScore >= config.confidenceThreshold) {
       postEl.setAttribute('data-jev-handled', 'true');
       postEl.setAttribute('data-jev-seeding', 'true');
-      console.info(`[Social Shield 🧹 THU GỌN SEEDING]`, item.text);
+      console.info(`[Social Shield 🧹 COLLAPSED SEEDING]`, item.text);
       cleanedSeedingCount++;
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         chrome.storage.local.set({ cleanedSeedingCount });
@@ -1359,16 +1385,16 @@
         bar.innerHTML = `
           <div class="x-jev-seeding-label">
             <span>🧹</span>
-            <span>Đã thu gọn bình luận nghi vấn <b>Seeding / Clone</b> (${pct}%)</span>
+            <span>Collapsed suspected <b>Seeding / Bot</b> comment (${pct}%)</span>
           </div>
-          <span class="x-jev-expand-icon">Xem nội dung ▾</span>
+          <span class="x-jev-expand-icon">View comment ▾</span>
         `;
 
         bar.onclick = (e) => {
           e.preventDefault();
           e.stopPropagation();
           const isCollapsed = textEl.classList.toggle('x-jev-collapsed-body');
-          bar.querySelector('.x-jev-expand-icon').textContent = isCollapsed ? 'Xem nội dung ▾' : 'Thu gọn ▴';
+          bar.querySelector('.x-jev-expand-icon').textContent = isCollapsed ? 'View comment ▾' : 'Collapse ▴';
         };
 
         parentContainer.insertBefore(bar, textEl);
@@ -1418,10 +1444,10 @@
           const displayName = typeof customFound === 'object' ? customFound.name : customFound;
           customMeta = {
             text: `🏷️ ${displayName}`,
-            desc: `Nhãn tùy chỉnh: ${displayName}`,
-            bg: 'rgba(168, 85, 247, 0.18)',
-            border: '#a855f7',
-            color: '#c084fc',
+            desc: `Custom label: ${displayName}`,
+            bg: '#0a0a0a',
+            border: '#2e2e2e',
+            color: '#ededed',
           };
         }
       }
@@ -1497,6 +1523,9 @@
         const badge = document.createElement('div');
         badge.className = 'x-jev-badge';
         badge.setAttribute('data-jev-badge-category', label);
+        badge.style.setProperty('--badge-bg', meta.bg || '#0a0a0a');
+        badge.style.setProperty('--badge-border', meta.border || '#2e2e2e');
+        badge.style.setProperty('--badge-color', meta.color || '#ededed');
         badge.style.backgroundColor = meta.bg;
         badge.style.borderColor = meta.border;
         badge.style.color = meta.color;
@@ -1634,18 +1663,18 @@
           overlay.innerHTML = `
             <div class="x-monk-reels-card">
               <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Đã chặn Pop-up Reels Facebook</div>
-              <div class="x-monk-reels-desc">Thước phim ngắn đã được tạm dừng và làm mờ để bảo vệ sự tập trung tuyệt đối.</div>
+              <div class="x-monk-reels-title">Monk Mode: Blocked Facebook Reels Pop-up</div>
+              <div class="x-monk-reels-desc">Short-form video has been paused and obscured to protect your focus.</div>
               <div class="x-monk-reels-actions">
-                <button class="x-monk-btn-reveal">▶ Xem video</button>
-                <button class="x-monk-btn-close">✕ Đóng pop-up</button>
+                <button class="x-monk-btn-reveal">▶ Play Reel</button>
+                <button class="x-monk-btn-close">✕ Close Pop-up</button>
               </div>
             </div>
           `;
 
           const floatingReblur = document.createElement('button');
           floatingReblur.className = 'x-monk-re-blur-floating';
-          floatingReblur.innerHTML = `<span>🧘</span><span>Ẩn lại Reels</span>`;
+          floatingReblur.innerHTML = `<span>🧘</span><span>Re-blur Reel</span>`;
           floatingReblur.onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1674,67 +1703,31 @@
           const closeBtn = overlay.querySelector('.x-monk-btn-close');
           closeBtn.onclick = (e) => {
             e.preventDefault();
-            e.stopPropagation();
-            const fbClose = dialog.querySelector(
-              'div[aria-label*="Đóng" i], div[aria-label*="Close" i], div[role="button"][tabindex="0"]'
-            );
-            if (fbClose) {
-              fbClose.click();
+            const closeSvg = dialog.querySelector('svg[aria-label*="Close" i], svg[aria-label*="Đóng" i]');
+            if (closeSvg && closeSvg.closest('button, div[role="button"]')) {
+              closeSvg.closest('button, div[role="button"]').click();
+            } else {
+              const esc = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true });
+              document.dispatchEvent(esc);
+              window.dispatchEvent(esc);
             }
-            const esc = new KeyboardEvent('keydown', {
-              key: 'Escape',
-              code: 'Escape',
-              keyCode: 27,
-              which: 27,
-              bubbles: true,
-              cancelable: true,
-            });
-            document.dispatchEvent(esc);
-            window.dispatchEvent(esc);
-            dialog.dispatchEvent(esc);
           };
 
-          const videoWrapper = dialog.querySelector('div:has(> video)') || videos[0]?.parentElement || dialog;
-          videoWrapper.style.position = 'relative';
-          videoWrapper.appendChild(overlay);
-          videoWrapper.appendChild(floatingReblur);
+          dialog.style.position = 'relative';
+          dialog.appendChild(overlay);
+          dialog.appendChild(floatingReblur);
         }
       }
     });
 
-    // 2. Target Reels Trays / Carousels in Feed ("Reels và video ngắn" / "Thước phim")
-    const reelLinks = document.querySelectorAll('a[href*="/reel/"], a[href*="/reels/"]');
-    reelLinks.forEach((link) => {
-      if (link.closest('[data-monk-reels-blocked="true"]')) return;
-
-      let tray = link.closest('div[data-pagelet*="Reels"]') ||
-                 link.closest('div[aria-label*="Reels" i]') ||
-                 link.closest('div[aria-label*="Thước phim" i]') ||
-                 link.closest('div[data-pagelet^="FeedUnit_"]');
-
-      if (!tray) {
-        let curr = link.parentElement;
-        let depth = 0;
-        while (curr && curr !== document.body && depth < 6) {
-          if (curr.querySelectorAll('a[href*="/reel/"]').length >= 2) {
-            tray = curr;
-            break;
-          }
-          curr = curr.parentElement;
-          depth++;
-        }
-      }
-
-      if (tray && !tray.hasAttribute('data-monk-tray-handled')) {
-        tray.setAttribute('data-monk-tray-handled', 'true');
-        tray.setAttribute('data-monk-tray-blocked', 'true');
-        monkModeBlockedCount++;
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-          chrome.storage.local.set({ monkModeBlockedCount });
-        }
-        updatePill();
-
-        tray.querySelectorAll('video').forEach((v) => {
+    // 2. Feed Reels Tray (`aria-label="Reels"`, `aria-label="Thước phim"`)
+    const reelTrays = document.querySelectorAll(
+      'div[aria-label="Reels"], div[aria-label*="Thước phim" i], div[data-pagelet*="Reels" i], div[data-pagelet*="Tahoe" i]'
+    );
+    reelTrays.forEach((tray) => {
+      const vids = tray.querySelectorAll('video');
+      if (vids.length > 0 || tray.querySelector('a[href*="/reel/"]')) {
+        vids.forEach((v) => {
           try { v.pause(); v.muted = true; } catch (e) {}
         });
 
@@ -1745,11 +1738,11 @@
             <div class="x-monk-tray-content">
               <span>🧘</span>
               <div>
-                <b>Monk Mode: Đã ẩn khu vực Thước phim (Reels) trên Bảng tin</b>
-                <div style="font-size:11px;opacity:0.85;margin-top:1px;">Duy trì sự tập trung, chống nghiện lướt video ngắn và dopamine độc hại.</div>
+                <b>Monk Mode: Hidden Facebook Reels shelf from feed</b>
+                <div style="font-size:11px;opacity:0.85;margin-top:1px;">Preserve deep focus, eliminate short-form video dopamine loops.</div>
               </div>
             </div>
-            <button class="x-monk-tray-toggle">Xem Reels</button>
+            <button class="x-monk-tray-toggle">Show Reels</button>
           `;
 
           const toggleBtn = banner.querySelector('.x-monk-tray-toggle');
@@ -1757,7 +1750,7 @@
             e.preventDefault();
             e.stopPropagation();
             const isRevealed = tray.classList.toggle('monk-revealed');
-            toggleBtn.textContent = isRevealed ? 'Ẩn lại' : 'Xem Reels';
+            toggleBtn.textContent = isRevealed ? 'Hide Reels' : 'Show Reels';
           };
 
           tray.prepend(banner);
@@ -1781,10 +1774,10 @@
             overlay.innerHTML = `
               <div class="x-monk-reels-card">
                 <div class="x-monk-reels-icon">🧘</div>
-                <div class="x-monk-reels-title">Monk Mode: Đã chặn Reels Facebook</div>
-                <div class="x-monk-reels-desc">Thước phim ngắn đã được tạm dừng để bảo vệ sự tập trung tuyệt đối.</div>
+                <div class="x-monk-reels-title">Monk Mode: Blocked Facebook Reel</div>
+                <div class="x-monk-reels-desc">Short-form video has been paused to protect your focus.</div>
                 <div class="x-monk-reels-actions">
-                  <button class="x-monk-btn-reveal">▶ Xem video</button>
+                  <button class="x-monk-btn-reveal">▶ Play Reel</button>
                 </div>
               </div>
             `;
@@ -1843,11 +1836,11 @@
           overlay.innerHTML = `
             <div class="x-monk-reels-card">
               <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Đã chặn Instagram Reel</div>
-              <div class="x-monk-reels-desc">Thước phim ngắn đã được tạm dừng và làm mờ để bảo vệ sự tập trung tuyệt đối.</div>
+              <div class="x-monk-reels-title">Monk Mode: Blocked Instagram Reel</div>
+              <div class="x-monk-reels-desc">Short-form video has been paused and obscured to protect your focus.</div>
               <div class="x-monk-reels-actions">
-                <button class="x-monk-btn-reveal">▶ Xem Reel</button>
-                <button class="x-monk-btn-home">🏠 Về Trang chủ</button>
+                <button class="x-monk-btn-reveal">▶ Play Reel</button>
+                <button class="x-monk-btn-home">🏠 Return to Feed</button>
               </div>
             </div>
           `;
@@ -1906,18 +1899,18 @@
           overlay.innerHTML = `
             <div class="x-monk-reels-card">
               <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Đã chặn Pop-up Reel Instagram</div>
-              <div class="x-monk-reels-desc">Thước phim ngắn đã được tạm dừng và làm mờ để bảo vệ sự tập trung.</div>
+              <div class="x-monk-reels-title">Monk Mode: Blocked Instagram Reel Pop-up</div>
+              <div class="x-monk-reels-desc">Short-form video has been paused and obscured to protect your focus.</div>
               <div class="x-monk-reels-actions">
-                <button class="x-monk-btn-reveal">▶ Xem Reel</button>
-                <button class="x-monk-btn-close">✕ Đóng pop-up</button>
+                <button class="x-monk-btn-reveal">▶ Play Reel</button>
+                <button class="x-monk-btn-close">✕ Close Pop-up</button>
               </div>
             </div>
           `;
 
           const floatingReblur = document.createElement('button');
           floatingReblur.className = 'x-monk-re-blur-floating';
-          floatingReblur.innerHTML = `<span>🧘</span><span>Ẩn lại Reel</span>`;
+          floatingReblur.innerHTML = `<span>🧘</span><span>Re-blur Reel</span>`;
           floatingReblur.onclick = (e) => {
             e.preventDefault();
             dialog.classList.remove('monk-revealed');
@@ -1976,18 +1969,18 @@
             <div class="x-monk-warning-text">
               <span>🧘</span>
               <div>
-                <b>Monk Mode: Đã chặn Instagram Reel trên Bảng tin.</b>
-                <div style="font-size:10.5px;opacity:0.85;margin-top:1px;">Bảo vệ sự tập trung, chống nghiện lướt clip ngắn.</div>
+                <b>Monk Mode: Blocked Instagram Reel from feed.</b>
+                <div style="font-size:10.5px;opacity:0.85;margin-top:1px;">Protect focus and prevent endless short-form video browsing.</div>
               </div>
             </div>
           `;
           const btn = document.createElement('button');
           btn.className = 'x-monk-reveal-btn';
-          btn.textContent = 'Xem Reel';
+          btn.textContent = 'Play Reel';
           btn.onclick = (e) => {
             e.preventDefault();
             const isRev = article.classList.toggle('monk-revealed');
-            btn.textContent = isRev ? 'Ẩn lại' : 'Xem Reel';
+            btn.textContent = isRev ? 'Hide Reel' : 'Play Reel';
             videos.forEach((v) => { try { if (isRev) { v.muted = false; v.play(); } else { v.muted = true; v.pause(); } } catch (err) {} });
           };
           box.appendChild(btn);
@@ -2054,11 +2047,11 @@
           overlay.innerHTML = `
             <div class="x-monk-reels-card">
               <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Đã chặn YouTube Shorts</div>
-              <div class="x-monk-reels-desc">Video ngắn đã được tạm dừng và làm mờ để bảo vệ sự tập trung tuyệt đối.</div>
+              <div class="x-monk-reels-title">Monk Mode: Blocked YouTube Shorts</div>
+              <div class="x-monk-reels-desc">Short-form video has been paused and blurred to preserve focus.</div>
               <div class="x-monk-reels-actions">
-                <button class="x-monk-btn-reveal">▶ Xem Shorts</button>
-                <button class="x-monk-btn-home">🏠 Về Trang chủ</button>
+                <button class="x-monk-btn-reveal">▶ Play Shorts</button>
+                <button class="x-monk-btn-home">🏠 Return to Home</button>
               </div>
             </div>
           `;
@@ -2106,18 +2099,18 @@
           <div class="x-monk-tray-content">
             <span>🧘</span>
             <div>
-              <b>Monk Mode: Đã ẩn khu vực YouTube Shorts trên Bảng tin</b>
-              <div style="font-size:11px;opacity:0.85;margin-top:1px;">Duy trì sự tập trung, chống nghiện lướt video ngắn.</div>
+              <b>Monk Mode: Hidden YouTube Shorts shelf from feed</b>
+              <div style="font-size:11px;opacity:0.85;margin-top:1px;">Maintain focus and prevent endless short-form video browsing.</div>
             </div>
           </div>
-          <button class="x-monk-tray-toggle">Xem Shorts</button>
+          <button class="x-monk-tray-toggle">Show Shorts</button>
         `;
 
         const toggleBtn = banner.querySelector('.x-monk-tray-toggle');
         toggleBtn.onclick = (e) => {
           e.preventDefault();
           const isRevealed = shelf.classList.toggle('monk-revealed');
-          toggleBtn.textContent = isRevealed ? 'Ẩn lại' : 'Xem Shorts';
+          toggleBtn.textContent = isRevealed ? 'Hide Shorts' : 'Show Shorts';
         };
 
         shelf.prepend(banner);
@@ -2269,7 +2262,7 @@
     }
 
     if (queue.length > 0) {
-      console.log(`[Social Shield] 🔎 Tìm thấy ${queue.length} bài mới trên ${platform.toUpperCase()} cần gửi Jev.`);
+      console.log(`[Social Shield] 🔎 Found ${queue.length} new items on ${platform.toUpperCase()} to classify.`);
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(flushQueue, config.batchDebounceMs);
     }

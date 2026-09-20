@@ -73,9 +73,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (customLabels.length === 0) {
       const emptyMsg = document.createElement('div');
       emptyMsg.style.fontSize = '10.5px';
-      emptyMsg.style.color = '#64748b';
-      emptyMsg.style.fontStyle = 'italic';
-      emptyMsg.textContent = 'Chưa có nhãn tự điền nào';
+      emptyMsg.style.color = '#737373';
+      emptyMsg.style.fontFamily = "'Geist Mono', monospace";
+      emptyMsg.textContent = 'No custom labels added';
       customLabelsContainer.appendChild(emptyMsg);
       return;
     }
@@ -88,9 +88,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const enabled = typeof item === 'string' ? true : item?.enabled !== false;
 
       const labelText = document.createElement('span');
-      labelText.style.color = '#c084fc';
-      labelText.style.fontWeight = '600';
+      labelText.style.color = '#ededed';
+      labelText.style.fontWeight = '500';
       labelText.style.fontSize = '11px';
+      labelText.style.fontFamily = "'Geist', sans-serif";
       labelText.textContent = `🏷️ ${name}`;
 
       const actions = document.createElement('div');
@@ -123,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const removeBtn = document.createElement('span');
       removeBtn.className = 'remove-btn';
       removeBtn.textContent = '✕';
-      removeBtn.title = 'Xóa nhãn này';
+      removeBtn.title = 'Remove this label';
       removeBtn.addEventListener('click', () => {
         customLabels.splice(index, 1);
         renderCustomLabels();

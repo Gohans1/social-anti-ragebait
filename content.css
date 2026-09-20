@@ -1,4 +1,4 @@
-/* Universal Social Shield (Threads, X, Facebook) - Anti-Rage, Anti-Scam, Anti-Seeding, Monk Mode */
+/* Universal Social Shield (Threads, X, Facebook, YouTube, Instagram) - Vercel Design System */
 
 /* --- Badges & Multi-Badge Container --- */
 .x-jev-badge-container {
@@ -22,32 +22,33 @@
 }
 
 .x-jev-badge {
-  display: inline-flex;
+  display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  padding: 3px 10px !important;
-  border-radius: 9999px !important;
-  font-size: 11.5px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.02em !important;
+  gap: 5px !important;
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
   margin: 4px 0 8px 0 !important;
-  border: 1px solid !important;
+  border: 1px solid var(--badge-border, #2e2e2e) !important;
+  background: var(--badge-bg, #0a0a0a) !important;
+  color: var(--badge-color, #ededed) !important;
   width: fit-content !important;
   user-select: none !important;
-  transition: all 0.2s ease !important;
+  transition: border-color 0.15s ease !important;
   cursor: help !important;
-  line-height: 1.2 !important;
+  line-height: 1.3 !important;
   z-index: 10 !important;
   position: relative !important;
   filter: none !important;
   opacity: 1 !important;
   pointer-events: auto !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
 }
 
 .x-jev-badge:hover {
-  filter: brightness(1.2) !important;
-  transform: translateY(-1px) !important;
+  border-color: #555555 !important;
 }
 
 .x-jev-badge.x-jev-hidden {
@@ -55,8 +56,9 @@
 }
 
 .x-jev-confidence {
+  font-family: "Geist Mono", monospace !important;
   font-size: 10px !important;
-  opacity: 0.85 !important;
+  color: #737373 !important;
   font-weight: 500 !important;
 }
 
@@ -102,7 +104,7 @@ body.x-jev-no-rage-blur [data-jev-rage="true"] [data-jev-blur-item="true"],
 body.x-jev-no-rage-blur [data-jev-rage="true"] span,
 body.x-jev-no-rage-blur [data-jev-rage="true"] div,
 body.x-jev-disable-all-blur [data-jev-blur-item="true"],
-body.x-jev-disable-all-blur [data-jev-rage="true"] *,
+body.x-jev-disable-all-blur [data-jev-rage="true"] [data-jev-blur-item="true"],
 body.x-jev-disable-all-blur .x-jev-blurred-content {
   filter: none !important;
   opacity: 1 !important;
@@ -150,18 +152,18 @@ body.x-jev-disable-all-blur .x-monk-warning-box {
 }
 
 .x-monk-warning-box {
-  background: rgba(15, 23, 42, 0.9) !important;
-  border: 1.5px solid #0ea5e9 !important;
-  border-radius: 10px !important;
-  padding: 8px 14px !important;
+  background: #0a0a0a !important;
+  border: 1px solid #262626 !important;
+  border-left: 3px solid #0070f3 !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
   margin: 6px 0 10px 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   gap: 12px !important;
   font-size: 12px !important;
-  color: #38bdf8 !important;
-  backdrop-filter: blur(10px) !important;
+  color: #ededed !important;
   z-index: 99 !important;
   position: relative !important;
   width: 100% !important;
@@ -169,37 +171,38 @@ body.x-jev-disable-all-blur .x-monk-warning-box {
   filter: none !important;
   opacity: 1 !important;
   pointer-events: auto !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 .x-monk-warning-text {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  font-weight: 600 !important;
-  color: #38bdf8 !important;
+  font-weight: 500 !important;
+  color: #ededed !important;
   line-height: 1.3 !important;
 }
 
 .x-monk-reveal-btn {
-  background: #0284c7 !important;
-  border: none !important;
-  color: #ffffff !important;
-  padding: 5px 12px !important;
-  border-radius: 6px !important;
+  background: #ededed !important;
+  border: 1px solid #ededed !important;
+  color: #000000 !important;
+  padding: 4px 10px !important;
+  border-radius: 4px !important;
   cursor: pointer !important;
-  font-size: 11.5px !important;
-  font-weight: 700 !important;
+  font-family: "Geist", sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
   white-space: nowrap !important;
-  transition: all 0.15s ease !important;
+  transition: background 0.15s ease !important;
   filter: none !important;
   opacity: 1 !important;
   pointer-events: auto !important;
 }
 
 .x-monk-reveal-btn:hover {
-  background: #0369a1 !important;
-  transform: scale(1.04) !important;
+  background: #ffffff !important;
+  border-color: #ffffff !important;
 }
 
 /* --- Facebook Reels & Video Popups / Shelves (Monk Mode) --- */
@@ -229,9 +232,9 @@ body.x-jev-disable-all-blur .x-monk-warning-box {
   width: 100% !important;
   height: 100% !important;
   min-height: 240px !important;
-  background: rgba(9, 13, 22, 0.94) !important;
-  backdrop-filter: blur(25px) !important;
-  -webkit-backdrop-filter: blur(25px) !important;
+  background: rgba(0, 0, 0, 0.92) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -249,88 +252,86 @@ body.x-jev-disable-all-blur .x-monk-warning-box {
 
 .x-monk-reels-card {
   max-width: 360px !important;
-  background: rgba(15, 23, 42, 0.96) !important;
-  border: 1.5px solid rgba(56, 189, 248, 0.5) !important;
-  border-radius: 16px !important;
-  padding: 22px 20px !important;
+  background: #0a0a0a !important;
+  border: 1px solid #262626 !important;
+  border-radius: 8px !important;
+  padding: 24px 20px !important;
   text-align: center !important;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7) !important;
-  color: #f8fafc !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8) !important;
+  color: #ededed !important;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 .x-monk-reels-icon {
-  font-size: 38px !important;
+  font-size: 32px !important;
   margin-bottom: 10px !important;
   line-height: 1 !important;
 }
 
 .x-monk-reels-title {
   font-size: 15px !important;
-  font-weight: 700 !important;
-  color: #38bdf8 !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
   margin-bottom: 6px !important;
 }
 
 .x-monk-reels-desc {
   font-size: 12px !important;
-  color: #94a3b8 !important;
+  color: #888888 !important;
   line-height: 1.45 !important;
   margin-bottom: 16px !important;
 }
 
 .x-monk-reels-actions {
   display: flex !important;
-  gap: 10px !important;
+  gap: 8px !important;
   justify-content: center !important;
 }
 
 .x-monk-btn-reveal {
-  background: #0284c7 !important;
-  color: #ffffff !important;
-  border: none !important;
-  border-radius: 8px !important;
-  padding: 8px 16px !important;
-  font-size: 12.5px !important;
-  font-weight: 700 !important;
+  background: #ededed !important;
+  color: #000000 !important;
+  border: 1px solid #ededed !important;
+  border-radius: 4px !important;
+  padding: 6px 14px !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
   cursor: pointer !important;
-  transition: all 0.15s ease !important;
+  transition: background 0.15s ease !important;
 }
 .x-monk-btn-reveal:hover {
-  background: #0369a1 !important;
-  transform: scale(1.03) !important;
+  background: #ffffff !important;
+  border-color: #ffffff !important;
 }
 
 .x-monk-btn-close {
-  background: rgba(239, 68, 68, 0.18) !important;
-  color: #fca5a5 !important;
-  border: 1px solid rgba(239, 68, 68, 0.4) !important;
-  border-radius: 8px !important;
-  padding: 8px 16px !important;
-  font-size: 12.5px !important;
-  font-weight: 700 !important;
+  background: #141414 !important;
+  color: #ededed !important;
+  border: 1px solid #2e2e2e !important;
+  border-radius: 4px !important;
+  padding: 6px 14px !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
   cursor: pointer !important;
-  transition: all 0.15s ease !important;
+  transition: border-color 0.15s ease !important;
 }
 .x-monk-btn-close:hover {
-  background: rgba(239, 68, 68, 0.3) !important;
-  transform: scale(1.03) !important;
+  border-color: #555555 !important;
 }
 
 .x-monk-btn-home {
-  background: rgba(255, 255, 255, 0.12) !important;
-  color: #f1f5f9 !important;
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
-  border-radius: 8px !important;
-  padding: 8px 16px !important;
-  font-size: 12.5px !important;
-  font-weight: 700 !important;
+  background: #141414 !important;
+  color: #ededed !important;
+  border: 1px solid #2e2e2e !important;
+  border-radius: 4px !important;
+  padding: 6px 14px !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
   cursor: pointer !important;
-  transition: all 0.15s ease !important;
+  transition: border-color 0.15s ease !important;
 }
 .x-monk-btn-home:hover {
-  background: rgba(255, 255, 255, 0.22) !important;
-  transform: scale(1.03) !important;
+  border-color: #555555 !important;
 }
 
 /* YouTube Shorts & Instagram Reels Blurs */
@@ -352,22 +353,21 @@ main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
   top: 14px !important;
   left: 14px !important;
   z-index: 999999 !important;
-  background: rgba(15, 23, 42, 0.88) !important;
-  border: 1px solid rgba(56, 189, 248, 0.6) !important;
-  color: #38bdf8 !important;
-  padding: 6px 12px !important;
-  border-radius: 20px !important;
-  font-size: 11.5px !important;
-  font-weight: 700 !important;
+  background: rgba(0, 0, 0, 0.9) !important;
+  border: 1px solid #2e2e2e !important;
+  color: #ededed !important;
+  padding: 4px 10px !important;
+  border-radius: 4px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
   cursor: pointer !important;
   backdrop-filter: blur(8px) !important;
   display: none;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
   box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
 }
 .x-monk-re-blur-floating:hover {
-  background: #0284c7 !important;
-  color: #ffffff !important;
+  border-color: #555555 !important;
 }
 [data-monk-reels-blocked="true"].monk-revealed .x-monk-re-blur-floating {
   display: flex !important;
@@ -377,16 +377,16 @@ main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
 
 /* Reels Tray Banner in Feed */
 .x-monk-tray-banner {
-  background: linear-gradient(90deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 58, 138, 0.9) 100%) !important;
-  border: 1.5px solid rgba(56, 189, 248, 0.4) !important;
-  border-radius: 10px !important;
-  padding: 10px 14px !important;
-  margin: 10px 0 !important;
+  background: #0a0a0a !important;
+  border: 1px solid #262626 !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  margin: 8px 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  color: #f8fafc !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  color: #ededed !important;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
   z-index: 10 !important;
   position: relative !important;
   box-sizing: border-box !important;
@@ -396,41 +396,41 @@ main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
 .x-monk-tray-content {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
-  font-size: 12.5px !important;
+  gap: 8px !important;
+  font-size: 12px !important;
 }
 
 .x-monk-tray-toggle {
-  background: #0284c7 !important;
-  color: #fff !important;
-  border: none !important;
-  border-radius: 6px !important;
-  padding: 6px 14px !important;
-  font-size: 11.5px !important;
-  font-weight: 700 !important;
+  background: #ededed !important;
+  color: #000000 !important;
+  border: 1px solid #ededed !important;
+  border-radius: 4px !important;
+  padding: 4px 10px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
   cursor: pointer !important;
   flex-shrink: 0 !important;
-  transition: all 0.15s ease !important;
+  transition: background 0.15s ease !important;
 }
 .x-monk-tray-toggle:hover {
-  background: #0369a1 !important;
-  transform: scale(1.04) !important;
+  background: #ffffff !important;
+  border-color: #ffffff !important;
 }
 
 /* --- Rage Bait Warning Box --- */
 .x-jev-warning-box {
-  background: rgba(239, 68, 68, 0.16) !important;
-  border: 1.5px dashed #ef4444 !important;
-  border-radius: 10px !important;
-  padding: 8px 14px !important;
+  background: #0a0a0a !important;
+  border: 1px solid #262626 !important;
+  border-left: 3px solid #ef4444 !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
   margin: 6px 0 10px 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   gap: 12px !important;
-  font-size: 12.5px !important;
-  color: #ef4444 !important;
-  backdrop-filter: blur(6px) !important;
+  font-size: 12px !important;
+  color: #ededed !important;
   z-index: 99 !important;
   position: relative !important;
   width: 100% !important;
@@ -438,32 +438,32 @@ main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
   filter: none !important;
   opacity: 1 !important;
   pointer-events: auto !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 .x-jev-warning-text {
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
-  font-weight: 600 !important;
-  color: #ef4444 !important;
+  font-weight: 500 !important;
+  color: #ededed !important;
   line-height: 1.3 !important;
 }
 
 /* --- Scam & Fraud Warning Box --- */
 .x-jev-scam-box {
-  background: rgba(220, 38, 38, 0.18) !important;
-  border: 1.5px dashed #dc2626 !important;
-  border-radius: 10px !important;
-  padding: 9px 14px !important;
+  background: #0a0a0a !important;
+  border: 1px solid #262626 !important;
+  border-left: 3px solid #f97316 !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
   margin: 6px 0 10px 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   gap: 12px !important;
-  font-size: 12.5px !important;
-  color: #f87171 !important;
-  backdrop-filter: blur(8px) !important;
+  font-size: 12px !important;
+  color: #ededed !important;
   z-index: 99 !important;
   position: relative !important;
   width: 100% !important;
@@ -471,29 +471,30 @@ main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
   filter: none !important;
   opacity: 1 !important;
   pointer-events: auto !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 .x-jev-scam-text {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  font-weight: 600 !important;
-  color: #f87171 !important;
+  font-weight: 500 !important;
+  color: #ededed !important;
   line-height: 1.3 !important;
 }
 
 .x-jev-reveal-btn {
-  background: #ef4444 !important;
-  border: none !important;
-  color: #ffffff !important;
-  padding: 5px 14px !important;
-  border-radius: 6px !important;
+  background: #ededed !important;
+  border: 1px solid #ededed !important;
+  color: #000000 !important;
+  padding: 4px 10px !important;
+  border-radius: 4px !important;
   cursor: pointer !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
+  font-family: "Geist", sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
   white-space: nowrap !important;
-  transition: all 0.15s ease !important;
+  transition: background 0.15s ease !important;
   filter: none !important;
   opacity: 1 !important;
   pointer-events: auto !important;
@@ -502,34 +503,32 @@ main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
 }
 
 .x-jev-reveal-btn:hover {
-  background: #dc2626 !important;
-  transform: scale(1.04) !important;
+  background: #ffffff !important;
+  border-color: #ffffff !important;
 }
 
 /* --- Collapsed Seeding Comment Bar --- */
 .x-jev-seeding-collapsed {
-  background: rgba(168, 85, 247, 0.12) !important;
-  border: 1px dashed rgba(168, 85, 247, 0.45) !important;
-  border-radius: 8px !important;
+  background: #0a0a0a !important;
+  border: 1px solid #222222 !important;
+  border-radius: 6px !important;
   padding: 6px 12px !important;
   margin: 4px 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   font-size: 11.5px !important;
-  color: #c084fc !important;
+  color: #888888 !important;
   cursor: pointer !important;
   user-select: none !important;
-  transition: all 0.15s ease !important;
+  transition: border-color 0.15s ease !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 .x-jev-seeding-collapsed:hover {
-  background: rgba(168, 85, 247, 0.2) !important;
-  border-color: #a855f7 !important;
-  transform: translateX(2px) !important;
+  border-color: #444444 !important;
 }
 
 .x-jev-seeding-label {
@@ -540,11 +539,13 @@ main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
 }
 
 .x-jev-expand-icon {
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  color: #e9d5ff !important;
-  background: rgba(168, 85, 247, 0.25) !important;
-  padding: 2px 8px !important;
+  font-family: "Geist Mono", monospace !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  color: #ededed !important;
+  background: #141414 !important;
+  border: 1px solid #262626 !important;
+  padding: 2px 6px !important;
   border-radius: 4px !important;
 }
 
@@ -554,29 +555,26 @@ main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
 
 /* --- Focus Feed Mode: Collapsed Bar for Off-Topic Posts --- */
 .x-jev-focus-bar {
-  background: rgba(30, 41, 59, 0.5) !important;
-  border: 1px dashed rgba(148, 163, 184, 0.35) !important;
-  border-radius: 8px !important;
+  background: #0a0a0a !important;
+  border: 1px solid #222222 !important;
+  border-radius: 6px !important;
   padding: 6px 12px !important;
   margin: 4px 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   font-size: 11.5px !important;
-  color: #94a3b8 !important;
+  color: #888888 !important;
   cursor: pointer !important;
   user-select: none !important;
-  transition: all 0.15s ease !important;
+  transition: border-color 0.15s ease !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 .x-jev-focus-bar:hover {
-  background: rgba(30, 41, 59, 0.8) !important;
-  border-color: rgba(56, 189, 248, 0.6) !important;
-  color: #f1f5f9 !important;
-  transform: translateX(2px) !important;
+  border-color: #444444 !important;
 }
 
 .x-jev-focus-info {
@@ -587,17 +585,14 @@ main[data-monk-reels-blocked="true"]:not(.monk-revealed) video {
 }
 
 .x-jev-focus-action {
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  color: #38bdf8 !important;
-  background: rgba(56, 189, 248, 0.15) !important;
-  padding: 2px 8px !important;
+  font-family: "Geist Mono", monospace !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  color: #ededed !important;
+  background: #141414 !important;
+  border: 1px solid #262626 !important;
+  padding: 2px 6px !important;
   border-radius: 4px !important;
-  transition: background 0.15s ease !important;
-}
-
-.x-jev-focus-bar:hover .x-jev-focus-action {
-  background: rgba(56, 189, 248, 0.25) !important;
 }
 
 .x-jev-focus-collapsed-content {
@@ -622,26 +617,26 @@ body.x-jev-no-focus .x-jev-focus-collapsed-content {
   bottom: 24px !important;
   right: 24px !important;
   z-index: 999999 !important;
-  background: rgba(15, 23, 42, 0.94) !important;
-  color: #e2e8f0 !important;
-  padding: 8px 16px !important;
+  background: rgba(0, 0, 0, 0.9) !important;
+  color: #ededed !important;
+  padding: 6px 14px !important;
   border-radius: 9999px !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.02em !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid #262626 !important;
   display: flex;
   align-items: center !important;
   gap: 8px !important;
   cursor: pointer !important;
   user-select: none !important;
-  transition: all 0.2s ease !important;
+  transition: border-color 0.15s ease !important;
   filter: none !important;
   opacity: 1 !important;
   pointer-events: auto !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 body.x-jev-hide-pill .x-jev-floating-pill,
@@ -655,26 +650,23 @@ body.x-jev-hide-pill .x-jev-floating-pill,
 }
 
 .x-jev-floating-pill:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
+  border-color: #444444 !important;
 }
 
 .x-jev-pill-close {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  margin-left: 8px !important;
-  padding: 2px 8px !important;
-  min-width: 18px !important;
-  min-height: 18px !important;
-  font-size: 13px !important;
-  font-weight: 800 !important;
-  color: #94a3b8 !important;
+  margin-left: 6px !important;
+  padding: 1px 4px !important;
+  font-size: 11px !important;
+  font-family: "Geist Mono", monospace !important;
+  font-weight: 500 !important;
+  color: #737373 !important;
   cursor: pointer !important;
-  border-radius: 9999px !important;
-  background: rgba(255, 255, 255, 0.12) !important;
-  transition: all 0.15s ease !important;
+  border-radius: 3px !important;
+  background: transparent !important;
+  transition: color 0.15s ease !important;
   user-select: none !important;
   z-index: 1000000 !important;
   pointer-events: auto !important;
@@ -682,6 +674,4 @@ body.x-jev-hide-pill .x-jev-floating-pill,
 
 .x-jev-pill-close:hover {
   color: #ffffff !important;
-  background: #ef4444 !important;
-  transform: scale(1.15) !important;
 }

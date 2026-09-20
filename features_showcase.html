@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Social Shield: System Architecture & Features</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400..600&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet" referrerpolicy="no-referrer">
+  <link href="assets/vercel-brand.css" rel="stylesheet">
+  <style>
+    /* Page-owned custom namespace: vbg-custom-* */
+    .vbg-custom-tab-nav {
+      display: inline-flex;
+      border: 1px solid var(--vbg-border-default);
+      border-radius: var(--vbg-radius-small);
+      padding: 2px;
+      background: var(--vbg-surface-secondary);
+      margin-bottom: var(--vbg-space-8);
+      gap: 2px;
+    }
+    .vbg-custom-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--vbg-text-secondary);
+      font-size: var(--vbg-type-compact);
+      font-weight: var(--vbg-weight-medium);
+      padding: 6px 14px;
+      border-radius: calc(var(--vbg-radius-small) - 2px);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .vbg-custom-tab-btn:hover {
+      color: var(--vbg-text-primary);
+    }
+    .vbg-custom-tab-btn.active {
+      background: var(--vbg-surface-primary);
+      color: var(--vbg-text-primary);
+    }
+    .vbg-custom-tab-content {
+      display: none;
+    }
+    .vbg-custom-tab-content.active {
+      display: block;
+    }
+
+    /* Vercel-styled simulated social feed posts */
+    .vbg-custom-sim-post {
+      background: var(--vbg-surface-secondary);
+      border: 1px solid var(--vbg-border-default);
+      border-radius: var(--vbg-radius);
+      padding: var(--vbg-space-4);
+      font-size: var(--vbg-type-compact);
+      line-height: var(--vbg-leading-compact);
+      min-height: 140px;
+    }
+    .vbg-custom-sim-author {
+      font-size: var(--vbg-type-metadata);
+      color: var(--vbg-text-secondary);
+      margin-bottom: var(--vbg-space-2);
+    }
+    .vbg-custom-sim-blurred {
+      filter: blur(12px);
+      opacity: 0.2;
+      user-select: none;
+      pointer-events: none;
+    }
+    .vbg-custom-sim-media {
+      width: 100%;
+      height: 100px;
+      background: var(--vbg-surface-primary);
+      border: 1px solid var(--vbg-border-subtle);
+      border-radius: var(--vbg-radius-small);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--vbg-text-secondary);
+      margin-top: var(--vbg-space-2);
+      font-size: var(--vbg-type-metadata);
+    }
+    .vbg-custom-sim-media-monk-blur {
+      filter: blur(20px) grayscale(70%);
+      opacity: 0.15;
+    }
+
+    /* Alert banners in simulated posts */
+    .vbg-custom-sim-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--vbg-space-3);
+      padding: var(--vbg-space-2) var(--vbg-space-3);
+      border-radius: var(--vbg-radius-small);
+      font-size: var(--vbg-type-compact);
+      margin-bottom: var(--vbg-space-3);
+      border: 1px solid var(--vbg-border-default);
+      background: var(--vbg-surface-primary);
+    }
+    .vbg-custom-sim-banner-rage {
+      border-left: 3px solid var(--vbg-color-error);
+    }
+    .vbg-custom-sim-banner-scam {
+      border-left: 3px solid var(--vbg-color-warning);
+    }
+    .vbg-custom-sim-banner-monk {
+      border-left: 3px solid var(--vbg-color-info);
+    }
+
+    .vbg-custom-sim-btn {
+      background: var(--vbg-text-primary);
+      color: var(--vbg-surface-primary);
+      border: none;
+      padding: 4px 10px;
+      border-radius: var(--vbg-radius-small);
+      font-size: var(--vbg-type-metadata);
+      font-weight: var(--vbg-weight-medium);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.15s;
+    }
+    .vbg-custom-sim-btn:hover {
+      opacity: 0.88;
+    }
+    .vbg-custom-sim-btn-secondary {
+      background: var(--vbg-surface-primary);
+      color: var(--vbg-text-primary);
+      border: 1px solid var(--vbg-border-default);
+    }
+
+    /* Badges */
+    .vbg-custom-sim-badge-container {
+      display: flex;
+      gap: var(--vbg-space-2);
+      margin-bottom: var(--vbg-space-2);
+      flex-wrap: wrap;
+    }
+    .vbg-custom-sim-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: var(--vbg-type-metadata);
+      font-weight: var(--vbg-weight-medium);
+      padding: 2px 8px;
+      border-radius: var(--vbg-radius-small);
+      border: 1px solid var(--vbg-border-default);
+      background: var(--vbg-surface-primary);
+      color: var(--vbg-text-primary);
+    }
+    .vbg-custom-sim-badge-confidence {
+      font-size: var(--vbg-type-metadata);
+      color: var(--vbg-text-secondary);
+    }
+
+    /* Collapsed seeding & focus bars */
+    .vbg-custom-sim-collapsed-bar {
+      background: var(--vbg-surface-primary);
+      border: 1px solid var(--vbg-border-default);
+      border-radius: var(--vbg-radius-small);
+      padding: 6px 12px;
+      font-size: var(--vbg-type-compact);
+      color: var(--vbg-text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--vbg-space-2);
+    }
+    .vbg-custom-sim-collapsed-cue {
+      font-size: var(--vbg-type-metadata);
+      padding: 2px 6px;
+      border-radius: var(--vbg-radius-small);
+      border: 1px solid var(--vbg-border-subtle);
+      background: var(--vbg-surface-secondary);
+      color: var(--vbg-text-primary);
+    }
+
+    /* Page-owned custom code blocks */
+    pre.vbg-custom-code-block {
+      background: var(--vbg-surface-secondary);
+      border: 1px solid var(--vbg-border-default);
+      border-radius: var(--vbg-radius);
+      padding: var(--vbg-space-4);
+      font-size: var(--vbg-type-compact);
+      color: var(--vbg-text-primary);
+      overflow-x: auto;
+      line-height: var(--vbg-leading-compact);
+      margin-bottom: var(--vbg-space-6);
+    }
+  </style>
+</head>
+<body class="vbg-report">
+  <div class="vbg-shell">
+    <a class="vbg-skip-link" href="#main">Skip to content</a>
+
+    <header class="vbg-header">
+      <div class="vbg-masthead">
+        <span class="vbg-identity"><span class="vbg-wordmark" role="img" aria-label="Vercel"></span></span>
+        <div class="vbg-document-meta">
+          <span class="vbg-recipient">Social Shield Security</span>
+          <span class="vbg-state">Production Specification • Jev AI</span>
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- Title and Lede -->
+      <section class="vbg-section">
+        <h1 class="vbg-title">Social Shield: Anti-Rage, Scam, Reels & Monk Mode</h1>
+        <p class="vbg-lede">Technical specification and interactive showcase for multi-platform social media defense (X, Threads, Facebook, YouTube, Instagram) engineered to Vercel design principles.</p>
+
+        <!-- KPI Stat Strip -->
+        <div class="vbg-stat-strip" style="margin-top: var(--vbg-space-6); margin-bottom: var(--vbg-space-8);">
+          <div class="vbg-stat">
+            <p class="vbg-stat-label">Classification Latency</p>
+            <p class="vbg-stat-value">~250ms</p>
+            <p class="vbg-stat-detail">Zero-shot Jev AI Engine</p>
+          </div>
+          <div class="vbg-stat">
+            <p class="vbg-stat-label">Monk Mode Response</p>
+            <p class="vbg-stat-value">0ms</p>
+            <p class="vbg-stat-detail">Client-side regex & Meta AI Alt-tags</p>
+          </div>
+          <div class="vbg-stat">
+            <p class="vbg-stat-label">Supported Platforms</p>
+            <p class="vbg-stat-value">5 Networks</p>
+            <p class="vbg-stat-detail">FB, Threads, X, YouTube, Instagram</p>
+          </div>
+          <div class="vbg-stat">
+            <p class="vbg-stat-label">Multi-Tag Taxonomy</p>
+            <p class="vbg-stat-value">7+ Labels</p>
+            <p class="vbg-stat-detail">Curated + Custom Taxonomy</p>
+          </div>
+        </div>
+
+        <!-- Segmented Tab Nav -->
+        <div class="vbg-custom-tab-nav" role="tablist" aria-orientation="horizontal" aria-label="Report view modes">
+          <button class="vbg-custom-tab-btn active" role="tab" id="tab-summarize-btn" aria-selected="true" aria-controls="summarize" data-tab="summarize">Interactive Preview (Before / After)</button>
+          <button class="vbg-custom-tab-btn" role="tab" id="tab-explain-btn" aria-selected="false" aria-controls="explain" data-tab="explain">Technical Specification & Architecture</button>
+        </div>
+      </section>
+
+      <!-- TAB SUMMARIZE: FEATURE COMPARISONS -->
+      <div id="summarize" class="vbg-custom-tab-content active" role="tabpanel" aria-labelledby="tab-summarize-btn">
+        <!-- Anti-Ragebait -->
+        <section class="vbg-section">
+          <h2 class="vbg-heading-20">Anti-Ragebait & Toxic Drama Defense</h2>
+          <p>Identifies hostile, provocative, and cynicism-inducing content using Jev Zero-shot AI. Automatically blurs the post body and attaches a minimal warning banner.</p>
+
+          <div class="vbg-split" data-ratio="equal" style="margin-top: var(--vbg-space-4);">
+            <div>
+              <p class="vbg-label" style="color: var(--vbg-color-error); margin-bottom: var(--vbg-space-2);">Before Filtering • Harmful</p>
+              <div class="vbg-custom-sim-post">
+                <div class="vbg-custom-sim-author"><code>@drama_queen</code> • 5m ago</div>
+                <p style="margin-bottom: var(--vbg-space-2);">If you don't boil with rage after watching this clip, you have no soul! Despicable behavior, share this everywhere so they get cancelled!</p>
+                <div class="vbg-custom-sim-media">[Screenshot of online feud / hostile provocation]</div>
+              </div>
+            </div>
+            <div>
+              <p class="vbg-label" style="color: var(--vbg-color-success); margin-bottom: var(--vbg-space-2);">After Filtering • Protected</p>
+              <div class="vbg-custom-sim-post">
+                <div class="vbg-custom-sim-author"><code>@drama_queen</code> • 5m ago</div>
+                <div class="vbg-custom-sim-banner vbg-custom-sim-banner-rage">
+                  <div>
+                    <strong>Warning: Outrage-Inducing / Rage-Bait Content</strong>
+                    <div class="vbg-meta" style="font-size: var(--vbg-type-metadata);"><code>Confidence: 98% (Jev AI)</code></div>
+                  </div>
+                  <button class="vbg-custom-sim-btn">Show Content</button>
+                </div>
+                <div class="vbg-custom-sim-blurred">
+                  <p>If you don't boil with rage after watching this clip, you have no soul...</p>
+                  <div class="vbg-custom-sim-media">[Media has been blurred]</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Anti-Scam -->
+        <section class="vbg-section">
+          <h2 class="vbg-heading-20">Anti-Scam & Deceptive Schemes Defense</h2>
+          <p>Detects financial traps, crypto Ponzi schemes, fake remote job offers, and deceptive banking links.</p>
+
+          <div class="vbg-split" data-ratio="equal" style="margin-top: var(--vbg-space-4);">
+            <div>
+              <p class="vbg-label" style="color: var(--vbg-color-error); margin-bottom: var(--vbg-space-2);">Before Filtering • Financial Risk</p>
+              <div class="vbg-custom-sim-post">
+                <div class="vbg-custom-sim-author"><code>@easy_income</code> • Just now</div>
+                <p style="margin-bottom: var(--vbg-space-2);">Hiring 15 assistants to watch TikTok clips from home! Earn $200-$500 daily paid direct to your account. No experience required. Message WhatsApp now!</p>
+                <div class="vbg-custom-sim-media">[Fabricated banking transfer screenshot]</div>
+              </div>
+            </div>
+            <div>
+              <p class="vbg-label" style="color: var(--vbg-color-success); margin-bottom: var(--vbg-space-2);">After Filtering • Risk Neutralized</p>
+              <div class="vbg-custom-sim-post">
+                <div class="vbg-custom-sim-author"><code>@easy_income</code> • Just now</div>
+                <div class="vbg-custom-sim-banner vbg-custom-sim-banner-scam">
+                  <div>
+                    <strong>Warning: Suspected Scam / Deceptive Offer</strong>
+                    <div class="vbg-meta" style="font-size: var(--vbg-type-metadata);"><code>Confidence: 100% (Jev AI)</code></div>
+                  </div>
+                  <button class="vbg-custom-sim-btn">View Post</button>
+                </div>
+                <div class="vbg-custom-sim-blurred">
+                  <p>Hiring 15 assistants to watch TikTok clips from home...</p>
+                  <div class="vbg-custom-sim-media">[Deceptive transfer proof blurred]</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Monk Mode -->
+        <section class="vbg-section">
+          <h2 class="vbg-heading-20">Monk Mode & Instant Client Scanning (0ms)</h2>
+          <p>Instant client-side detection via Meta AI Accessibility alt-tags and provocative keywords. Blurs photos and videos to preserve focus.</p>
+
+          <div class="vbg-split" data-ratio="equal" style="margin-top: var(--vbg-space-4);">
+            <div>
+              <p class="vbg-label" style="color: var(--vbg-color-error); margin-bottom: var(--vbg-space-2);">Before Filtering • Dopamine Trap</p>
+              <div class="vbg-custom-sim-post">
+                <div class="vbg-custom-sim-author"><code>@fitness_bikini</code> • 1h ago</div>
+                <p style="margin-bottom: var(--vbg-space-2);">Weather is heating up, who wants to hit the beach together... 💦👙</p>
+                <div class="vbg-custom-sim-media">[Bikini / provocative selfie pose]</div>
+              </div>
+            </div>
+            <div>
+              <p class="vbg-label" style="color: var(--vbg-color-success); margin-bottom: var(--vbg-space-2);">After Filtering • Clean & Focused</p>
+              <div class="vbg-custom-sim-post">
+                <div class="vbg-custom-sim-author"><code>@fitness_bikini</code> • 1h ago</div>
+                <div class="vbg-custom-sim-banner vbg-custom-sim-banner-monk">
+                  <div>
+                    <strong>Monk Mode: Media hidden to maintain focus</strong>
+                    <div class="vbg-meta" style="font-size: var(--vbg-type-metadata);"><code>Meta AI Alt-tag: woman, selfie, swimsuit (0ms)</code></div>
+                  </div>
+                  <button class="vbg-custom-sim-btn">View Media</button>
+                </div>
+                <div class="vbg-custom-sim-media vbg-custom-sim-media-monk-blur">[Media blurred 28px with 60% desaturation]</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Universal Reels & Shorts Blocker -->
+        <section class="vbg-section">
+          <h2 class="vbg-heading-20">Universal Reels & Shorts Blocker</h2>
+          <p>Automatically intercepts and pauses Instagram Reels, YouTube Shorts, and Facebook Reels with an overlay guard.</p>
+
+          <div class="vbg-split" data-ratio="equal" style="margin-top: var(--vbg-space-4);">
+            <div>
+              <p class="vbg-label" style="color: var(--vbg-color-error); margin-bottom: var(--vbg-space-2);">Before Filtering • Endless Time Sink</p>
+              <div class="vbg-custom-sim-post" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                <p style="font-weight: var(--vbg-weight-semibold); margin-bottom: var(--vbg-space-1);">Shorts / Reels Autoplay Loop</p>
+                <p class="vbg-meta">Mindlessly scrolling for hours without realization</p>
+              </div>
+            </div>
+            <div>
+              <p class="vbg-label" style="color: var(--vbg-color-success); margin-bottom: var(--vbg-space-2);">After Filtering • Attention Regained</p>
+              <div class="vbg-custom-sim-post" style="border: 1px solid var(--vbg-border-strong); display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                <p style="font-weight: var(--vbg-weight-semibold); margin-bottom: var(--vbg-space-1);">Addictive Reels / Shorts Blocked</p>
+                <p class="vbg-meta" style="margin-bottom: var(--vbg-space-3);">Video paused and audio muted automatically</p>
+                <div style="display: flex; gap: var(--vbg-space-2);">
+                  <button class="vbg-custom-sim-btn">▶ Play Reel</button>
+                  <button class="vbg-custom-sim-btn vbg-custom-sim-btn-secondary">✕ Dismiss</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Seeding Comments -->
+        <section class="vbg-section">
+          <h2 class="vbg-heading-20">Comment Seeding & Bot Clone Cleanup</h2>
+          <p>Collapses promotional affiliate spam, bot farming, and fake review comments into single-line minimal bars.</p>
+
+          <div class="vbg-split" data-ratio="equal" style="margin-top: var(--vbg-space-4);">
+            <div>
+              <p class="vbg-label" style="color: var(--vbg-color-error); margin-bottom: var(--vbg-space-2);">Before Filtering • Spam Clutter</p>
+              <div class="vbg-custom-sim-post">
+                <div class="vbg-custom-sim-author"><code>@clone_bot123</code></div>
+                <p style="margin-bottom: var(--vbg-space-2);">Love this! Check DM for special discount code ❤️</p>
+                <div class="vbg-custom-sim-author"><code>@seeding_affiliate</code></div>
+                <p>Link in bio is 50% off right now don't miss out!</p>
+              </div>
+            </div>
+            <div>
+              <p class="vbg-label" style="color: var(--vbg-color-success); margin-bottom: var(--vbg-space-2);">After Filtering • Clean Minimal Layout</p>
+              <div class="vbg-custom-sim-post">
+                <div class="vbg-custom-sim-collapsed-bar">
+                  <span>🧹 Collapsed suspected seeding / bot comment</span>
+                  <span class="vbg-custom-sim-collapsed-cue">Expand ▾</span>
+                </div>
+                <div class="vbg-custom-sim-collapsed-bar">
+                  <span>🧹 Collapsed suspected seeding / bot comment</span>
+                  <span class="vbg-custom-sim-collapsed-cue">Expand ▾</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Taxonomy Badges -->
+        <section class="vbg-section">
+          <h2 class="vbg-heading-20">Multi-Label Classification & Custom Taxonomy</h2>
+          <p>Classifies valuable posts and tags them with curated badges: Motivational, Meme, Deep Dive, Wholesome, Doom, FOMO, or user-defined custom labels.</p>
+
+          <div class="vbg-split" data-ratio="equal" style="margin-top: var(--vbg-space-4);">
+            <div>
+              <p class="vbg-label" style="color: var(--vbg-color-error); margin-bottom: var(--vbg-space-2);">Before Filtering • Untagged Post</p>
+              <div class="vbg-custom-sim-post">
+                <div class="vbg-custom-sim-author"><code>@tech_insider</code> • 2h ago</div>
+                <p>Detailed architectural analysis on database latency optimization when scaling beyond 10M daily requests...</p>
+              </div>
+            </div>
+            <div>
+              <p class="vbg-label" style="color: var(--vbg-color-success); margin-bottom: var(--vbg-space-2);">After Filtering • Categorized Badges</p>
+              <div class="vbg-custom-sim-post">
+                <div class="vbg-custom-sim-badge-container">
+                  <span class="vbg-custom-sim-badge">🔬 Deep Dive <span class="vbg-custom-sim-badge-confidence">96%</span></span>
+                  <span class="vbg-custom-sim-badge">🌱 Motivational <span class="vbg-custom-sim-badge-confidence">91%</span></span>
+                </div>
+                <div class="vbg-custom-sim-author"><code>@tech_insider</code> • 2h ago</div>
+                <p>Detailed architectural analysis on database latency optimization when scaling beyond 10M daily requests...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- TAB EXPLAIN: TECHNICAL SPECIFICATIONS -->
+      <div id="explain" class="vbg-custom-tab-content" role="tabpanel" aria-labelledby="tab-explain-btn">
+        <!-- Call tree -->
+        <section class="vbg-section">
+          <h2 class="vbg-heading-20">Architecture & Data Flow (Call Tree)</h2>
+          <p>Execution lifecycle from initial page load or DOM mutation to sanitized UI rendering:</p>
+          <pre class="vbg-custom-code-block">scheduleScan (content.js: Debounced 150ms)
+  scanPosts
+    checkAndApplyMonkMode (0ms Instant Client-side Regex + Meta AI Alt-tags)
+    collectUnscannedItems (Filter unscanned post and comment text)
+      flushQueue (Debounced 80ms, batch dispatch)
+        callJevBatch
+          chrome.runtime.sendMessage (Service Worker background CSP bypass)
+            fetch('https://classifier.dev/classify') (Zero-shot AI)
+              renderClassification
+                applyStateToDOM (Blur harmful content, attach warning banner, collapse seeding)
+                updatePill (Update stats counters on floating overlay widget)</pre>
+        </section>
+
+        <!-- Component tree -->
+        <section class="vbg-section">
+          <h2 class="vbg-heading-20">Injected Component Hierarchy</h2>
+          <p>DOM architecture of components injected into host social media feeds following Vercel styling:</p>
+          <pre class="vbg-custom-code-block">&lt;FeedContainer&gt;
+  &lt;PostElement data-jev-handled="true"&gt;
+    &lt;BadgeContainer class="x-jev-badge-container"&gt;
+      &lt;Badge class="x-jev-badge"&gt; 🌱 Motivational &lt;span class="x-jev-confidence"&gt;95%&lt;/span&gt; &lt;/Badge&gt;
+      &lt;Badge class="x-jev-badge"&gt; 🔬 Deep Dive &lt;span class="x-jev-confidence"&gt;92%&lt;/span&gt; &lt;/Badge&gt;
+    &lt;/BadgeContainer&gt;
+    
+    &lt;WarningBox class="x-jev-warning-box | x-jev-scam-box | x-monk-warning-box"&gt;
+      &lt;WarningText /&gt;
+      &lt;RevealButton class="x-jev-reveal-btn | x-monk-reveal-btn"&gt; Reveal post / Reveal media &lt;/RevealButton&gt;
+    &lt;/WarningBox&gt;
+    
+    &lt;PostContent data-jev-blur-item="true" class="x-jev-blurred-content" /&gt;
+  &lt;/PostElement&gt;
+
+  &lt;CommentElement data-jev-seeding="true"&gt;
+    &lt;CollapsedBar class="x-jev-seeding-collapsed"&gt;
+      🧹 Collapsed suspected seeding / bot comment &lt;span class="x-jev-expand-icon"&gt;Expand&lt;/span&gt;
+    &lt;/CollapsedBar&gt;
+  &lt;/CommentElement&gt;
+
+  &lt;FloatingStatusPill class="x-jev-floating-pill"&gt;
+    🛡️ X: ON | 👁️ Scanned: 14 &lt;CloseBtn class="x-jev-pill-close" /&gt;
+  &lt;/FloatingStatusPill&gt;
+&lt;/FeedContainer&gt;</pre>
+        </section>
+
+        <!-- File Map -->
+        <section class="vbg-section">
+          <h2 class="vbg-heading-20">Project File Map & Responsibilities</h2>
+          <pre class="vbg-custom-code-block">social-anti-ragebait/
+├── manifest.json              # Declarations: permissions, background service worker, host matches
+├── background.js              # Service Worker proxying Jev API requests around host page CSP
+├── content.js                 # DOM scanning engine, 0ms monk mode, batching, UI injection
+├── content.css                # Scoped styles: blur filters, alert banners, floating pill, badge tokens
+├── popup.html                 # Vercel-styled settings popup UI and feature toggles
+├── popup.js                   # Settings persistence via chrome.storage, synchronization, telemetry
+├── social-anti-ragebait.user.js # Standalone Tampermonkey script for cross-browser users
+├── assets/vercel-brand.css    # Official Vercel Brand Guidelines foundation stylesheet
+├── features_showcase.html     # Technical architecture report and interactive showcase
+└── README.md                  # Installation instructions and live performance benchmarks</pre>
+        </section>
+
+        <!-- Taxonomy Spec Table -->
+        <section class="vbg-section">
+          <h2 class="vbg-heading-20">Default Supported Taxonomy Comparison</h2>
+          <div class="vbg-table-wrap">
+            <table>
+              <caption class="vbg-visually-hidden">Default classification taxonomy actions and priorities</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Content Label</th>
+                  <th scope="col">Description & Detection</th>
+                  <th scope="col">Intervention Action (Vercel Style)</th>
+                  <th scope="col" class="vbg-numeric">Priority</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row"><code>rage bait / toxic / hostility</code></th>
+                  <td>Provocative outrage, toxic arguments, drama</td>
+                  <td>Blurs content body, attaches error red border banner</td>
+                  <td class="vbg-numeric">1</td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>scam / fraud / fake jobs</code></th>
+                  <td>Deceptive affiliate traps, Ponzi schemes, fake jobs</td>
+                  <td>Blurs content body, attaches warning orange border banner</td>
+                  <td class="vbg-numeric">1</td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>goon bait / thirst trap</code></th>
+                  <td>Provocative photos, bikini selfies, sexualized clickbait</td>
+                  <td>Blurs 28px with 60% desaturation (0ms client scan)</td>
+                  <td class="vbg-numeric">1</td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>comment seeding / clone</code></th>
+                  <td>Bot spam comments, promo clones, fake reviews</td>
+                  <td>Collapses comment into a single-line minimal bar</td>
+                  <td class="vbg-numeric">2</td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>motivational / mindset</code></th>
+                  <td>Personal growth, discipline, constructive mindset</td>
+                  <td>Attaches 🌱 badge with confidence percentage</td>
+                  <td class="vbg-numeric">3</td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>deep dive / breakdown</code></th>
+                  <td>Technical breakdowns, domain teardowns, insider analysis</td>
+                  <td>Attaches 🔬 badge with confidence percentage</td>
+                  <td class="vbg-numeric">3</td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>meme / entertainment</code></th>
+                  <td>Lighthearted jokes, humor, playful memes</td>
+                  <td>Attaches 🎭 badge with confidence percentage</td>
+                  <td class="vbg-numeric">3</td>
+                </tr>
+                <tr>
+                  <th scope="row"><code>wholesome / positive</code></th>
+                  <td>Heartwarming, uplifting, constructive stories</td>
+                  <td>Attaches 🌿 badge with confidence percentage</td>
+                  <td class="vbg-numeric">3</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="vbg-footer">
+      <span class="vbg-logo" role="img" aria-label="Vercel"></span>
+      <span>Social Shield Research & Engineering • Jev AI • Confidential</span>
+    </footer>
+  </div>
+
+  <script>
+    function openTab(tabId) {
+      document.querySelectorAll('.vbg-custom-tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.vbg-custom-tab-btn').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+
+      const targetContent = document.getElementById(tabId);
+      if (targetContent) targetContent.classList.add('active');
+
+      const activeBtn = document.querySelector(`[data-tab="${tabId}"]`);
+      if (activeBtn) {
+        activeBtn.classList.add('active');
+        activeBtn.setAttribute('aria-selected', 'true');
+      }
+    }
+
+    const tabButtons = document.querySelectorAll('.vbg-custom-tab-btn');
+    tabButtons.forEach((btn, idx, btnList) => {
+      btn.addEventListener('click', (e) => {
+        const tabId = btn.getAttribute('data-tab');
+        openTab(tabId);
+      });
+
+      btn.addEventListener('keydown', (e) => {
+        let newIdx = idx;
+        if (e.key === 'ArrowRight') {
+          newIdx = (idx + 1) % btnList.length;
+        } else if (e.key === 'ArrowLeft') {
+          newIdx = (idx - 1 + btnList.length) % btnList.length;
+        } else {
+          return;
+        }
+        e.preventDefault();
+        const nextBtn = btnList[newIdx];
+        const tabId = nextBtn.getAttribute('data-tab');
+        openTab(tabId);
+        nextBtn.focus();
+      });
+    });
+  </script>
+</body>
+</html>
