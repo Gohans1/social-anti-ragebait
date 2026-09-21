@@ -283,18 +283,24 @@
         if (typeof request.config.filterFomoEnabled === 'boolean') config.filterFomoEnabled = request.config.filterFomoEnabled;
         if (typeof request.config.filterCasualEnabled === 'boolean') config.filterCasualEnabled = request.config.filterCasualEnabled;
         if (Array.isArray(request.config.customLabels)) config.customLabels = request.config.customLabels;
-        config.monkModeEnabled = request.config.monkModeEnabled;
+        if (typeof request.config.monkModeEnabled === 'boolean') config.monkModeEnabled = request.config.monkModeEnabled;
         if (typeof request.config.blockReelsEnabled === 'boolean') config.blockReelsEnabled = request.config.blockReelsEnabled;
-        config.autoBlurRageEnabled = request.config.autoBlurRageEnabled;
-        config.blockScamsEnabled = request.config.blockScamsEnabled;
-        config.collapseSeedingEnabled = request.config.collapseSeedingEnabled;
+        if (typeof request.config.autoBlurRageEnabled === 'boolean') config.autoBlurRageEnabled = request.config.autoBlurRageEnabled;
+        if (typeof request.config.blockScamsEnabled === 'boolean') config.blockScamsEnabled = request.config.blockScamsEnabled;
+        if (typeof request.config.collapseSeedingEnabled === 'boolean') config.collapseSeedingEnabled = request.config.collapseSeedingEnabled;
         if (typeof request.config.focusModeEnabled === 'boolean') config.focusModeEnabled = request.config.focusModeEnabled;
         if (Array.isArray(request.config.focusWhitelistTags)) config.focusWhitelistTags = request.config.focusWhitelistTags;
         if (typeof request.config.hideFloatingPill === 'boolean') config.hideFloatingPill = request.config.hideFloatingPill;
         if (typeof request.config.singleTagMode === 'boolean') config.singleTagMode = request.config.singleTagMode;
         if (typeof request.config.geminiApiKey === 'string') config.geminiApiKey = request.config.geminiApiKey.trim();
-        if (typeof request.config.geminiPrompt === 'string') config.geminiPrompt = request.config.geminiPrompt.trim();
-        config.confidenceThreshold = request.config.confidenceThreshold;
+        if (typeof request.config.geminiPrompt === 'string') {
+          const newPrompt = request.config.geminiPrompt.trim();
+          if (newPrompt !== config.geminiPrompt) {
+            config.geminiPrompt = newPrompt;
+            summaryCache.clear();
+          }
+        }
+        if (typeof request.config.confidenceThreshold === 'number') config.confidenceThreshold = request.config.confidenceThreshold;
 
         if (taxonomyChanged) {
           textCache.clear();
@@ -371,6 +377,12 @@
                 taxonomyChanged = true;
               }
               config.customLabels = changes.customLabels.newValue || [];
+            } else if (key === 'geminiPrompt') {
+              const newPrompt = (changes.geminiPrompt.newValue || '').trim() || DEFAULT_GEMINI_PROMPT;
+              if (newPrompt !== config.geminiPrompt) {
+                config.geminiPrompt = newPrompt;
+                summaryCache.clear();
+              }
             } else {
               if (TAXONOMY_KEYS.includes(key) && changes[key].newValue !== config[key]) {
                 taxonomyChanged = true;

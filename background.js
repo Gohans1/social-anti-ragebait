@@ -88,7 +88,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const baseInstruction = (typeof systemPrompt === 'string' && systemPrompt.trim().length > 0)
         ? systemPrompt.trim()
         : DEFAULT_GEMINI_PROMPT;
-      const formattedInstruction = baseInstruction.endsWith(':')
+      const formattedInstruction = /[:.?!]$/.test(baseInstruction)
         ? baseInstruction
         : baseInstruction + ':';
       const prompt = formattedInstruction + '\n\n' + text.trim();

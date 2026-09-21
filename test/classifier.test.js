@@ -1576,15 +1576,17 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(resolvePrompt('   ')).toBe(DEFAULT_GEMINI_PROMPT);
     expect(resolvePrompt('Custom summary prompt')).toBe('Custom summary prompt');
 
-    // 2. Colon formatting: ensures instructions end with a colon before post text
+    // 2. Terminal punctuation formatting: preserves terminal punctuation (:.!?), appends : if none
     const formatInstruction = (instruction) => {
       const trimmed = instruction.trim();
-      return trimmed.endsWith(':') ? trimmed : trimmed + ':';
+      return /[:.?!]$/.test(trimmed) ? trimmed : trimmed + ':';
     };
 
     expect(formatInstruction(DEFAULT_GEMINI_PROMPT)).toBe(DEFAULT_GEMINI_PROMPT);
     expect(formatInstruction('Summarize in 3 bullet points')).toBe('Summarize in 3 bullet points:');
-    expect(formatInstruction('Summarize in 3 bullet points: ')).toBe('Summarize in 3 bullet points:');
+    expect(formatInstruction('Summarize in 3 bullet points.')).toBe('Summarize in 3 bullet points.');
+    expect(formatInstruction('Summarize in 3 bullet points! ')).toBe('Summarize in 3 bullet points!');
+    expect(formatInstruction('Can you summarize this?')).toBe('Can you summarize this?');
 
     // 3. Dirty checking contract for Save Button
     let savedPrompt = DEFAULT_GEMINI_PROMPT;
@@ -1609,6 +1611,40 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     // After save action, savedPrompt updates to new value -> button disables
     savedPrompt = 'Custom prompt 123';
     expect(isSaveDisabled('Custom prompt 123')).toBe(true);
+  });
+
+  test("Config synchronization: partial UPDATE_CONFIG payloads never corrupt existing filters or thresholds", () => {
+    const baseConfig = {
+      monkModeEnabled: true,
+      blockReelsEnabled: true,
+      autoBlurRageEnabled: true,
+      blockScamsEnabled: true,
+      collapseSeedingEnabled: true,
+      focusModeEnabled: true,
+      confidenceThreshold: 0.35,
+      geminiApiKey: 'AIzaSyTestKey',
+      geminiPrompt: 'Default prompt',
+    };
+
+    const targetConfig = { ...baseConfig };
+    const partialUpdate = { geminiPrompt: 'New prompt' };
+
+    // Apply partial update with type-guarded semantics (as in content.js)
+    if (typeof partialUpdate.monkModeEnabled === 'boolean') targetConfig.monkModeEnabled = partialUpdate.monkModeEnabled;
+    if (typeof partialUpdate.blockReelsEnabled === 'boolean') targetConfig.blockReelsEnabled = partialUpdate.blockReelsEnabled;
+    if (typeof partialUpdate.autoBlurRageEnabled === 'boolean') targetConfig.autoBlurRageEnabled = partialUpdate.autoBlurRageEnabled;
+    if (typeof partialUpdate.blockScamsEnabled === 'boolean') targetConfig.blockScamsEnabled = partialUpdate.blockScamsEnabled;
+    if (typeof partialUpdate.collapseSeedingEnabled === 'boolean') targetConfig.collapseSeedingEnabled = partialUpdate.collapseSeedingEnabled;
+    if (typeof partialUpdate.confidenceThreshold === 'number') targetConfig.confidenceThreshold = partialUpdate.confidenceThreshold;
+    if (typeof partialUpdate.geminiPrompt === 'string') targetConfig.geminiPrompt = partialUpdate.geminiPrompt.trim();
+
+    // Verify critical protections are completely preserved
+    expect(targetConfig.monkModeEnabled).toBe(true);
+    expect(targetConfig.autoBlurRageEnabled).toBe(true);
+    expect(targetConfig.blockScamsEnabled).toBe(true);
+    expect(targetConfig.collapseSeedingEnabled).toBe(true);
+    expect(targetConfig.confidenceThreshold).toBe(0.35);
+    expect(targetConfig.geminiPrompt).toBe('New prompt');
   });
 
   test("Script syntax & parse integrity: content.js, background.js, and userscript parse without syntax errors", async () => {

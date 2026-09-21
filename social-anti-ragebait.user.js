@@ -1874,7 +1874,7 @@
       }
       const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent';
       const baseInstruction = (CONFIG.geminiPrompt || DEFAULT_GEMINI_PROMPT).trim();
-      const formattedInstruction = baseInstruction.endsWith(':')
+      const formattedInstruction = /[:.?!]$/.test(baseInstruction)
         ? baseInstruction
         : baseInstruction + ':';
       const prompt = formattedInstruction + '\n\n' + text.trim();

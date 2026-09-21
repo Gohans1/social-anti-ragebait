@@ -491,28 +491,17 @@ document.addEventListener('DOMContentLoaded', () => {
     savePromptBtn.addEventListener('click', () => {
       if (savePromptBtn.disabled) return;
       const newPrompt = geminiPromptInput.value.trim() || DEFAULT_GEMINI_PROMPT;
-      chrome.storage.local.set({ geminiPrompt: newPrompt }, () => {
-        savedGeminiPrompt = newPrompt;
-        geminiPromptInput.value = newPrompt;
-        savePromptBtn.disabled = true;
+      savedGeminiPrompt = newPrompt;
+      geminiPromptInput.value = newPrompt;
+      savePromptBtn.disabled = true;
 
-        const originalText = savePromptBtn.textContent;
-        savePromptBtn.textContent = 'Saved ✓';
-        setTimeout(() => {
-          savePromptBtn.textContent = originalText;
-        }, 1500);
+      const originalText = 'Save';
+      savePromptBtn.textContent = 'Saved ✓';
+      setTimeout(() => {
+        savePromptBtn.textContent = originalText;
+      }, 1500);
 
-        chrome.tabs.query({}, (tabs) => {
-          if (tabs) {
-            tabs.forEach((tab) => {
-              chrome.tabs.sendMessage(tab.id, {
-                type: 'UPDATE_CONFIG',
-                config: { geminiPrompt: newPrompt },
-              }).catch(() => {});
-            });
-          }
-        });
-      });
+      saveAndNotify();
     });
 
     if (resetPromptBtn) {
@@ -585,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (changes.geminiApiKey && geminiApiKeyInput) {
         geminiApiKeyInput.value = changes.geminiApiKey.newValue || '';
       }
-      if (changes.geminiPrompt && geminiPromptInput) {
+      if (changes.geminiPrompt && geminiPromptInput && document.activeElement !== geminiPromptInput) {
         savedGeminiPrompt = (changes.geminiPrompt.newValue || '').trim() || DEFAULT_GEMINI_PROMPT;
         geminiPromptInput.value = savedGeminiPrompt;
         if (savePromptBtn) savePromptBtn.disabled = true;
