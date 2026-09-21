@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
     casual: 'show',
   };
 
+  const DEFAULT_GEMINI_API_KEY = 'AIzaSyCEUfHf2SiBsA5ZLDLHJMg_1bkjebeuVoo';
+
   let categoryActions = { ...DEFAULT_CATEGORY_ACTIONS };
   let customLabels = [];
   let focusModeEnabled = true;
@@ -377,7 +379,9 @@ document.addEventListener('DOMContentLoaded', () => {
         singleTagModeToggle.checked = res.singleTagMode;
       }
       if (geminiApiKeyInput) {
-        geminiApiKeyInput.value = typeof res.geminiApiKey === 'string' ? res.geminiApiKey : '';
+        geminiApiKeyInput.value = (typeof res.geminiApiKey === 'string' && res.geminiApiKey.trim().length > 0)
+          ? res.geminiApiKey
+          : DEFAULT_GEMINI_API_KEY;
       }
       if (typeof res.confidenceThreshold === 'number') {
         thresholdRange.value = Math.round(res.confidenceThreshold * 100);
@@ -429,7 +433,9 @@ document.addEventListener('DOMContentLoaded', () => {
       collapseSeedingEnabled: collapseSeedingToggle.checked,
       hideFloatingPill: hideFloatingPillToggle.checked,
       singleTagMode: singleTagModeToggle ? singleTagModeToggle.checked : false,
-      geminiApiKey: geminiApiKeyInput ? geminiApiKeyInput.value.trim() : '',
+      geminiApiKey: (geminiApiKeyInput && geminiApiKeyInput.value.trim().length > 0)
+        ? geminiApiKeyInput.value.trim()
+        : DEFAULT_GEMINI_API_KEY,
       confidenceThreshold: parseInt(thresholdRange.value, 10) / 100,
     };
 

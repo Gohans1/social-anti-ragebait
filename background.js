@@ -3,13 +3,17 @@
 // completely bypassing page Content Security Policy (CSP) on Threads, Facebook, and X.
 
 const API_ENDPOINT = 'https://classifier.dev/';
+const DEFAULT_GEMINI_API_KEY = 'AIzaSyCEUfHf2SiBsA5ZLDLHJMg_1bkjebeuVoo';
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log('[Social Anti-Ragebait] Extension installed / updated.');
-  // Set default confidence threshold in storage if not already set
-  chrome.storage.local.get(['confidenceThreshold'], (res) => {
+  // Set default confidence threshold and Gemini API Key in storage if not already set
+  chrome.storage.local.get(['confidenceThreshold', 'geminiApiKey'], (res) => {
     if (typeof res.confidenceThreshold !== 'number') {
       chrome.storage.local.set({ confidenceThreshold: 0.30 });
+    }
+    if (!res.geminiApiKey || typeof res.geminiApiKey !== 'string' || !res.geminiApiKey.trim()) {
+      chrome.storage.local.set({ geminiApiKey: DEFAULT_GEMINI_API_KEY });
     }
   });
 });
@@ -121,11 +125,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
     };
 
-    if (apiKey && typeof apiKey === 'string' && apiKey.trim().length > 0) {
-      doSummarize(apiKey);
+    const resolvedKey = (apiKey && typeof apiKey === 'string' && apiKey.trim().length > 0)
+      ? apiKey.trim()
+      : null;
+
+    if (resolvedKey) {
+      doSummarize(resolvedKey);
     } else {
       chrome.storage.local.get(['geminiApiKey'], (storageRes) => {
-        doSummarize(storageRes?.geminiApiKey);
+        const fallbackKey = (typeof storageRes?.geminiApiKey === 'string' && storageRes.geminiApiKey.trim())
+          ? storageRes.geminiApiKey.trim()
+          : DEFAULT_GEMINI_API_KEY;
+        doSummarize(fallbackKey);
       });
     }
 

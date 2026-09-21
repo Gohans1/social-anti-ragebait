@@ -3,9 +3,11 @@
 (function () {
   'use strict';
 
+  const DEFAULT_GEMINI_API_KEY = 'AIzaSyCEUfHf2SiBsA5ZLDLHJMg_1bkjebeuVoo';
+
   let config = {
     apiEndpoint: 'https://classifier.dev/',
-    geminiApiKey: '',
+    geminiApiKey: DEFAULT_GEMINI_API_KEY,
     batchDebounceMs: 120,
     confidenceThreshold: 0.30,
     categoryActions: {
@@ -157,8 +159,10 @@
         'geminiApiKey',
       ],
       (res) => {
-        if (typeof res.geminiApiKey === 'string') {
+        if (typeof res.geminiApiKey === 'string' && res.geminiApiKey.trim().length > 0) {
           config.geminiApiKey = res.geminiApiKey.trim();
+        } else {
+          config.geminiApiKey = DEFAULT_GEMINI_API_KEY;
         }
         if (res.categoryActions && typeof res.categoryActions === 'object') {
           config.categoryActions = { ...config.categoryActions, ...res.categoryActions };
@@ -1326,6 +1330,8 @@
       }
       postEl.classList.remove('x-jev-focus-expanded');
     }
+  }
+
   function escapeHtml(str) {
     if (!str) return '';
     return String(str)
@@ -1342,7 +1348,7 @@
   async function requestPostSummary(text) {
     if (summaryCache.has(text)) return summaryCache.get(text);
     return new Promise((resolve, reject) => {
-      const apiKey = (config.geminiApiKey || '').trim();
+      const apiKey = (config.geminiApiKey || DEFAULT_GEMINI_API_KEY).trim();
       if (!apiKey) {
         reject(new Error('Google AI Studio API key missing. Please enter your API key in extension settings.'));
         return;
@@ -1876,7 +1882,8 @@
             return;
           }
 
-          if (!config.geminiApiKey) {
+          const activeKey = (config.geminiApiKey || DEFAULT_GEMINI_API_KEY).trim();
+          if (!activeKey) {
             summaryBtn.innerHTML = '<span>⚠️</span><span>Set API Key</span>';
             summaryBtn.title = 'Please configure your Gemini API Key in the Social Shield extension popup.';
             setTimeout(() => {

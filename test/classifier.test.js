@@ -1559,6 +1559,18 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(bullets.length).toBeGreaterThanOrEqual(1);
     expect(bullets.length).toBeLessThanOrEqual(3);
   }, 15000);
+
+  test("Script syntax & parse integrity: content.js, background.js, and userscript parse without syntax errors", async () => {
+    const fs = await import("node:fs");
+    const files = ["content.js", "background.js", "social-anti-ragebait.user.js", "popup.js"];
+    for (const file of files) {
+      const code = fs.readFileSync(file, "utf8");
+      expect(() => {
+        new Function(code);
+      }).not.toThrow();
+    }
+  });
 });
+
 
 

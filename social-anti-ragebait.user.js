@@ -33,7 +33,7 @@
 
   const CONFIG = {
     apiEndpoint: 'https://classifier.dev',
-    geminiApiKey: '',
+    geminiApiKey: 'AIzaSyCEUfHf2SiBsA5ZLDLHJMg_1bkjebeuVoo',
     batchDebounceMs: 120,
     confidenceThreshold: 0.30,
     categoryActions: {
@@ -1856,7 +1856,7 @@
   async function requestPostSummary(text) {
     if (summaryCache.has(text)) return summaryCache.get(text);
     return new Promise((resolve, reject) => {
-      const key = (CONFIG.geminiApiKey || '').trim();
+      const key = (CONFIG.geminiApiKey || 'AIzaSyCEUfHf2SiBsA5ZLDLHJMg_1bkjebeuVoo').trim();
       if (!key) {
         reject(new Error('Google AI Studio API key is missing.'));
         return;
@@ -2385,7 +2385,8 @@
             return;
           }
 
-          if (!CONFIG.geminiApiKey) {
+          const activeKey = (CONFIG.geminiApiKey || 'AIzaSyCEUfHf2SiBsA5ZLDLHJMg_1bkjebeuVoo').trim();
+          if (!activeKey) {
             const userKey = window.prompt('Social Shield: Enter your Google AI Studio (Gemini) API Key to enable TL;DR summarization:');
             if (userKey && userKey.trim()) {
               CONFIG.geminiApiKey = userKey.trim();
