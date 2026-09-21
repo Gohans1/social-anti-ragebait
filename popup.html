@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Social Shield: All-in-One Guardian</title>
+  <title>Social Shield: AI Anti-Rage & Focus Guard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" referrerpolicy="no-referrer">
@@ -67,31 +67,67 @@
       color: #ffffff;
       letter-spacing: -0.01em;
     }
-    .badge-version {
+    .header-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       font-family: 'Geist Mono', monospace;
       font-size: 9.5px;
-      color: #737373;
-      padding: 2px 6px;
+      font-weight: 500;
+      color: #888888;
+      padding: 2px 7px;
       border: 1px solid #262626;
       border-radius: 4px;
       background: #0a0a0a;
+      letter-spacing: -0.01em;
+    }
+    .header-status-badge.active {
+      border-color: #262626;
+      color: #ededed;
+    }
+    .header-status-badge.standby {
+      color: #737373;
+    }
+    .status-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #555555;
+      display: inline-block;
+    }
+    .header-status-badge.active .status-dot {
+      background: #22c55e;
     }
 
-    /* Platform tags */
-    .platform-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
+    /* Hero Mini Stats Bar */
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
       margin-bottom: 12px;
     }
-    .platform-tag {
+    .hero-stat-card {
       background: #0a0a0a;
-      border: 1px solid #222222;
-      border-radius: 4px;
-      padding: 2px 6px;
-      font-family: 'Geist Mono', monospace;
-      font-size: 10px;
-      color: #888888;
+      border: 1px solid #1f1f1f;
+      border-radius: 6px;
+      padding: 8px 6px;
+      text-align: center;
+    }
+    .hero-stat-num {
+      font-size: 15px;
+      font-weight: 600;
+      color: #ffffff;
+      line-height: 1.2;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+    }
+    .hero-stat-lbl {
+      font-size: 9.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #737373;
+      margin-top: 2px;
+      font-weight: 500;
     }
 
     /* Vercel Section Card */
@@ -180,15 +216,63 @@
       background-color: #000000;
     }
 
-    /* Custom Chips & Mini Switch */
+    /* Vercel Segmented Control (3-state) */
+    .segmented-control {
+      display: inline-flex;
+      background: #111111;
+      border: 1px solid #262626;
+      border-radius: 5px;
+      padding: 2px;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .segment-btn {
+      background: transparent;
+      border: none;
+      border-radius: 3px;
+      color: #737373;
+      font-family: 'Geist Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 7px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      line-height: 1.3;
+      user-select: none;
+    }
+    .segment-btn:hover:not(.active) {
+      color: #ededed;
+    }
+    .segment-btn.active {
+      background: #ededed;
+      color: #000000;
+      font-weight: 600;
+    }
+    .segment-btn.active[data-action="off"] {
+      background: #262626;
+      color: #888888;
+    }
+
+    /* Custom Chips */
     .custom-label-chip {
       display: flex;
       align-items: center;
       justify-content: space-between;
       background: #111111;
       border: 1px solid #262626;
-      border-radius: 4px;
+      border-radius: 5px;
       padding: 4px 8px;
+      gap: 6px;
+    }
+    .custom-label-chip .chip-name {
+      color: #ededed;
+      font-weight: 500;
+      font-size: 11px;
+      font-family: 'Geist', sans-serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 120px;
     }
     .custom-label-chip .remove-btn {
       color: #737373;
@@ -199,65 +283,13 @@
       line-height: 1;
       padding: 2px 4px;
       border-radius: 3px;
+      background: transparent;
+      border: none;
       transition: color 0.15s;
     }
     .custom-label-chip .remove-btn:hover {
       color: #ef4444;
       background: rgba(239, 68, 68, 0.12);
-    }
-    .switch-mini {
-      position: relative;
-      display: inline-block;
-      width: 24px;
-      height: 14px;
-      flex-shrink: 0;
-    }
-    .switch-mini input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .switch-mini .slider {
-      border-radius: 14px;
-    }
-    .switch-mini .slider:before {
-      height: 8px;
-      width: 8px;
-      left: 2px;
-      bottom: 2px;
-    }
-    .switch-mini input:checked + .slider:before {
-      transform: translateX(10px);
-    }
-
-    /* Focus Tag Grid */
-    .focus-tag-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      margin-top: 8px;
-    }
-    .focus-tag-label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: #111111;
-      border: 1px solid #262626;
-      border-radius: 4px;
-      padding: 4px 8px;
-      font-size: 11px;
-      color: #888888;
-      cursor: pointer;
-      user-select: none;
-      transition: all 0.15s ease;
-    }
-    .focus-tag-label:hover {
-      border-color: #444444;
-      color: #ededed;
-    }
-    .focus-tag-label input[type="checkbox"] {
-      accent-color: #ededed;
-      cursor: pointer;
     }
 
     /* Range input */
@@ -349,156 +381,121 @@
         <h1>Social Shield</h1>
       </div>
     </div>
-    <span class="badge-version">v2.3.0 • Jev AI</span>
-  </div>
-
-  <!-- Platform Tags -->
-  <div class="platform-tags">
-    <span class="platform-tag">Facebook</span>
-    <span class="platform-tag">Instagram</span>
-    <span class="platform-tag">YouTube</span>
-    <span class="platform-tag">Threads</span>
-    <span class="platform-tag">X / Twitter</span>
-  </div>
-
-  <!-- Focus Feed Mode -->
-  <div class="section">
-    <div class="row">
-      <div>
-        <div class="label">Focus Feed Mode</div>
-        <div class="sublabel">Collapse posts that do not match selected tags</div>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="focusModeToggle" class="focus-toggle">
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div id="focusTagSelection" style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #1f1f1f; opacity: 0.5; transition: opacity 0.2s;">
-      <div style="font-family: 'Geist Mono', monospace; font-size: 10px; color: #737373; margin-bottom: 6px;">Keep posts matching these tags:</div>
-      <div class="focus-tag-grid">
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagMotivational" checked>
-          <span>Motivational</span>
-        </label>
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagMeme" checked>
-          <span>Meme</span>
-        </label>
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagDeepDive" checked>
-          <span>Teardown</span>
-        </label>
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagWholesome" checked>
-          <span>Wholesome</span>
-        </label>
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagCasual">
-          <span>Casual</span>
-        </label>
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagDoom">
-          <span>Doom</span>
-        </label>
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagFomo">
-          <span>FOMO</span>
-        </label>
-        <label class="focus-tag-label">
-          <input type="checkbox" id="focusTagCustom" checked>
-          <span>Custom</span>
-        </label>
-      </div>
+    <div id="headerStatusBadge" class="header-status-badge standby">
+      <span class="status-dot"></span>
+      <span id="headerStatusText">Standby</span>
     </div>
   </div>
 
-  <!-- AI Taxonomy & Badges -->
+  <!-- Hero Mini Stats Bar -->
+  <div class="hero-stats">
+    <div class="hero-stat-card">
+      <div class="hero-stat-num" id="heroScannedCount">0</div>
+      <div class="hero-stat-lbl">Scanned</div>
+    </div>
+    <div class="hero-stat-card">
+      <div class="hero-stat-num" id="heroFilteredCount">0</div>
+      <div class="hero-stat-lbl">Filtered</div>
+    </div>
+    <div class="hero-stat-card">
+      <div class="hero-stat-num" id="heroThreatsCount">0</div>
+      <div class="hero-stat-lbl">Threats</div>
+    </div>
+  </div>
+
+  <!-- Feed Content Rules (Unified 3-State Controls) -->
   <div class="section">
-    <div class="section-title">AI Taxonomy & Badges</div>
+    <div class="section-title">Feed Content Rules</div>
 
     <div class="row">
       <div>
         <div class="label">Motivational</div>
-        <div class="sublabel">Personal growth, mindset, positive discipline</div>
+        <div class="sublabel">Personal growth & mindset</div>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="filterMotivationalToggle" checked>
-        <span class="slider"></span>
-      </label>
+      <div class="segmented-control" data-category="motivational">
+        <button type="button" class="segment-btn active" data-action="show">Show</button>
+        <button type="button" class="segment-btn" data-action="hide">Hide</button>
+        <button type="button" class="segment-btn" data-action="off">Off</button>
+      </div>
     </div>
 
     <div class="row">
       <div>
         <div class="label">Meme</div>
-        <div class="sublabel">Jokes, lighthearted memes, playful satire</div>
+        <div class="sublabel">Jokes, satire & memes</div>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="filterMemeToggle" checked>
-        <span class="slider"></span>
-      </label>
+      <div class="segmented-control" data-category="meme">
+        <button type="button" class="segment-btn active" data-action="show">Show</button>
+        <button type="button" class="segment-btn" data-action="hide">Hide</button>
+        <button type="button" class="segment-btn" data-action="off">Off</button>
+      </div>
     </div>
 
     <div class="row">
       <div>
         <div class="label">Teardown</div>
-        <div class="sublabel">Technical breakdowns, domain insights, architectural deep dives</div>
+        <div class="sublabel">Technical breakdowns & analysis</div>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="filterDeepDiveToggle" checked>
-        <span class="slider"></span>
-      </label>
+      <div class="segmented-control" data-category="deepdive">
+        <button type="button" class="segment-btn active" data-action="show">Show</button>
+        <button type="button" class="segment-btn" data-action="hide">Hide</button>
+        <button type="button" class="segment-btn" data-action="off">Off</button>
+      </div>
     </div>
 
     <div class="row">
       <div>
         <div class="label">Wholesome</div>
-        <div class="sublabel">Heartwarming, uplifting, constructive stories</div>
+        <div class="sublabel">Heartwarming & good news</div>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="filterWholesomeToggle" checked>
-        <span class="slider"></span>
-      </label>
+      <div class="segmented-control" data-category="wholesome">
+        <button type="button" class="segment-btn active" data-action="show">Show</button>
+        <button type="button" class="segment-btn" data-action="hide">Hide</button>
+        <button type="button" class="segment-btn" data-action="off">Off</button>
+      </div>
     </div>
 
     <div class="row">
       <div>
         <div class="label">Doom</div>
-        <div class="sublabel">Sensationalized bad news, catastrophic warnings</div>
+        <div class="sublabel">Alarmist news & fearmongering</div>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="filterDoomToggle" checked>
-        <span class="slider"></span>
-      </label>
+      <div class="segmented-control" data-category="doom">
+        <button type="button" class="segment-btn" data-action="show">Show</button>
+        <button type="button" class="segment-btn active" data-action="hide">Hide</button>
+        <button type="button" class="segment-btn" data-action="off">Off</button>
+      </div>
     </div>
 
     <div class="row">
       <div>
         <div class="label">FOMO</div>
-        <div class="sublabel">Exaggerated wealth claims, artificial urgency</div>
+        <div class="sublabel">Hype, fake urgency & flexes</div>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="filterFomoToggle" checked>
-        <span class="slider"></span>
-      </label>
+      <div class="segmented-control" data-category="fomo">
+        <button type="button" class="segment-btn" data-action="show">Show</button>
+        <button type="button" class="segment-btn active" data-action="hide">Hide</button>
+        <button type="button" class="segment-btn" data-action="off">Off</button>
+      </div>
     </div>
 
     <div class="row">
       <div>
         <div class="label">Casual</div>
-        <div class="sublabel">Everyday conversations and general posts</div>
+        <div class="sublabel">Daily chats & banter</div>
       </div>
-      <label class="switch">
-        <input type="checkbox" id="filterCasualToggle" checked>
-        <span class="slider"></span>
-      </label>
+      <div class="segmented-control" data-category="casual">
+        <button type="button" class="segment-btn active" data-action="show">Show</button>
+        <button type="button" class="segment-btn" data-action="hide">Hide</button>
+        <button type="button" class="segment-btn" data-action="off">Off</button>
+      </div>
     </div>
 
     <!-- Custom Labels -->
     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #1f1f1f;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
         <div class="label">Custom Labels</div>
-        <span style="font-family: 'Geist Mono', monospace; font-size: 9.5px; color: #737373;">Auto prompt wrapping</span>
+        <span style="font-family: 'Geist Mono', monospace; font-size: 9.5px; color: #737373;">AI-matched</span>
       </div>
       <div style="display: flex; gap: 6px; margin-bottom: 8px;">
         <input type="text" id="customLabelInput" maxlength="40" placeholder="Enter label (e.g. anime, soccer)..." style="flex: 1; background: #000000; border: 1px solid #262626; border-radius: 4px; padding: 5px 8px; color: #ededed; font-family: 'Geist', sans-serif; font-size: 11px; outline: none;">
@@ -513,8 +510,8 @@
     <!-- Monk Mode -->
     <div class="row">
       <div>
-        <div class="label">Monk Mode (Hardcore)</div>
-        <div class="sublabel">Block media with women & thirst-traps to stay focused</div>
+        <div class="label">Monk Mode</div>
+        <div class="sublabel">Blur thirst-traps & suggestive media</div>
       </div>
       <label class="switch">
         <input type="checkbox" id="monkModeToggle" checked>
@@ -526,7 +523,7 @@
     <div class="row">
       <div>
         <div class="label">Block Reels & Shorts</div>
-        <div class="sublabel">Universal blocker for IG Reels, YT Shorts & FB Reels</div>
+        <div class="sublabel">Universal blocker for IG, YT & FB short videos</div>
       </div>
       <label class="switch">
         <input type="checkbox" id="blockReelsToggle" checked>
@@ -538,7 +535,7 @@
     <div class="row">
       <div>
         <div class="label">Auto-Blur Rage Bait</div>
-        <div class="sublabel">Blur provocative rage-bait, toxic drama, and insults</div>
+        <div class="sublabel">Blur toxic drama, outrage & hostile posts</div>
       </div>
       <label class="switch">
         <input type="checkbox" id="autoBlurRageToggle" checked>
@@ -550,7 +547,7 @@
     <div class="row">
       <div>
         <div class="label">Block Scams & Fraud</div>
-        <div class="sublabel">Detect and blur affiliate traps, Ponzi schemes, & fake jobs</div>
+        <div class="sublabel">Detect and blur affiliate traps, Ponzi & fake jobs</div>
       </div>
       <label class="switch">
         <input type="checkbox" id="blockScamsToggle" checked>
@@ -562,7 +559,7 @@
     <div class="row">
       <div>
         <div class="label">Collapse Seeding Comments</div>
-        <div class="sublabel">Auto-collapse bot spam, promo clones, & fake reviews</div>
+        <div class="sublabel">Auto-collapse bot spam, promo clones & fake reviews</div>
       </div>
       <label class="switch">
         <input type="checkbox" id="collapseSeedingToggle" checked>
@@ -574,10 +571,22 @@
     <div class="row">
       <div>
         <div class="label">Hide Floating Pill</div>
-        <div class="sublabel">Disable overlay counter widget in viewport corner</div>
+        <div class="sublabel">Hide on-screen stats pill on feeds</div>
       </div>
       <label class="switch">
         <input type="checkbox" id="hideFloatingPillToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- Single Tag Mode -->
+    <div class="row">
+      <div>
+        <div class="label">Single Tag Mode</div>
+        <div class="sublabel">Show only top 1 primary category tag per post</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="singleTagModeToggle">
         <span class="slider"></span>
       </label>
     </div>
@@ -593,6 +602,15 @@
         <span>30% (Strict)</span>
         <span>80% (Definite)</span>
       </div>
+    </div>
+
+    <!-- Gemini 3.5 Flash-Lite API Key -->
+    <div class="row" style="flex-direction: column; align-items: stretch; gap: 6px;">
+      <div>
+        <div class="label">Gemini 3.5 Flash-Lite API Key</div>
+        <div class="sublabel">Google AI Studio key for on-demand 3-bullet post summary</div>
+      </div>
+      <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." style="width: 100%; box-sizing: border-box; background: #0a0a0a; border: 1px solid #262626; color: #ededed; padding: 5px 8px; border-radius: 4px; font-size: 11px; font-family: 'Geist Mono', monospace; outline: none;" />
     </div>
   </div>
 
@@ -642,7 +660,7 @@
     </div>
     <div class="stat-card">
       <div class="stat-num" id="focusCounter">0</div>
-      <div class="stat-lbl">Focus</div>
+      <div class="stat-lbl">Filtered</div>
     </div>
     <div class="stat-card">
       <div class="stat-num" id="customCounter">0</div>
@@ -652,7 +670,10 @@
 
   <!-- Footer -->
   <div class="footer">
-    <span>Jev AI Engine (~250ms)</span>
+    <div style="display: flex; flex-direction: column; gap: 2px;">
+      <span>Jev AI Engine (~250ms)</span>
+      <span style="font-size: 9px; color: #555555; font-family: 'Geist Mono', monospace;">FB • IG • YT • Threads • X</span>
+    </div>
     <button class="btn-reset" id="resetStats">Reset counters</button>
   </div>
 

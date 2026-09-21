@@ -5,8 +5,18 @@
 
   let config = {
     apiEndpoint: 'https://classifier.dev/',
+    geminiApiKey: '',
     batchDebounceMs: 120,
     confidenceThreshold: 0.30,
+    categoryActions: {
+      motivational: 'show',
+      meme: 'show',
+      deepdive: 'show',
+      wholesome: 'show',
+      doom: 'hide',
+      fomo: 'hide',
+      casual: 'show',
+    },
     filterMotivationalEnabled: true,
     filterMemeEnabled: true,
     filterDeepDiveEnabled: true,
@@ -14,7 +24,7 @@
     filterDoomEnabled: true,
     filterFomoEnabled: true,
     filterCasualEnabled: true,
-    focusModeEnabled: false,
+    focusModeEnabled: true,
     focusWhitelistTags: ['motivational', 'meme', 'deepdive', 'wholesome', 'custom'],
     monkModeEnabled: true,       // Hardcore Monk Mode: Block all photos/videos with women & goon-bait
     blockReelsEnabled: true,     // Block Reels pop-ups & short videos on Facebook
@@ -22,10 +32,12 @@
     blockScamsEnabled: true,
     collapseSeedingEnabled: true,
     hideFloatingPill: false,
+    singleTagMode: false,
     customLabels: [],
   };
 
   let scannedCount = 0;
+  let saveScannedDebounceTimer = null;
   let monkModeBlockedCount = 0;
   let blockedRageCount = 0;
   let blockedScamCount = 0;
@@ -123,6 +135,7 @@
         'blockScamsEnabled',
         'collapseSeedingEnabled',
         'hideFloatingPill',
+        'singleTagMode',
         'confidenceThreshold',
         'monkModeBlockedCount',
         'blockedRageCount',
@@ -139,17 +152,35 @@
         'focusModeEnabled',
         'focusWhitelistTags',
         'focusCollapsedCount',
+        'categoryActions',
+        'scannedCount',
+        'geminiApiKey',
       ],
       (res) => {
-        if (typeof res.filterMotivationalEnabled === 'boolean') config.filterMotivationalEnabled = res.filterMotivationalEnabled;
-        if (typeof res.filterMemeEnabled === 'boolean') config.filterMemeEnabled = res.filterMemeEnabled;
-        if (typeof res.filterDeepDiveEnabled === 'boolean') config.filterDeepDiveEnabled = res.filterDeepDiveEnabled;
-        if (typeof res.filterWholesomeEnabled === 'boolean') config.filterWholesomeEnabled = res.filterWholesomeEnabled;
-        if (typeof res.filterDoomEnabled === 'boolean') config.filterDoomEnabled = res.filterDoomEnabled;
-        if (typeof res.filterFomoEnabled === 'boolean') config.filterFomoEnabled = res.filterFomoEnabled;
-        if (typeof res.filterCasualEnabled === 'boolean') config.filterCasualEnabled = res.filterCasualEnabled;
+        if (typeof res.geminiApiKey === 'string') {
+          config.geminiApiKey = res.geminiApiKey.trim();
+        }
+        if (res.categoryActions && typeof res.categoryActions === 'object') {
+          config.categoryActions = { ...config.categoryActions, ...res.categoryActions };
+          if (typeof res.focusModeEnabled === 'boolean') config.focusModeEnabled = res.focusModeEnabled;
+        } else {
+          // Backward-compatibility migration for upgrading users who haven't opened popup yet
+          const legacyKeep = Array.isArray(res.focusWhitelistTags)
+            ? res.focusWhitelistTags
+            : ['motivational', 'meme', 'deepdive', 'wholesome', 'custom'];
+          const isLegacyFocus = res.focusModeEnabled === true;
+          config.categoryActions = {
+            motivational: res.filterMotivationalEnabled === false ? 'off' : (isLegacyFocus && !legacyKeep.includes('motivational') ? 'hide' : 'show'),
+            meme: res.filterMemeEnabled === false ? 'off' : (isLegacyFocus && !legacyKeep.includes('meme') ? 'hide' : 'show'),
+            deepdive: res.filterDeepDiveEnabled === false ? 'off' : (isLegacyFocus && !legacyKeep.includes('deepdive') ? 'hide' : 'show'),
+            wholesome: res.filterWholesomeEnabled === false ? 'off' : (isLegacyFocus && !legacyKeep.includes('wholesome') ? 'hide' : 'show'),
+            doom: res.filterDoomEnabled === false ? 'off' : (isLegacyFocus && legacyKeep.includes('doom') ? 'show' : 'hide'),
+            fomo: res.filterFomoEnabled === false ? 'off' : (isLegacyFocus && legacyKeep.includes('fomo') ? 'show' : 'hide'),
+            casual: res.filterCasualEnabled === false ? 'off' : (isLegacyFocus && !legacyKeep.includes('casual') ? 'hide' : 'show'),
+          };
+          config.focusModeEnabled = Object.values(config.categoryActions).includes('hide');
+        }
         if (Array.isArray(res.customLabels)) config.customLabels = res.customLabels;
-        if (typeof res.focusModeEnabled === 'boolean') config.focusModeEnabled = res.focusModeEnabled;
         if (Array.isArray(res.focusWhitelistTags)) config.focusWhitelistTags = res.focusWhitelistTags;
         if (typeof res.monkModeEnabled === 'boolean') config.monkModeEnabled = res.monkModeEnabled;
         if (typeof res.blockReelsEnabled === 'boolean') config.blockReelsEnabled = res.blockReelsEnabled;
@@ -157,6 +188,7 @@
         if (typeof res.blockScamsEnabled === 'boolean') config.blockScamsEnabled = res.blockScamsEnabled;
         if (typeof res.collapseSeedingEnabled === 'boolean') config.collapseSeedingEnabled = res.collapseSeedingEnabled;
         if (typeof res.hideFloatingPill === 'boolean') config.hideFloatingPill = res.hideFloatingPill;
+        if (typeof res.singleTagMode === 'boolean') config.singleTagMode = res.singleTagMode;
         if (typeof res.confidenceThreshold === 'number') {
           config.confidenceThreshold = res.confidenceThreshold;
         }
@@ -174,6 +206,7 @@
         if (typeof res.casualCount === 'number') casualCount = res.casualCount;
         if (typeof res.customCount === 'number') customCount = res.customCount;
         if (typeof res.focusCollapsedCount === 'number') focusCollapsedCount = res.focusCollapsedCount;
+        if (typeof res.scannedCount === 'number') scannedCount = res.scannedCount;
 
         updatePill();
         applyStateToDOM();
@@ -181,6 +214,7 @@
     );
 
     const TAXONOMY_KEYS = [
+      'categoryActions',
       'filterMotivationalEnabled',
       'filterMemeEnabled',
       'filterDeepDiveEnabled',
@@ -195,19 +229,40 @@
       'confidenceThreshold',
     ];
 
+    function isTaxonomyPayloadAltered(oldCfg, newCfg) {
+      const stdCats = ['motivational', 'meme', 'deepdive', 'wholesome', 'doom', 'fomo', 'casual'];
+      for (const cat of stdCats) {
+        const oldOff = (oldCfg?.categoryActions?.[cat] || 'show') === 'off';
+        const newOff = (newCfg?.categoryActions?.[cat] || 'show') === 'off';
+        if (oldOff !== newOff) return true;
+      }
+      const oldCustomActive = (Array.isArray(oldCfg?.customLabels) ? oldCfg.customLabels : [])
+        .filter((c) => (typeof c === 'object' ? (c.action || (c.enabled === false ? 'off' : 'show')) : 'show') !== 'off')
+        .map((c) => (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase());
+      const newCustomActive = (Array.isArray(newCfg?.customLabels) ? newCfg.customLabels : [])
+        .filter((c) => (typeof c === 'object' ? (c.action || (c.enabled === false ? 'off' : 'show')) : 'show') !== 'off')
+        .map((c) => (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase());
+      return JSON.stringify(oldCustomActive) !== JSON.stringify(newCustomActive);
+    }
+
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.type === 'UPDATE_CONFIG') {
         let taxonomyChanged = false;
+        if (request.config.categoryActions || request.config.customLabels) {
+          if (isTaxonomyPayloadAltered(config, request.config)) {
+            taxonomyChanged = true;
+          }
+        }
         TAXONOMY_KEYS.forEach((key) => {
-          if (key === 'customLabels') {
-            if (Array.isArray(request.config.customLabels) && JSON.stringify(request.config.customLabels) !== JSON.stringify(config.customLabels)) {
-              taxonomyChanged = true;
-            }
-          } else if (request.config[key] !== undefined && request.config[key] !== config[key]) {
+          if (key === 'categoryActions' || key === 'customLabels') return;
+          if (request.config[key] !== undefined && request.config[key] !== config[key]) {
             taxonomyChanged = true;
           }
         });
 
+        if (request.config.categoryActions && typeof request.config.categoryActions === 'object') {
+          config.categoryActions = { ...config.categoryActions, ...request.config.categoryActions };
+        }
         if (typeof request.config.filterMotivationalEnabled === 'boolean') config.filterMotivationalEnabled = request.config.filterMotivationalEnabled;
         if (typeof request.config.filterMemeEnabled === 'boolean') config.filterMemeEnabled = request.config.filterMemeEnabled;
         if (typeof request.config.filterDeepDiveEnabled === 'boolean') config.filterDeepDiveEnabled = request.config.filterDeepDiveEnabled;
@@ -224,6 +279,8 @@
         if (typeof request.config.focusModeEnabled === 'boolean') config.focusModeEnabled = request.config.focusModeEnabled;
         if (Array.isArray(request.config.focusWhitelistTags)) config.focusWhitelistTags = request.config.focusWhitelistTags;
         if (typeof request.config.hideFloatingPill === 'boolean') config.hideFloatingPill = request.config.hideFloatingPill;
+        if (typeof request.config.singleTagMode === 'boolean') config.singleTagMode = request.config.singleTagMode;
+        if (typeof request.config.geminiApiKey === 'string') config.geminiApiKey = request.config.geminiApiKey.trim();
         config.confidenceThreshold = request.config.confidenceThreshold;
 
         if (taxonomyChanged) {
@@ -247,6 +304,10 @@
         blockedRageCount = 0;
         blockedScamCount = 0;
         cleanedSeedingCount = 0;
+        scannedCount = 0;
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ scannedCount: 0 });
+        }
         countedTexts.clear();
         saveCountedToStorage();
         revealedTexts.clear();
@@ -262,6 +323,7 @@
         let configChanged = false;
         let taxonomyChanged = false;
         [
+          'categoryActions',
           'filterMotivationalEnabled',
           'filterMemeEnabled',
           'filterDeepDiveEnabled',
@@ -279,10 +341,19 @@
           'collapseSeedingEnabled',
           'confidenceThreshold',
           'hideFloatingPill',
+          'singleTagMode',
+          'geminiApiKey',
         ].forEach((key) => {
           if (changes[key]) {
-            if (key === 'customLabels') {
-              if (JSON.stringify(changes.customLabels.newValue) !== JSON.stringify(config.customLabels)) {
+            if (key === 'categoryActions') {
+              const simCfg = { ...config, categoryActions: changes.categoryActions.newValue || {} };
+              if (isTaxonomyPayloadAltered(config, simCfg)) {
+                taxonomyChanged = true;
+              }
+              config.categoryActions = { ...config.categoryActions, ...(changes.categoryActions.newValue || {}) };
+            } else if (key === 'customLabels') {
+              const simCfg = { ...config, customLabels: changes.customLabels.newValue || [] };
+              if (isTaxonomyPayloadAltered(config, simCfg)) {
                 taxonomyChanged = true;
               }
               config.customLabels = changes.customLabels.newValue || [];
@@ -325,81 +396,95 @@
 
   const TAXONOMY_CATALOG = {
     'self-improvement / motivational': {
+      tagKey: 'motivational',
       configKey: 'filterMotivationalEnabled',
       instruction: 'personal growth, discipline, fitness, productivity lessons, inspiring mindsets, self-help, stoicism.',
       badge: {
         text: 'Motivational',
-        desc: 'Personal growth, productivity, and constructive mindset',
+        desc: 'Personal growth & mindset',
         bg: '#000000',
         border: '#262626',
         color: '#ededed',
+        dotColor: '#c084fc',
       },
     },
     'meme / humor / satire': {
+      tagKey: 'meme',
       configKey: 'filterMemeEnabled',
       instruction: 'lighthearted jokes, funny memes, sarcastic humor, parody, troll posts.',
       badge: {
         text: 'Meme',
-        desc: 'Humor, memes, satire, and playful wit',
+        desc: 'Jokes, satire & memes',
         bg: '#000000',
         border: '#262626',
         color: '#ededed',
+        dotColor: '#fbbf24',
       },
     },
     'deep dive / technical breakdown / industry insider': {
+      tagKey: 'deepdive',
       configKey: 'filterDeepDiveEnabled',
       instruction: 'in-depth technical threads, architectural teardowns, insider industry analysis, comprehensive teardowns of complex problems.',
       badge: {
         text: 'Teardown',
-        desc: 'Detailed domain teardown, insider analysis, or technical deep dive',
+        desc: 'Technical breakdowns & analysis',
         bg: '#000000',
         border: '#262626',
         color: '#ededed',
+        dotColor: '#38bdf8',
       },
     },
     'wholesome / positive': {
+      tagKey: 'wholesome',
       configKey: 'filterWholesomeEnabled',
       instruction: 'uplifting, heartwarming, kind, peaceful, constructive positive stories, wholesome moments.',
       badge: {
         text: 'Wholesome',
-        desc: 'Uplifting, heartwarming, and constructive positive content',
+        desc: 'Heartwarming & good news',
         bg: '#000000',
         border: '#262626',
         color: '#ededed',
+        dotColor: '#4ade80',
       },
     },
     'fearmongering / doom': {
+      tagKey: 'doom',
       configKey: 'filterDoomEnabled',
       instruction: 'alarming, sensationalized bad news, apocalyptic anxiety, catastrophic predictions, fearmongering.',
       badge: {
         text: 'Doom',
-        desc: 'Sensationalized bad news, existential threat, or doom anxiety',
+        desc: 'Alarmist news & fearmongering',
         bg: '#000000',
         border: '#262626',
         color: '#ededed',
+        dotColor: '#f97316',
       },
     },
     'fomo / hype': {
+      tagKey: 'fomo',
       configKey: 'filterFomoEnabled',
       countKey: 'fomoCount',
       badge: {
         text: 'FOMO',
-        desc: 'Hyperbolic hype, get-rich-quick claims, or unrealistic promises',
+        desc: 'Hype, fake urgency & flexes',
         bg: '#000000',
         border: '#262626',
         color: '#ededed',
+        dotColor: '#f59e0b',
       },
       instruction: 'exaggerated breakthrough hype, urgency inducing claims, overnight wealth promises, or artificial urgency.',
     },
     'other / casual discussion': {
+      tagKey: 'casual',
       configKey: 'filterCasualEnabled',
       countKey: 'casualCount',
       badge: {
         text: 'Casual',
-        desc: 'Everyday casual talk or general conversation',
+        desc: 'Daily chats & banter',
         bg: '#000000',
         border: '#262626',
         color: '#ededed',
+        dotColor: '#94a3b8',
       },
       instruction: 'everyday personal chatter, news, generic talk, or any content that does not fit the other categories.',
     },
@@ -436,7 +521,13 @@
 
     Object.entries(TAXONOMY_CATALOG).forEach(([label, def]) => {
       if (label === CATCH_ALL_LABEL) return; // Always appended at the end
-      if (cfg && cfg[def.configKey] !== false) {
+      let isEnabled = true;
+      if (cfg && cfg.categoryActions && def.tagKey) {
+        isEnabled = cfg.categoryActions[def.tagKey] !== 'off';
+      } else if (cfg && cfg[def.configKey] !== undefined) {
+        isEnabled = cfg[def.configKey] !== false;
+      }
+      if (isEnabled) {
         activeLabels.push(label);
         instructionsList.push(`"${label}": ${def.instruction}`);
       }
@@ -445,7 +536,8 @@
     if (Array.isArray(cfg?.customLabels)) {
       cfg.customLabels.forEach((c) => {
         const rawName = typeof c === 'string' ? c : c?.name;
-        const enabled = typeof c === 'object' ? c?.enabled !== false : true;
+        const action = typeof c === 'object' ? (c.action || (c.enabled === false ? 'off' : 'show')) : 'show';
+        const enabled = action !== 'off';
         const name = rawName ? rawName.replace(/["\r\n\t]/g, '').slice(0, 40).trim() : '';
         const isDuplicate =
           !name ||
@@ -561,37 +653,45 @@
       `Scanned: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${scannedCount}</span>`,
     ];
     if (config.focusModeEnabled && focusCollapsedCount > 0) {
-      parts.push(`<span class="x-jev-pill-focus-toggle" title="Click to toggle Focus Feed Mode" style="cursor:pointer;">Focus: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${focusCollapsedCount}</span></span>`);
+      parts.push(`<span class="x-jev-pill-focus-toggle" title="Click to pause feed filtering" style="cursor:pointer;">Filtered: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${focusCollapsedCount}</span></span>`);
+    } else if (focusCollapsedCount > 0 && !config.focusModeEnabled) {
+      parts.push(`<span class="x-jev-pill-focus-toggle" title="Click to resume feed filtering" style="cursor:pointer;opacity:0.6;">Filtered: <span style="color:#fb923c; font-family:'Geist Mono',monospace;">PAUSED</span></span>`);
     }
     if (config.autoBlurRageEnabled) {
       parts.push(`Rage: <span style="color:#ef4444; font-family:'Geist Mono',monospace;">${blockedRageCount}</span>`);
     }
-    if (config.filterMotivationalEnabled !== false && motivationalCount > 0) {
+    if ((config.categoryActions?.motivational || (config.filterMotivationalEnabled ? 'show' : 'off')) !== 'off' && motivationalCount > 0) {
       parts.push(`Motivational: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${motivationalCount}</span>`);
     }
-    if (config.filterMemeEnabled !== false && memeCount > 0) {
+    if ((config.categoryActions?.meme || (config.filterMemeEnabled ? 'show' : 'off')) !== 'off' && memeCount > 0) {
       parts.push(`Meme: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${memeCount}</span>`);
     }
-    if (config.filterDeepDiveEnabled !== false && deepDiveCount > 0) {
+    if ((config.categoryActions?.deepdive || (config.filterDeepDiveEnabled ? 'show' : 'off')) !== 'off' && deepDiveCount > 0) {
       parts.push(`Teardown: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${deepDiveCount}</span>`);
     }
-    if (config.filterWholesomeEnabled !== false && wholesomeCount > 0) {
+    if ((config.categoryActions?.wholesome || (config.filterWholesomeEnabled ? 'show' : 'off')) !== 'off' && wholesomeCount > 0) {
       parts.push(`Wholesome: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${wholesomeCount}</span>`);
     }
-    if (config.filterDoomEnabled !== false && doomCount > 0) {
+    if ((config.categoryActions?.doom || (config.filterDoomEnabled ? 'show' : 'off')) !== 'off' && doomCount > 0) {
       parts.push(`Doom: <span style="color:#fb923c; font-family:'Geist Mono',monospace;">${doomCount}</span>`);
     }
-    if (config.filterFomoEnabled !== false && fomoCount > 0) {
+    if ((config.categoryActions?.fomo || (config.filterFomoEnabled ? 'show' : 'off')) !== 'off' && fomoCount > 0) {
       parts.push(`FOMO: <span style="color:#fde047; font-family:'Geist Mono',monospace;">${fomoCount}</span>`);
     }
-    if (config.filterCasualEnabled !== false && casualCount > 0) {
+    if ((config.categoryActions?.casual || (config.filterCasualEnabled ? 'show' : 'off')) !== 'off' && casualCount > 0) {
       parts.push(`Casual: <span style="color:#888888; font-family:'Geist Mono',monospace;">${casualCount}</span>`);
     }
-    const hasActiveCustom = Array.isArray(config.customLabels) && config.customLabels.some((c) => (c && typeof c === 'object' ? c.enabled !== false : Boolean(c)));
+    const hasActiveCustom = Array.isArray(config.customLabels) && config.customLabels.some((c) => (typeof c === 'object' ? (c.action || (c.enabled === false ? 'off' : 'show')) : 'show') !== 'off');
     if (hasActiveCustom && customCount > 0) {
       parts.push(`Custom: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${customCount}</span>`);
     }
     pillStats.innerHTML = parts.join(' | ');
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      if (saveScannedDebounceTimer) clearTimeout(saveScannedDebounceTimer);
+      saveScannedDebounceTimer = setTimeout(() => {
+        chrome.storage.local.set({ scannedCount });
+      }, 500);
+    }
   }
 
   updatePill();
@@ -637,7 +737,13 @@
       document.body.classList.toggle('x-jev-no-monk-blur', !config.monkModeEnabled);
       document.body.classList.toggle('x-jev-no-scam-blur', !config.blockScamsEnabled);
       document.body.classList.toggle('x-jev-hide-pill', !!config.hideFloatingPill);
-      document.body.classList.toggle('x-jev-no-focus', !config.focusModeEnabled);
+      document.body.classList.toggle('x-jev-single-tag-mode', !!config.singleTagMode);
+      const hasAnyHide = config.focusModeEnabled !== false && (
+        (config.categoryActions && Object.values(config.categoryActions).includes('hide')) ||
+        (Array.isArray(config.customLabels) && config.customLabels.some((c) => (typeof c === 'object' && c.action === 'hide'))) ||
+        (!config.categoryActions && !!config.focusModeEnabled)
+      );
+      document.body.classList.toggle('x-jev-no-focus', !hasAnyHide);
       const disableAll = !config.autoBlurRageEnabled && !config.monkModeEnabled && !config.blockScamsEnabled;
       document.body.classList.toggle('x-jev-disable-all-blur', disableAll);
     }
@@ -750,14 +856,19 @@
       const cat = badge.getAttribute('data-jev-badge-category');
       const def = TAXONOMY_CATALOG[cat];
       let isHidden = false;
-      if ((def && config[def.configKey] === false) || (cat === 'other / casual discussion' && window.location.pathname.includes('/activity'))) {
+      if (cat === 'other / casual discussion' && window.location.pathname.includes('/activity')) {
+        isHidden = true;
+      } else if (def && config.categoryActions && def.tagKey) {
+        isHidden = config.categoryActions[def.tagKey] === 'off';
+      } else if (def && config[def.configKey] === false) {
         isHidden = true;
       } else if (Array.isArray(config.customLabels)) {
         const customFound = config.customLabels.find(
           (c) => (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase() === cat?.trim().toLowerCase()
         );
-        if (customFound && typeof customFound === 'object' && customFound.enabled === false) {
-          isHidden = true;
+        if (customFound && typeof customFound === 'object') {
+          const action = customFound.action || (customFound.enabled === false ? 'off' : 'show');
+          if (action === 'off') isHidden = true;
         } else if (!customFound && !def && cat !== 'other / casual discussion') {
           isHidden = true;
         }
@@ -787,25 +898,26 @@
       }
     }
 
-    // 7. Focus Feed Mode: Re-evaluate state on all classified posts
+    // 7. Feed Content Filter & Focus Mode: Re-evaluate state on all classified posts
     let currentFocusCount = 0;
     document.querySelectorAll('[data-jev-assigned-label]').forEach((post) => {
       const assignedLabel = post.getAttribute('data-jev-assigned-label');
-      const matchesFocus = isPostMatchingFocus(assignedLabel);
+      const shouldHide = isPostHidden(assignedLabel);
       const bar = post.querySelector('.x-jev-focus-bar');
       const textEl = post.querySelector('[data-jev-tracked-text="true"]') || post.querySelector('span[dir="auto"], div[dir="auto"]');
 
-      if (config.focusModeEnabled && !matchesFocus) {
+      if (shouldHide) {
         currentFocusCount++;
         post.setAttribute('data-jev-focus-offtag', 'true');
         if (textEl) textEl.classList.add('x-jev-focus-collapsed-content');
-        post.querySelectorAll('img, video, .x-jev-badge, .x-jev-warning-box, .x-jev-scam-box, .x-monk-warning-box, .x-jev-seeding-collapsed').forEach((m) => {
+        post.querySelectorAll('img, video, .x-jev-badge, .x-jev-badge-container, .x-jev-warning-box, .x-jev-scam-box, .x-monk-warning-box, .x-jev-seeding-collapsed, .x-jev-summary-box').forEach((m) => {
           if (!m.closest('a[href*="/@"]')) m.classList.add('x-jev-focus-collapsed-content');
         });
         if (!bar && textEl) {
           createFocusBar(post, textEl, assignedLabel);
         } else if (bar) {
-          bar.style.display = 'flex';
+          bar.classList.remove('x-jev-hidden');
+          bar.style.removeProperty('display');
         }
       } else {
         post.removeAttribute('data-jev-focus-offtag');
@@ -813,16 +925,17 @@
         post.querySelectorAll('.x-jev-focus-collapsed-content').forEach((m) => {
           m.classList.remove('x-jev-focus-collapsed-content');
         });
-        if (bar) bar.style.display = 'none';
+        if (bar) {
+          bar.classList.add('x-jev-hidden');
+          bar.style.setProperty('display', 'none', 'important');
+        }
         post.classList.remove('x-jev-focus-expanded');
       }
     });
 
-    if (config.focusModeEnabled) {
-      focusCollapsedCount = currentFocusCount;
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.set({ focusCollapsedCount });
-      }
+    focusCollapsedCount = currentFocusCount;
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ focusCollapsedCount });
     }
   }
 
@@ -875,7 +988,7 @@
           <div class="x-monk-warning-text">
             <span>🧘</span>
             <div>
-              <b>Monk Mode: Media hidden to maintain focus.</b>
+              <b>Monk Mode: Media blurred to preserve focus.</b>
               <div style="font-size:10.5px;font-weight:400;opacity:0.9;margin-top:1px;">${detectedReason}</div>
             </div>
           </div>
@@ -1079,31 +1192,63 @@
     return label || 'Other';
   }
 
-  function isPostMatchingFocus(labels) {
-    if (!config.focusModeEnabled) return true;
-    const allowedTags = Array.isArray(config.focusWhitelistTags) ? config.focusWhitelistTags : [];
-    if (allowedTags.length === 0) return true;
+  function isPostHidden(labels) {
+    if (config.focusModeEnabled === false) return false;
 
     const labelList = Array.isArray(labels)
       ? labels
       : (typeof labels === 'string' ? labels.split('|') : []);
     if (labelList.length === 0) return false;
 
-    return labelList.some((lbl) => {
-      const tagKey = getPostTagKey(lbl);
-      return tagKey && allowedTags.includes(tagKey);
-    });
+    // 1. Unified categoryActions takes precedence
+    if (config.categoryActions && typeof config.categoryActions === 'object') {
+      return labelList.some((lbl) => {
+        const tagKey = getPostTagKey(lbl);
+        if (tagKey && config.categoryActions[tagKey] === 'hide') return true;
+
+        if (Array.isArray(config.customLabels)) {
+          const custom = config.customLabels.find(
+            (c) => (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase() === lbl?.trim().toLowerCase()
+          );
+          if (custom && typeof custom === 'object') {
+            const action = custom.action || (custom.enabled === false ? 'off' : 'show');
+            if (action === 'hide') return true;
+          }
+        }
+        return false;
+      });
+    }
+
+    // 2. Legacy focus mode fallback (only when categoryActions is not present)
+    if (config.focusModeEnabled) {
+      const allowedTags = Array.isArray(config.focusWhitelistTags) ? config.focusWhitelistTags : [];
+      if (allowedTags.length > 0) {
+        const matchesAllowed = labelList.some((lbl) => {
+          const tagKey = getPostTagKey(lbl);
+          return tagKey && allowedTags.includes(tagKey);
+        });
+        if (!matchesAllowed) return true;
+      }
+    }
+
+    return false;
   }
 
   function createFocusBar(postEl, textEl, labels) {
-    if (postEl.querySelector('.x-jev-focus-bar')) return;
-    const parentContainer = textEl.parentElement;
-    if (!parentContainer) return;
-
+    const existingBar = postEl.querySelector('.x-jev-focus-bar');
     const labelList = Array.isArray(labels)
       ? labels
       : (typeof labels === 'string' ? labels.split('|') : []);
     const displayTag = labelList.map((l) => getDisplayLabelName(l)).join(', ') || 'Other';
+
+    if (existingBar) {
+      const boldTag = existingBar.querySelector('.x-jev-focus-info span:last-child');
+      if (boldTag) boldTag.textContent = displayTag;
+      return;
+    }
+    const parentContainer = textEl.parentElement;
+    if (!parentContainer) return;
+
     const focusBar = document.createElement('div');
     focusBar.className = 'x-jev-focus-bar';
 
@@ -1116,7 +1261,7 @@
     iconSpan.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>';
 
     const textSpan = document.createElement('span');
-    textSpan.textContent = 'Off-topic (Focus Mode): ';
+    textSpan.textContent = 'Filtered: ';
 
     const boldTag = document.createElement('b');
     boldTag.style.color = '#ededed';
@@ -1148,18 +1293,132 @@
     const labelStr = Array.isArray(labels) ? labels.join('|') : (labels || '');
     postEl.setAttribute('data-jev-assigned-label', labelStr);
     textEl.setAttribute('data-jev-tracked-text', 'true');
-    if (config.focusModeEnabled && !isPostMatchingFocus(labels)) {
+    if (isPostHidden(labels)) {
+      const wasHidden = postEl.hasAttribute('data-jev-focus-offtag');
       postEl.setAttribute('data-jev-focus-offtag', 'true');
       textEl.classList.add('x-jev-focus-collapsed-content');
-      postEl.querySelectorAll('img, video, .x-jev-badge, .x-jev-badge-container, .x-jev-warning-box, .x-jev-scam-box, .x-monk-warning-box, .x-jev-seeding-collapsed').forEach((m) => {
+      postEl.querySelectorAll('img, video, .x-jev-badge, .x-jev-badge-container, .x-jev-warning-box, .x-jev-scam-box, .x-monk-warning-box, .x-jev-seeding-collapsed, .x-jev-summary-box').forEach((m) => {
         if (!m.closest('a[href*="/@"]')) m.classList.add('x-jev-focus-collapsed-content');
       });
       createFocusBar(postEl, textEl, labels);
-      focusCollapsedCount++;
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.set({ focusCollapsedCount });
+      const bar = postEl.querySelector('.x-jev-focus-bar');
+      if (bar) {
+        bar.classList.remove('x-jev-hidden');
+        bar.style.removeProperty('display');
       }
-      updatePill();
+      if (!wasHidden) {
+        focusCollapsedCount++;
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ focusCollapsedCount });
+        }
+        updatePill();
+      }
+    } else {
+      postEl.removeAttribute('data-jev-focus-offtag');
+      textEl.classList.remove('x-jev-focus-collapsed-content');
+      postEl.querySelectorAll('.x-jev-focus-collapsed-content').forEach((m) => {
+        m.classList.remove('x-jev-focus-collapsed-content');
+      });
+      const bar = postEl.querySelector('.x-jev-focus-bar');
+      if (bar) {
+        bar.classList.add('x-jev-hidden');
+        bar.style.setProperty('display', 'none', 'important');
+      }
+      postEl.classList.remove('x-jev-focus-expanded');
+    }
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // --- GEMINI 3.5 FLASH-LITE POST SUMMARIZER ---
+  const summaryCache = new Map();
+
+  async function requestPostSummary(text) {
+    if (summaryCache.has(text)) return summaryCache.get(text);
+    return new Promise((resolve, reject) => {
+      const apiKey = (config.geminiApiKey || '').trim();
+      if (!apiKey) {
+        reject(new Error('Google AI Studio API key missing. Please enter your API key in extension settings.'));
+        return;
+      }
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage(
+          {
+            type: 'SUMMARIZE_POST',
+            payload: {
+              text: text,
+              apiKey: apiKey,
+            },
+          },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message || 'Background service worker unavailable'));
+            } else if (response && response.success) {
+              const bullets = response.bullets || [];
+              if (bullets.length > 0) {
+                summaryCache.set(text, bullets);
+                if (summaryCache.size > 200) {
+                  const firstKey = summaryCache.keys().next().value;
+                  summaryCache.delete(firstKey);
+                }
+              }
+              resolve(bullets);
+            } else {
+              reject(new Error(response?.error || 'Summarization failed'));
+            }
+          }
+        );
+      } else {
+        reject(new Error('Extension runtime unavailable'));
+      }
+    });
+  }
+
+  function renderSummaryBox(postEl, textEl, bullets, text) {
+    let box = postEl.querySelector('.x-jev-summary-box');
+    if (!box) {
+      box = document.createElement('div');
+      box.className = 'x-jev-summary-box';
+      const parentContainer = textEl.parentElement || postEl;
+      if (textEl.nextSibling) {
+        parentContainer.insertBefore(box, textEl.nextSibling);
+      } else {
+        parentContainer.appendChild(box);
+      }
+    }
+    box.classList.remove('x-jev-hidden');
+
+    const contentHtml = (Array.isArray(bullets) && bullets.length > 0)
+      ? `<ul class="x-jev-summary-list">${bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join('')}</ul>`
+      : `<div class="x-jev-summary-error"><span>⚠️</span><span>Unable to generate 3-bullet summary (content may be too brief or restricted by safety guidelines).</span></div>`;
+
+    box.innerHTML = `
+      <div class="x-jev-summary-header">
+        <div class="x-jev-summary-title">
+          <span>✨</span>
+          <span>Gemini 3.5 Flash-Lite</span>
+          <span class="x-jev-summary-badge">3-Bullet TL;DR</span>
+        </div>
+        <button class="x-jev-summary-close" title="Close summary">✕</button>
+      </div>
+      ${contentHtml}
+    `;
+
+    const closeBtn = box.querySelector('.x-jev-summary-close');
+    if (closeBtn) {
+      closeBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        box.classList.add('x-jev-hidden');
+        const btn = postEl.querySelector('.x-jev-summary-btn');
+        if (btn) btn.classList.remove('x-jev-active');
+      };
     }
   }
 
@@ -1216,8 +1475,8 @@
           <div class="x-jev-scam-text">
             <span>🛑</span>
             <div>
-              <b>Scam / Deceptive Scheme Warning (${pct}%):</b>
-              <div style="font-size:11px;font-weight:400;opacity:0.9;margin-top:2px;">Suspicious financial scheme, unrealistic income promises, or deceptive links.</div>
+              <b>Scam Warning (${pct}%)</b>
+              <div style="font-size:11px;font-weight:400;opacity:0.9;margin-top:2px;">Suspicious financial promises or deceptive links detected.</div>
             </div>
           </div>
         `;
@@ -1309,8 +1568,8 @@
           <div class="x-jev-warning-text">
             <span>🛡️</span>
             <div>
-              <b>Rage / Toxic Warning (${pct}%):</b>
-              <div style="font-size:11px;font-weight:400;opacity:0.9;margin-top:2px;">Potentially hostile, outrage-inducing, or toxic content blurred.</div>
+              <b>Rage Bait Warning (${pct}%)</b>
+              <div style="font-size:11px;font-weight:400;opacity:0.9;margin-top:2px;">Hostile, outrage-inducing, or toxic content blurred.</div>
             </div>
           </div>
         `;
@@ -1392,7 +1651,7 @@
         const pct = Math.round(seedingScore * 100);
         bar.innerHTML = `
           <div class="x-jev-seeding-label">
-            <span>Collapsed suspected <b>Seeding / Bot</b> comment (${pct}%)</span>
+            <span>Suspected <b>bot seeding / spam</b> comment (${pct}%)</span>
           </div>
           <span class="x-jev-expand-icon">View comment ▾</span>
         `;
@@ -1430,13 +1689,20 @@
       ) {
         return;
       }
-      if (candidateLabel === 'other / casual discussion' && (config.filterCasualEnabled === false || isActivity)) {
-        return;
+      if (candidateLabel === 'other / casual discussion') {
+        if (isActivity) return;
+        if (config.categoryActions && config.categoryActions.casual === 'off') return;
+        if (!config.categoryActions && config.filterCasualEnabled === false) return;
       }
 
       const def = TAXONOMY_CATALOG[candidateLabel];
-      if (def && config[def.configKey] === false) {
-        return;
+      if (def) {
+        if (config.categoryActions && def.tagKey && config.categoryActions[def.tagKey] === 'off') {
+          return;
+        }
+        if (!config.categoryActions && config[def.configKey] === false) {
+          return;
+        }
       }
 
       let isCustom = false;
@@ -1446,8 +1712,8 @@
           (c) => (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase() === candidateLabel?.trim().toLowerCase()
         );
         if (customFound) {
-          const isEnabled = typeof customFound === 'object' ? customFound.enabled !== false : true;
-          if (!isEnabled) return;
+          const action = typeof customFound === 'object' ? (customFound.action || (customFound.enabled === false ? 'off' : 'show')) : 'show';
+          if (action === 'off') return;
           isCustom = true;
           const displayName = typeof customFound === 'object' ? customFound.name : customFound;
           customMeta = {
@@ -1456,6 +1722,7 @@
             bg: '#000000',
             border: '#262626',
             color: '#ededed',
+            dotColor: '#a78bfa',
           };
         }
       }
@@ -1470,8 +1737,11 @@
     eligibleBadges.sort((a, b) => b.score - a.score);
     const selectedBadges = eligibleBadges.slice(0, 4);
 
-    if (selectedBadges.length > 0) {
-      if (!countedTexts.has(item.text)) {
+    const hasEligibleBadges = selectedBadges.length > 0;
+    const hasSummarizableText = typeof item.text === 'string' && item.text.trim().length >= 35;
+
+    if (hasEligibleBadges || hasSummarizableText) {
+      if (hasEligibleBadges && !countedTexts.has(item.text)) {
         countedTexts.add(item.text);
         saveCountedToStorage();
         postEl.setAttribute('data-jev-counted', 'true');
@@ -1511,41 +1781,133 @@
         updatePill();
       }
 
-      // Remove any lingering uncontained badge right before textEl
+      // Find optimal injection point: preferably inline in author header row
+      const userNameHeader = postEl.querySelector('div[data-testid="User-Name"]');
+      const caretEl = postEl.querySelector('[data-testid="caret"]');
+      let container = null;
+
+      // Clean up any lingering uncontained badge
       if (textEl.previousElementSibling && textEl.previousElementSibling.classList.contains('x-jev-badge')) {
         textEl.previousElementSibling.remove();
       }
+      // If we are now inserting into header, clean up any previous sibling container before textEl
+      if ((caretEl || userNameHeader) && textEl.previousElementSibling && textEl.previousElementSibling.classList.contains('x-jev-badge-container')) {
+        textEl.previousElementSibling.remove();
+      }
 
-      // Scope container search strictly to textEl's previous sibling to prevent leaking into child comments
-      let container = (textEl.previousElementSibling && textEl.previousElementSibling.classList.contains('x-jev-badge-container'))
-        ? textEl.previousElementSibling
-        : null;
-      if (!container) {
-        container = document.createElement('div');
-        container.className = 'x-jev-badge-container';
-        parentContainer.insertBefore(container, textEl);
+      if (caretEl && caretEl.parentElement) {
+        container = caretEl.parentElement.querySelector('.x-jev-badge-container');
+        if (!container) {
+          container = document.createElement('div');
+          container.className = 'x-jev-badge-container x-jev-header-container';
+          caretEl.parentElement.insertBefore(container, caretEl);
+        }
+      } else if (userNameHeader) {
+        container = userNameHeader.querySelector('.x-jev-badge-container');
+        if (!container) {
+          container = document.createElement('div');
+          container.className = 'x-jev-badge-container x-jev-header-container';
+          userNameHeader.appendChild(container);
+        }
+      } else {
+        // Fallback for non-X platforms or comments without User-Name
+        container = (textEl.previousElementSibling && textEl.previousElementSibling.classList.contains('x-jev-badge-container'))
+          ? textEl.previousElementSibling
+          : null;
+        if (!container) {
+          container = document.createElement('div');
+          container.className = 'x-jev-badge-container';
+          parentContainer.insertBefore(container, textEl);
+        }
       }
       container.innerHTML = '';
 
-      selectedBadges.forEach(({ label, score, meta }) => {
-        const badge = document.createElement('div');
-        badge.className = 'x-jev-badge';
-        badge.setAttribute('data-jev-badge-category', label);
-        badge.style.setProperty('--badge-bg', meta.bg || '#000000');
-        badge.style.setProperty('--badge-border', meta.border || '#262626');
-        badge.style.setProperty('--badge-color', meta.color || '#ededed');
-        badge.title = `${meta.desc} (Confidence: ${Math.round(score * 100)}%)`;
+      if (hasEligibleBadges) {
+        selectedBadges.forEach(({ label, score, meta }) => {
+          const badge = document.createElement('div');
+          badge.className = 'x-jev-badge';
+          badge.setAttribute('data-jev-badge-category', label);
+          badge.style.setProperty('--badge-bg', meta.bg || '#000000');
+          badge.style.setProperty('--badge-border', meta.border || '#262626');
+          badge.style.setProperty('--badge-color', meta.color || '#ededed');
+          badge.style.setProperty('--badge-dot', meta.dotColor || '#94a3b8');
+          badge.title = `${meta.desc || meta.text} (Confidence: ${Math.round(score * 100)}% • Jev AI)`;
 
-        const textSpan = document.createElement('span');
-        textSpan.textContent = meta.text;
-        const confSpan = document.createElement('span');
-        confSpan.className = 'x-jev-confidence';
-        confSpan.textContent = `${Math.round(score * 100)}%`;
+          const dotSpan = document.createElement('span');
+          dotSpan.className = 'x-jev-badge-dot';
 
-        badge.appendChild(textSpan);
-        badge.appendChild(confSpan);
-        container.appendChild(badge);
-      });
+          const textSpan = document.createElement('span');
+          textSpan.className = 'x-jev-badge-text';
+          textSpan.textContent = meta.text;
+
+          const confSpan = document.createElement('span');
+          confSpan.className = 'x-jev-confidence';
+          confSpan.textContent = `${Math.round(score * 100)}%`;
+
+          badge.appendChild(dotSpan);
+          badge.appendChild(textSpan);
+          badge.appendChild(confSpan);
+          container.appendChild(badge);
+        });
+      }
+
+      if (hasSummarizableText) {
+        const summaryBtn = document.createElement('button');
+        summaryBtn.type = 'button';
+        summaryBtn.className = 'x-jev-summary-btn';
+        summaryBtn.title = 'Summarize with Gemini 3.5 Flash-Lite (Google AI Studio)';
+        summaryBtn.innerHTML = '<span>✨</span><span>TL;DR</span>';
+        summaryBtn.onclick = async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          if (summaryBtn.classList.contains('x-jev-loading')) return;
+
+          const existingBox = postEl.querySelector('.x-jev-summary-box');
+          if (existingBox && !existingBox.classList.contains('x-jev-hidden')) {
+            existingBox.classList.add('x-jev-hidden');
+            summaryBtn.classList.remove('x-jev-active');
+            return;
+          }
+
+          if (summaryCache.has(item.text)) {
+            renderSummaryBox(postEl, textEl, summaryCache.get(item.text), item.text);
+            summaryBtn.classList.add('x-jev-active');
+            return;
+          }
+
+          if (!config.geminiApiKey) {
+            summaryBtn.innerHTML = '<span>⚠️</span><span>Set API Key</span>';
+            summaryBtn.title = 'Please configure your Gemini API Key in the Social Shield extension popup.';
+            setTimeout(() => {
+              summaryBtn.innerHTML = '<span>✨</span><span>TL;DR</span>';
+              summaryBtn.title = 'Summarize with Gemini 3.5 Flash-Lite (Google AI Studio)';
+            }, 3500);
+            return;
+          }
+
+          summaryBtn.classList.add('x-jev-loading');
+          summaryBtn.innerHTML = '<span>⏳</span><span>Summarizing...</span>';
+
+          try {
+            const bullets = await requestPostSummary(item.text);
+            renderSummaryBox(postEl, textEl, bullets, item.text);
+            summaryBtn.classList.remove('x-jev-loading');
+            summaryBtn.classList.add('x-jev-active');
+            summaryBtn.innerHTML = '<span>✨</span><span>TL;DR</span>';
+          } catch (err) {
+            console.error('[Social Shield] Summary failed:', err);
+            summaryBtn.classList.remove('x-jev-loading');
+            summaryBtn.innerHTML = '<span>⚠️</span><span>Failed</span>';
+            summaryBtn.title = err?.message || 'Summarization failed';
+            setTimeout(() => {
+              summaryBtn.innerHTML = '<span>✨</span><span>TL;DR</span>';
+              summaryBtn.title = 'Summarize with Gemini 3.5 Flash-Lite (Google AI Studio)';
+            }, 3000);
+          }
+        };
+        container.appendChild(summaryBtn);
+      }
     }
     const assignedLabels = selectedBadges.length > 0
       ? selectedBadges.map((b) => b.label)
@@ -1668,8 +2030,8 @@
           overlay.innerHTML = `
             <div class="x-monk-reels-card">
               <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Blocked Facebook Reels Pop-up</div>
-              <div class="x-monk-reels-desc">Short-form video has been paused and obscured to protect your focus.</div>
+              <div class="x-monk-reels-title">Monk Mode: Reels Blocked</div>
+              <div class="x-monk-reels-desc">Short-form video paused to protect your focus.</div>
               <div class="x-monk-reels-actions">
                 <button class="x-monk-btn-reveal">▶ Play Reel</button>
                 <button class="x-monk-btn-close">✕ Close Pop-up</button>
@@ -1743,8 +2105,8 @@
             <div class="x-monk-tray-content">
               <span>🧘</span>
               <div>
-                <b>Monk Mode: Hidden Facebook Reels shelf from feed</b>
-                <div style="font-size:11px;opacity:0.85;margin-top:1px;">Preserve deep focus, eliminate short-form video dopamine loops.</div>
+                <b>Monk Mode: Facebook Reels shelf hidden</b>
+                <div style="font-size:11px;opacity:0.85;margin-top:1px;">Short-form video shelf hidden to preserve focus.</div>
               </div>
             </div>
             <button class="x-monk-tray-toggle">Show Reels</button>
@@ -1779,8 +2141,8 @@
             overlay.innerHTML = `
               <div class="x-monk-reels-card">
                 <div class="x-monk-reels-icon">🧘</div>
-                <div class="x-monk-reels-title">Monk Mode: Blocked Facebook Reel</div>
-                <div class="x-monk-reels-desc">Short-form video has been paused to protect your focus.</div>
+                <div class="x-monk-reels-title">Monk Mode: Reel Blocked</div>
+                <div class="x-monk-reels-desc">Short-form video paused to protect your focus.</div>
                 <div class="x-monk-reels-actions">
                   <button class="x-monk-btn-reveal">▶ Play Reel</button>
                 </div>
@@ -1841,8 +2203,8 @@
           overlay.innerHTML = `
             <div class="x-monk-reels-card">
               <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Blocked Instagram Reel</div>
-              <div class="x-monk-reels-desc">Short-form video has been paused and obscured to protect your focus.</div>
+              <div class="x-monk-reels-title">Monk Mode: Reel Blocked</div>
+              <div class="x-monk-reels-desc">Short-form video paused to protect your focus.</div>
               <div class="x-monk-reels-actions">
                 <button class="x-monk-btn-reveal">▶ Play Reel</button>
                 <button class="x-monk-btn-home">🏠 Return to Feed</button>
@@ -1904,8 +2266,8 @@
           overlay.innerHTML = `
             <div class="x-monk-reels-card">
               <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Blocked Instagram Reel Pop-up</div>
-              <div class="x-monk-reels-desc">Short-form video has been paused and obscured to protect your focus.</div>
+              <div class="x-monk-reels-title">Monk Mode: Reel Pop-up Blocked</div>
+              <div class="x-monk-reels-desc">Short-form video paused to protect your focus.</div>
               <div class="x-monk-reels-actions">
                 <button class="x-monk-btn-reveal">▶ Play Reel</button>
                 <button class="x-monk-btn-close">✕ Close Pop-up</button>
@@ -1974,8 +2336,8 @@
             <div class="x-monk-warning-text">
               <span>🧘</span>
               <div>
-                <b>Monk Mode: Blocked Instagram Reel from feed.</b>
-                <div style="font-size:10.5px;opacity:0.85;margin-top:1px;">Protect focus and prevent endless short-form video browsing.</div>
+                <b>Monk Mode: Reel hidden from feed</b>
+                <div style="font-size:10.5px;opacity:0.85;margin-top:1px;">Hidden to prevent endless short-form video scrolling.</div>
               </div>
             </div>
           `;
@@ -2052,8 +2414,8 @@
           overlay.innerHTML = `
             <div class="x-monk-reels-card">
               <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Blocked YouTube Shorts</div>
-              <div class="x-monk-reels-desc">Short-form video has been paused and blurred to preserve focus.</div>
+              <div class="x-monk-reels-title">Monk Mode: Shorts Blocked</div>
+              <div class="x-monk-reels-desc">Short-form video paused to preserve focus.</div>
               <div class="x-monk-reels-actions">
                 <button class="x-monk-btn-reveal">▶ Play Shorts</button>
                 <button class="x-monk-btn-home">🏠 Return to Home</button>
@@ -2104,8 +2466,8 @@
           <div class="x-monk-tray-content">
             <span>🧘</span>
             <div>
-              <b>Monk Mode: Hidden YouTube Shorts shelf from feed</b>
-              <div style="font-size:11px;opacity:0.85;margin-top:1px;">Maintain focus and prevent endless short-form video browsing.</div>
+              <b>Monk Mode: YouTube Shorts shelf hidden</b>
+              <div style="font-size:11px;opacity:0.85;margin-top:1px;">Short-form shelf hidden to prevent endless scrolling.</div>
             </div>
           </div>
           <button class="x-monk-tray-toggle">Show Shorts</button>

@@ -5,3 +5,4 @@ Content phải xếp loại có thể bị lẫn lộn các ngôn ngữ khác nh
 
 App Language: English only
 Design: Vercel -> See DESIGN.md
+Tập trung ưu tiên vào X(Twitter), nền tảng khác bỏ qua, chỉ khi dc yêu cầu thì mới làm
