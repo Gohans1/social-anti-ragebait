@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bản Thiết Kế: Cải Tiến Typo, Microcopy & Visual Craft - Social Shield</title>
+  <link rel="stylesheet" href="./visual-core.css">
+
+  <style>
+    /* Custom styles for popup extension mockups */
+    .popup-frame {
+      width: 320px;
+      margin: 0 auto;
+      background: #000000;
+      border: 1px solid #1f1f1f;
+      border-radius: 8px;
+      padding: 14px;
+      color: #ededed;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 12px;
+      line-height: 1.4;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      user-select: none;
+    }
+
+    .mock-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #1f1f1f;
+    }
+    .mock-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .mock-logo {
+      width: 24px;
+      height: 24px;
+      background: #111111;
+      border: 1px solid #262626;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mock-title h1 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+    }
+
+    /* Bad vs Good Status Badge */
+    .mock-badge-bad {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      font-weight: 500;
+      color: #ededed;
+      padding: 2px 8px;
+      border: 1px solid #262626;
+      border-radius: 9999px; /* Pill reflex */
+      background: #0a0a0a;
+    }
+    .mock-dot-glow {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 6px rgba(34, 197, 94, 0.8); /* Ornamental glow */
+    }
+
+    .mock-badge-good {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      font-weight: 500;
+      color: #ededed;
+      padding: 2px 7px;
+      border: 1px solid #262626;
+      border-radius: 4px; /* Vercel Restraint */
+      background: #0a0a0a;
+    }
+    .mock-dot-flat {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #22c55e;
+    }
+
+    /* Hero Stats */
+    .mock-hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .mock-stat-card {
+      background: #0a0a0a;
+      border: 1px solid #1f1f1f;
+      border-radius: 6px;
+      padding: 8px 6px;
+      text-align: center;
+    }
+    .mock-stat-num {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .mock-stat-lbl {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #737373;
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    /* Section & rows */
+    .mock-section {
+      background: #0a0a0a;
+      border: 1px solid #1f1f1f;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .mock-sec-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      color: #888888;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .mock-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    .mock-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .mock-label-col {
+      flex: 1;
+      padding-right: 8px;
+      min-width: 0;
+    }
+    .mock-label {
+      font-weight: 500;
+      color: #ededed;
+      font-size: 11.5px;
+      line-height: 1.3;
+    }
+    .mock-sublabel {
+      font-size: 10px;
+      color: #888888;
+      margin-top: 1px;
+      line-height: 1.3;
+    }
+
+    /* Segmented Control */
+    .mock-seg {
+      display: inline-flex;
+      background: #111111;
+      border: 1px solid #262626;
+      border-radius: 5px;
+      padding: 2px;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .mock-btn {
+      background: transparent;
+      border: none;
+      border-radius: 3px;
+      color: #737373;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      font-weight: 500;
+      padding: 2px 6px;
+      line-height: 1.3;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mock-btn.active {
+      background: #ededed;
+      color: #000000;
+      font-weight: 600;
+    }
+    .mock-btn.active.hide-act {
+      background: #262626;
+      color: #ededed;
+    }
+
+    /* Switch */
+    .mock-switch {
+      width: 28px;
+      height: 16px;
+      background: #ededed;
+      border-radius: 16px;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .mock-switch::after {
+      content: '';
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: #000;
+      border-radius: 50%;
+      top: 2px;
+      right: 2px;
+    }
+
+    /* Annotations */
+    .diff-pin {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      line-height: 1;
+      margin-top: 3px;
+    }
+    .diff-pin.red {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .diff-pin.green {
+      background: rgba(34, 197, 94, 0.2);
+      color: #86efac;
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+    .strike {
+      text-decoration: line-through;
+      color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- STICKY TOPBAR -->
+  <header class="nav-header">
+    <div class="brand-title"><span>🛡️</span> SOCIAL SHIELD: BẢN THIẾT KẾ CẢI TIẾN TYPO &amp; CRAFT</div>
+    <nav class="tab-group" role="tablist">
+      <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('summarize')">📌 Tóm Lược</button>
+      <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('explain')">🔍 Giải Thích Chi Tiết</button>
+    </nav>
+  </header>
+
+  <div class="container">
+
+    <!-- =================================================================
+         TAB 1: TÓM LƯỢC (DEFAULT) - CHUẨN 3 CARDS THỊ GIÁC
+         ================================================================= -->
+    <main id="tab-summarize" class="tab-pane">
+      <section class="callout">
+        <h2>🗣️ TÓM LƯỢC &amp; Ý CHÍNH 🗣️</h2>
+        <p>Bố m đã thanh trừng sạch sẽ toàn bộ văn mẫu AI dài dòng, bệnh liệt kê 3 từ đồng nghĩa và các lỗi visual lệch chuẩn Vercel (pill 9999px, glow, màu inline), đưa giao diện popup và in-page về chuẩn monochrome Geist sắc nét, súc tích và pass 100% review.</p>
+      </section>
+
+      <!-- CARD 1: COMPARISON SLIDER -->
+      <article class="card-wrapper card-slider">
+        <div class="card-header-bar">
+          <span class="card-badge badge-white">CARD 1: COMPARISON SLIDER (SWIPE DIFF)</span>
+          <span style="font-size: 0.85rem; color: #ffffff;">Kéo thanh trượt để so sánh trực diện Trước và Sau</span>
+        </div>
+        <div class="slider-viewport">
+
+          <!-- Layer Before -->
+          <div class="slider-layer slider-before">
+            <div class="popup-frame">
+              <div class="mock-header">
+                <div class="mock-header-left">
+                  <div class="mock-logo">▲</div>
+                  <div class="mock-title">
+                    <h1 style="color:#f87171;">Social Shield: All-in-One Guardian</h1>
+                  </div>
+                </div>
+                <div class="mock-badge-bad">
+                  <span class="mock-dot-glow"></span>
+                  <span>Active</span>
+                </div>
+              </div>
+
+              <div class="mock-hero-stats">
+                <div class="mock-stat-card">
+                  <div class="mock-stat-num" style="color:#ffffff;">42</div>
+                  <div class="mock-stat-lbl">Scanned</div>
+                </div>
+                <div class="mock-stat-card">
+                  <div class="mock-stat-num" style="color:#0070f3;">12</div>
+                  <div class="mock-stat-lbl">Filtered</div>
+                </div>
+                <div class="mock-stat-card">
+                  <div class="mock-stat-num" style="color:#22c55e;">7</div>
+                  <div class="mock-stat-lbl">Threats</div>
+                </div>
+              </div>
+
+              <div class="mock-section">
+                <div class="mock-sec-title">Feed Content Rules</div>
+                <div class="mock-row">
+                  <div class="mock-label-col">
+                    <div class="mock-label">Motivational</div>
+                    <div class="mock-sublabel">Personal growth, mindset, positive discipline</div>
+                  </div>
+                  <div class="mock-seg"><span class="mock-btn active">Show</span><span class="mock-btn">Hide</span><span class="mock-btn">Off</span></div>
+                </div>
+                <div class="mock-row">
+                  <div class="mock-label-col">
+                    <div class="mock-label">Teardown</div>
+                    <div class="mock-sublabel">Technical breakdowns, domain insights</div>
+                  </div>
+                  <div class="mock-seg"><span class="mock-btn active">Show</span><span class="mock-btn">Hide</span><span class="mock-btn">Off</span></div>
+                </div>
+                <div class="mock-row">
+                  <div class="mock-label-col">
+                    <div class="mock-label">FOMO</div>
+                    <div class="mock-sublabel">Exaggerated wealth claims, artificial urgency</div>
+                  </div>
+                  <div class="mock-seg"><span class="mock-btn">Show</span><span class="mock-btn active hide-act">Hide</span><span class="mock-btn">Off</span></div>
+                </div>
+              </div>
+
+              <div class="mock-section">
+                <div class="mock-sec-title">Protective Shields</div>
+                <div class="mock-row">
+                  <div class="mock-label-col">
+                    <div class="mock-label">Monk Mode (Hardcore)</div>
+                    <div class="mock-sublabel">Block media with women & thirst-traps to stay focused</div>
+                  </div>
+                  <div class="mock-switch"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Layer After -->
+          <div class="slider-layer slider-after">
+            <div class="popup-frame">
+              <div class="mock-header">
+                <div class="mock-header-left">
+                  <div class="mock-logo">▲</div>
+                  <div class="mock-title">
+                    <h1 style="color:#4ade80;">Social Shield: AI Anti-Rage &amp; Focus Guard</h1>
+                  </div>
+                </div>
+                <div class="mock-badge-good">
+                  <span class="mock-dot-flat"></span>
+                  <span>Active on X</span>
+                </div>
+              </div>
+
+              <div class="mock-hero-stats">
+                <div class="mock-stat-card">
+                  <div class="mock-stat-num" style="color:#ededed;">42</div>
+                  <div class="mock-stat-lbl">Scanned</div>
+                </div>
+                <div class="mock-stat-card">
+                  <div class="mock-stat-num" style="color:#ededed;">12</div>
+                  <div class="mock-stat-lbl">Filtered</div>
+                </div>
+                <div class="mock-stat-card">
+                  <div class="mock-stat-num" style="color:#ededed;">7</div>
+                  <div class="mock-stat-lbl">Threats</div>
+                </div>
+              </div>
+
+              <div class="mock-section">
+                <div class="mock-sec-title">Feed Content Rules</div>
+                <div class="mock-row">
+                  <div class="mock-label-col">
+                    <div class="mock-label">Motivational</div>
+                    <div class="mock-sublabel">Personal growth &amp; mindset</div>
+                  </div>
+                  <div class="mock-seg"><span class="mock-btn active">Show</span><span class="mock-btn">Hide</span><span class="mock-btn">Off</span></div>
+                </div>
+                <div class="mock-row">
+                  <div class="mock-label-col">
+                    <div class="mock-label">Teardown</div>
+                    <div class="mock-sublabel">Technical breakdowns &amp; analysis</div>
+                  </div>
+                  <div class="mock-seg"><span class="mock-btn active">Show</span><span class="mock-btn">Hide</span><span class="mock-btn">Off</span></div>
+                </div>
+                <div class="mock-row">
+                  <div class="mock-label-col">
+                    <div class="mock-label">FOMO</div>
+                    <div class="mock-sublabel">Hype, fake urgency &amp; flexes</div>
+                  </div>
+                  <div class="mock-seg"><span class="mock-btn">Show</span><span class="mock-btn active hide-act">Hide</span><span class="mock-btn">Off</span></div>
+                </div>
+              </div>
+
+              <div class="mock-section">
+                <div class="mock-sec-title">Protective Shields</div>
+                <div class="mock-row">
+                  <div class="mock-label-col">
+                    <div class="mock-label">Monk Mode</div>
+                    <div class="mock-sublabel">Blur thirst-traps &amp; suggestive media</div>
+                  </div>
+                  <div class="mock-switch"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Divider & Knob -->
+          <div class="slider-divider">
+            <div class="slider-knob">⇄</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- CARD 2: BEFORE ONLY -->
+      <article class="card-wrapper card-before">
+        <div class="card-header-bar">
+          <span class="card-badge badge-red">CARD 2: BEFORE ONLY (HIỆN TRẠNG LỖI / VĂN MẪU RƯỜM RÀ)</span>
+          <span style="font-size: 0.85rem; color: #fca5a5;">Chữ dài ngoằng, rớt dòng cụt lủn, dính lỗi pill-reflex &amp; màu inline</span>
+        </div>
+        <div class="popup-frame">
+          <div class="mock-header">
+            <div class="mock-header-left">
+              <div class="mock-logo">▲</div>
+              <div class="mock-title">
+                <h1>Social Shield: All-in-One Guardian</h1>
+                <div class="diff-pin red" data-diff="annotation">⚠️ Tên dài dòng, chung chung</div>
+              </div>
+            </div>
+            <div class="mock-badge-bad">
+              <span class="mock-dot-glow"></span>
+              <span>Active</span>
+            </div>
+            <div class="diff-pin red" data-diff="annotation">⚠️ Bo 9999px + Glow box-shadow</div>
+          </div>
+
+          <div class="mock-hero-stats">
+            <div class="mock-stat-card">
+              <div class="mock-stat-num" style="color:#ffffff;">42</div>
+              <div class="mock-stat-lbl">Scanned</div>
+            </div>
+            <div class="mock-stat-card">
+              <div class="mock-stat-num" style="color:#0070f3;">12</div>
+              <div class="mock-stat-lbl">Filtered</div>
+              <div class="diff-pin red" data-diff="annotation">⚠️ Màu xanh dương inline</div>
+            </div>
+            <div class="mock-stat-card">
+              <div class="mock-stat-num" style="color:#22c55e;">7</div>
+              <div class="mock-stat-lbl">Threats</div>
+              <div class="diff-pin red" data-diff="annotation">⚠️ Màu xanh lá inline</div>
+            </div>
+          </div>
+
+          <div class="mock-section">
+            <div class="mock-sec-title">Feed Content Rules</div>
+            <div class="mock-row">
+              <div class="mock-label-col">
+                <div class="mock-label">Motivational</div>
+                <div class="mock-sublabel">Personal growth, mindset, <span class="strike">positive discipline</span></div>
+                <div class="diff-pin red" data-diff="annotation">⚠️ Rớt dòng, 3 từ đồng nghĩa AI-slop</div>
+              </div>
+              <div class="mock-seg"><span class="mock-btn active">Show</span><span class="mock-btn">Hide</span><span class="mock-btn">Off</span></div>
+            </div>
+
+            <div class="mock-row">
+              <div class="mock-label-col">
+                <div class="mock-label">Teardown</div>
+                <div class="mock-sublabel">Technical breakdowns, <span class="strike">domain insights</span></div>
+                <div class="diff-pin red" data-diff="annotation">⚠️ Chữ "insights" mồ côi 1 dòng lẻ loi</div>
+              </div>
+              <div class="mock-seg"><span class="mock-btn active">Show</span><span class="mock-btn">Hide</span><span class="mock-btn">Off</span></div>
+            </div>
+
+            <div class="mock-row">
+              <div class="mock-label-col">
+                <div class="mock-label">FOMO</div>
+                <div class="mock-sublabel"><span class="strike">Exaggerated wealth claims, artificial urgency</span></div>
+                <div class="diff-pin red" data-diff="annotation">⚠️ Dài 46 ký tự, ép chật layout 170px</div>
+              </div>
+              <div class="mock-seg"><span class="mock-btn">Show</span><span class="mock-btn active hide-act">Hide</span><span class="mock-btn">Off</span></div>
+            </div>
+
+            <div style="margin-top:8px; padding-top:6px; border-top:1px solid #1f1f1f; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; color:#ededed;">Custom Labels</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:9.5px; color:#ef4444;" class="strike">Auto prompt wrapping</span>
+            </div>
+            <div class="diff-pin red" data-diff="annotation">⚠️ Thuật ngữ nội bộ (dev-jargon) khó hiểu</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- CARD 3: AFTER ONLY -->
+      <article class="card-wrapper card-after">
+        <div class="card-header-bar">
+          <span class="card-badge badge-green">CARD 3: AFTER ONLY (GIẢI PHÁP MỚI TINH GỌN &amp; TƯƠNG TÁC THẬT)</span>
+          <span style="font-size: 0.85rem; color: #86efac;">Thử click các nút Show / Hide / Off bên dưới</span>
+        </div>
+        <div class="popup-frame">
+          <div class="mock-header">
+            <div class="mock-header-left">
+              <div class="mock-logo">▲</div>
+              <div class="mock-title">
+                <h1>Social Shield: AI Anti-Rage &amp; Focus Guard</h1>
+                <div class="diff-pin green" data-diff="annotation">✨ Rõ nghĩa, nhận diện thương hiệu mạnh</div>
+              </div>
+            </div>
+            <div class="mock-badge-good">
+              <span class="mock-dot-flat"></span>
+              <span id="activeDomainText">Active on X</span>
+            </div>
+            <div class="diff-pin green" data-diff="annotation">✨ Bo 4px chuẩn Vercel, phẳng sạch sẽ</div>
+          </div>
+
+          <div class="mock-hero-stats">
+            <div class="mock-stat-card">
+              <div class="mock-stat-num" style="color:#ededed;">42</div>
+              <div class="mock-stat-lbl">Scanned</div>
+            </div>
+            <div class="mock-stat-card">
+              <div class="mock-stat-num" style="color:#ededed;">12</div>
+              <div class="mock-stat-lbl">Filtered</div>
+            </div>
+            <div class="mock-stat-card">
+              <div class="mock-stat-num" style="color:#ededed;">7</div>
+              <div class="mock-stat-lbl">Threats</div>
+            </div>
+            <div class="diff-pin green" style="grid-column: span 3;" data-diff="annotation">✨ Đưa về Monochrome #ededed, Geist Sans Tabular Numbers</div>
+          </div>
+
+          <div class="mock-section">
+            <div class="mock-sec-title">Feed Content Rules</div>
+            
+            <div class="mock-row">
+              <div class="mock-label-col">
+                <div class="mock-label">Motivational</div>
+                <div class="mock-sublabel">Personal growth &amp; mindset</div>
+                <div class="diff-pin green" data-diff="annotation">✨ 4 từ vừa khít 1 dòng (24 ký tự)</div>
+              </div>
+              <div class="mock-seg" data-demo-seg="motivational">
+                <button class="mock-btn active" onclick="setDemoSeg(this, 'show')">Show</button>
+                <button class="mock-btn" onclick="setDemoSeg(this, 'hide')">Hide</button>
+                <button class="mock-btn" onclick="setDemoSeg(this, 'off')">Off</button>
+              </div>
+            </div>
+
+            <div class="mock-row">
+              <div class="mock-label-col">
+                <div class="mock-label">Teardown</div>
+                <div class="mock-sublabel">Technical breakdowns &amp; analysis</div>
+                <div class="diff-pin green" data-diff="annotation">✨ Rõ ràng, loại bỏ từ trừu tượng</div>
+              </div>
+              <div class="mock-seg" data-demo-seg="teardown">
+                <button class="mock-btn active" onclick="setDemoSeg(this, 'show')">Show</button>
+                <button class="mock-btn" onclick="setDemoSeg(this, 'hide')">Hide</button>
+                <button class="mock-btn" onclick="setDemoSeg(this, 'off')">Off</button>
+              </div>
+            </div>
+
+            <div class="mock-row">
+              <div class="mock-label-col">
+                <div class="mock-label">FOMO</div>
+                <div class="mock-sublabel">Hype, fake urgency &amp; flexes</div>
+                <div class="diff-pin green" data-diff="annotation">✨ Chuẩn bài văn hóa Twitter/X</div>
+              </div>
+              <div class="mock-seg" data-demo-seg="fomo">
+                <button class="mock-btn" onclick="setDemoSeg(this, 'show')">Show</button>
+                <button class="mock-btn active hide-act" onclick="setDemoSeg(this, 'hide')">Hide</button>
+                <button class="mock-btn" onclick="setDemoSeg(this, 'off')">Off</button>
+              </div>
+            </div>
+
+            <div class="mock-row">
+              <div class="mock-label-col">
+                <div class="mock-label">Wholesome</div>
+                <div class="mock-sublabel">Heartwarming &amp; good news</div>
+              </div>
+              <div class="mock-seg" data-demo-seg="wholesome">
+                <button class="mock-btn active" onclick="setDemoSeg(this, 'show')">Show</button>
+                <button class="mock-btn" onclick="setDemoSeg(this, 'hide')">Hide</button>
+                <button class="mock-btn" onclick="setDemoSeg(this, 'off')">Off</button>
+              </div>
+            </div>
+
+            <div style="margin-top:8px; padding-top:6px; border-top:1px solid #1f1f1f; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; color:#ededed; font-weight:500;">Custom Labels</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-size:9.5px; color:#22c55e; font-weight:600;">AI-matched</span>
+            </div>
+            <div class="diff-pin green" data-diff="annotation">✨ Thay thế jargon bằng nhãn người dùng hiểu ngay</div>
+          </div>
+
+          <div class="mock-section">
+            <div class="mock-sec-title">Protective Shields</div>
+            <div class="mock-row">
+              <div class="mock-label-col">
+                <div class="mock-label">Monk Mode</div>
+                <div class="mock-sublabel">Blur thirst-traps &amp; suggestive media</div>
+              </div>
+              <div class="mock-switch" style="cursor:pointer;" onclick="showToast('Đã lưu cài đặt Monk Mode!')"></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+    </main>
+
+    <!-- =================================================================
+         TAB 2: GIẢI THÍCH CHI TIẾT (4 TẦNG ZOOM-IN 2 CỘT)
+         ================================================================= -->
+    <section id="tab-explain" class="tab-pane" style="display: none;">
+
+      <!-- TẦNG 1: VĨ MÔ -->
+      <section class="explain-section">
+        <div class="explain-layout">
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 1/4 • VĨ MÔ</div>
+            <h3>📁 1. Cấu Trúc Toàn Bộ Dự Án</h3>
+            <p>Rà soát và đồng bộ toàn bộ chuỗi mắt xích từ Manifest, Extension Popup cho tới In-Page Content Scripts và Userscript dự phòng.</p>
+            <div class="meta-tag-group">
+              <span class="meta-tag green">Đồng Bộ Parity</span>
+              <span class="meta-tag blue">5 Files Thay Đổi</span>
+            </div>
+          </div>
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:0.8rem; color:#888;">📁 social-anti-ragebait/</span>
+              </div>
+              <div class="code-actions">
+                <span class="code-lang-badge"><span class="lang-dot structure"></span> TREE</span>
+              </div>
+            </div>
+            <div class="code-body">
+              <div class="c-line"><span class="c-text">📁 social-anti-ragebait/</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  ├── 📄 manifest.json            <span class="c-comment"># Tên ngắn gọn: AI Anti-Rage & Focus Guard</span></span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  ├── 📄 popup.html                <span class="c-comment"># Tối ưu 7 sublabels, bỏ glow, sửa border-radius 4px</span></span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  ├── 📄 popup.js                  <span class="c-comment"># Thêm nút xóa button có aria-label, tính dynamic focus</span></span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  ├── 📄 content.js                <span class="c-comment"># Đồng bộ TAXONOMY_CATALOG desc và các banner cảnh báo</span></span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  ├── 📄 social-anti-ragebait.user.js <span class="c-comment"># Đồng bộ 100% logic với extension</span></span></div>
+              <div class="c-line"><span class="c-text">  └── 📄 test/classifier.test.js  <span class="c-comment"># 26 unit & integration tests (Bun test)</span></span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TẦNG 2: UI & TYPOGRAPHY -->
+      <section class="explain-section">
+        <div class="explain-layout">
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 2/4 • UI &amp; TYPOGRAPHY</div>
+            <h3>🎨 2. Tinh Gọt Chữ Nghĩa &amp; Tránh Pill-Reflex</h3>
+            <p>Áp dụng skill <code>impeccable</code> và <code>DESIGN.md</code> của Vercel: triệt tiêu border-radius 9999px không có lý do, loại bỏ box-shadow lòe loẹt, đưa số liệu về font Geist Sans tabular-nums đồng nhất.</p>
+            <div class="meta-tag-group">
+              <span class="meta-tag green">Geist Tabular</span>
+              <span class="meta-tag yellow">Vercel Restraint</span>
+            </div>
+          </div>
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:0.8rem; color:#888;">popup.html (CSS Diff)</span>
+              </div>
+              <div class="code-actions">
+                <span class="diff-stat"><span class="stat-add">+4</span> <span class="stat-del">-4</span></span>
+                <span class="code-lang-badge"><span class="lang-dot ts"></span> CSS</span>
+              </div>
+            </div>
+            <div class="code-body">
+              <div class="c-line del"><span class="c-sign">-</span><span class="c-text">  border-radius: 9999px; /* Pill reflex bị bắt lỗi bởi Impeccable */</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  border-radius: 4px;    /* Chuẩn Vercel restrained radius */</span></div>
+              <div class="c-line del"><span class="c-sign">-</span><span class="c-text">  box-shadow: 0 0 6px rgba(34, 197, 94, 0.6); /* Glow trang trí thừa */</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  /* Đã loại bỏ hoàn toàn box-shadow theo nguyên tắc Monochrome */</span></div>
+              <div class="c-line del"><span class="c-sign">-</span><span class="c-text">  font-family: 'Geist Mono', monospace; /* Ép mono cho số hero */</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  font-variant-numeric: tabular-nums; font-feature-settings: "tnum";</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TẦNG 3: IN-PAGE INJECTIONS -->
+      <section class="explain-section">
+        <div class="explain-layout">
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 3/4 • RUNTIME INJECTIONS</div>
+            <h3>💬 3. Hộp Thoại Cảnh Báo In-Page</h3>
+            <p>Thay vì những câu cảnh báo dài dòng làm choán mất không gian xem bài viết trên feed, các hộp cảnh báo được rút gọn, dùng icon tối giản và ngôn từ đanh thép.</p>
+            <div class="meta-tag-group">
+              <span class="meta-tag blue">Microcopy</span>
+              <span class="meta-tag green">Anti-Slop</span>
+            </div>
+          </div>
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:0.8rem; color:#888;">content.js (DOM Injections)</span>
+              </div>
+              <div class="code-actions">
+                <span class="diff-stat"><span class="stat-add">+4</span> <span class="stat-del">-4</span></span>
+                <span class="code-lang-badge"><span class="lang-dot ts"></span> JS</span>
+              </div>
+            </div>
+            <div class="code-body">
+              <div class="c-line del"><span class="c-sign">-</span><span class="c-text">  b.innerHTML = `<b>Scam / Deceptive Scheme Warning (${pct}%):</b>...`;</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  b.innerHTML = `<b>Scam Warning (${pct}%)</b>...`;</span></div>
+              <div class="c-line del"><span class="c-sign">-</span><span class="c-text">  b.innerHTML = `<b>Rage / Toxic Warning (${pct}%):</b>...`;</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  b.innerHTML = `<b>Rage Bait Warning (${pct}%)</b>...`;</span></div>
+              <div class="c-line del"><span class="c-sign">-</span><span class="c-text">  title.textContent = 'Monk Mode: Blocked Facebook Reels Pop-up';</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  title.textContent = 'Monk Mode: Reels Blocked';</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TẦNG 4: LOGIC & TESTING -->
+      <section class="explain-section">
+        <div class="explain-layout">
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 4/4 • LOGIC &amp; KIỂM THỬ</div>
+            <h3>🧪 4. Bảo Chứng Test Suite 26/26 Xanh</h3>
+            <p>Tất cả logic phân loại 3 trạng thái (Show/Hide/Off), phát hiện active domain X/FB/IG và tính toán số liệu hero đều có test case bảo chứng độc lập.</p>
+            <div class="meta-tag-group">
+              <span class="meta-tag green">26 Pass</span>
+              <span class="meta-tag green">0 Fail</span>
+              <span class="meta-tag blue">Bun Test</span>
+            </div>
+          </div>
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:0.8rem; color:#888;">bun test terminal output</span>
+              </div>
+              <div class="code-actions">
+                <span class="code-lang-badge"><span class="lang-dot logic"></span> BUN</span>
+              </div>
+            </div>
+            <div class="code-body">
+              <div class="c-line add"><span class="c-sign">✓</span><span class="c-text"> Curated Classifier Taxonomy &amp; Dynamic Filter Rules (26 tests)</span></div>
+              <div class="c-line"><span class="c-text">   ✓ Taxonomy structure has all 7 labels with corresponding badges</span></div>
+              <div class="c-line"><span class="c-text">   ✓ Unified 3-state categoryActions: getActiveTaxonomy includes 'show' &amp; 'hide', excludes 'off'</span></div>
+              <div class="c-line"><span class="c-text">   ✓ Feed filtering with isPostHidden: collapses 'hide' categories and leaves 'show' visible</span></div>
+              <div class="c-line"><span class="c-text">   ✓ Active platform domain detection: accurately identifies X, FB, IG, Threads, YT</span></div>
+              <div class="c-line"><span class="c-text">   ✓ Hero mini stats computation: computes scanned, filtered, and threat aggregates</span></div>
+              <div class="c-line add"><span class="c-sign">★</span><span class="c-text"> <b>26 pass, 0 fail, 229 expect() calls</b> [2.30s]</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </section>
+  </div>
+
+  <!-- Nút Inspector Toggle Fixed -->
+  <button id="inspector-toggle" onclick="toggleDiff()">
+    <span>🔍 Check Diff</span>
+    <span id="diffStatusTag">[BẬT]</span>
+  </button>
+
+  <script src="./visual-core.js"></script>
+
+  <script>
+    // Demo Interactive Segmented Control for Card 3
+    function setDemoSeg(btn, action) {
+      const parent = btn.parentElement;
+      parent.querySelectorAll('.mock-btn').forEach(b => {
+        b.classList.remove('active', 'hide-act');
+      });
+      btn.classList.add('active');
+      if (action === 'hide') btn.classList.add('hide-act');
+      showToast(`Đã chuyển mục sang [${action.toUpperCase()}]!`);
+    }
+  </script>
+</body>
+</html>

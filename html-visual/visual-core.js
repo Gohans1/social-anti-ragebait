@@ -61,9 +61,14 @@ function switchTab(tabId, activeBtn) {
 
   const inspectorBtn = document.getElementById('inspector-toggle');
   if (inspectorBtn) {
+    const isExplainTab =
+      activePane &&
+      (activePane.id === 'tab-explain' ||
+        (activePane.dataset && activePane.dataset.tabPane === 'explain'));
     const diffSelector =
-      '.slider-viewport, .diff-tag, .diff-highlight, .diff-stat, .mock-annotation, [data-diff="annotation"]';
+      '.slider-viewport, .diff-tag, .diff-highlight, .mock-annotation, [data-diff="annotation"]';
     const hasDiff =
+      !isExplainTab &&
       activePane &&
       ((activePane.matches && activePane.matches(diffSelector)) ||
         Boolean(activePane.querySelector(diffSelector)));
@@ -111,9 +116,13 @@ function initSliderInstance(viewport) {
 
   function onPointerDown(e) {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
+    // Don't hijack clicks on interactive elements inside mockups
+    if (e.target && e.target.closest('button, a, input, textarea, select, [role="button"]')) {
+      return;
+    }
     isDragging = true;
     try {
-      (divider || e.currentTarget).setPointerCapture(e.pointerId);
+      viewport.setPointerCapture(e.pointerId);
     } catch (_) {}
     cachedRect = viewport.getBoundingClientRect();
     latestClientX = e.clientX;
@@ -149,27 +158,25 @@ function initSliderInstance(viewport) {
       }
     }
     try {
-      (divider || e.currentTarget).releasePointerCapture(e.pointerId);
+      viewport.releasePointerCapture(e.pointerId);
     } catch (_) {}
     cachedRect = null;
     latestClientX = null;
   }
 
-  if (divider) {
-    divider.addEventListener('pointerdown', onPointerDown);
-    divider.addEventListener('pointermove', onPointerMove);
-    divider.addEventListener('pointerup', onPointerUp);
-    divider.addEventListener('pointercancel', onPointerUp);
-    divider.addEventListener('lostpointercapture', () => {
-      isDragging = false;
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
-      }
-      cachedRect = null;
-      latestClientX = null;
-    });
-  }
+  viewport.addEventListener('pointerdown', onPointerDown);
+  viewport.addEventListener('pointermove', onPointerMove);
+  viewport.addEventListener('pointerup', onPointerUp);
+  viewport.addEventListener('pointercancel', onPointerUp);
+  viewport.addEventListener('lostpointercapture', () => {
+    isDragging = false;
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+    cachedRect = null;
+    latestClientX = null;
+  });
 
   if (rangeInput) {
     rangeInput.setAttribute('tabindex', '-1');
@@ -264,10 +271,16 @@ function initInspectorToggle() {
   }
   if (!activePane) activePane = document.body;
 
-  const diffSelector =
-    '.slider-viewport, .diff-tag, .diff-highlight, .diff-stat, .mock-annotation, [data-diff="annotation"]';
-  const hasDiff =
+  const isExplainTab =
     activePane &&
+    (activePane.id === 'tab-explain' ||
+      (activePane.dataset && activePane.dataset.tabPane === 'explain'));
+  const diffSelector =
+    '.slider-viewport, .diff-tag, .diff-highlight, .mock-annotation, [data-diff="annotation"]';
+  const hasDiff =
+    !isExplainTab &&
+    activePane &&
+    activePane !== document.body &&
     ((activePane.matches && activePane.matches(diffSelector)) ||
       Boolean(activePane.querySelector(diffSelector)));
   inspectorBtn.style.display = hasDiff ? 'flex' : 'none';

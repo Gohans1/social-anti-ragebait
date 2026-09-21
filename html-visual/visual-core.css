@@ -202,6 +202,9 @@ body {
   background: #09090b;
   border: 1px solid var(--border);
   overflow: hidden;
+  cursor: col-resize;
+  touch-action: pan-y;
+  user-select: none;
 }
 
 .slider-layer,
@@ -233,12 +236,12 @@ body {
   top: 0;
   bottom: 0;
   left: var(--slider-pos, 50%);
-  width: 6px;
-  background: #ffffff;
+  width: 4px;
+  background: linear-gradient(180deg, #38bdf8 0%, #3b82f6 50%, #6366f1 100%);
   transform: translateX(-50%);
   z-index: 30;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
-  cursor: ew-resize;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.9), 0 0 24px rgba(59, 130, 246, 0.5);
+  cursor: col-resize;
   touch-action: none;
 }
 
@@ -248,7 +251,7 @@ body {
   top: 0;
   bottom: 0;
   left: 50%;
-  width: 44px;
+  width: 48px;
   transform: translateX(-50%);
   touch-action: none;
 }
@@ -258,24 +261,35 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 2.4rem;
-  height: 2.4rem;
-  background: #ffffff;
-  color: #000000;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: #09090b;
+  color: #38bdf8;
+  border: 2px solid #38bdf8;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  font-size: 1rem;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
+  font-size: 1.1rem;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.7), 0 4px 12px rgba(0, 0, 0, 0.9);
   cursor: grab;
   touch-action: none;
   user-select: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.slider-knob:hover,
+.slider-viewport:hover .slider-knob {
+  border-color: #67e8f9;
+  color: #67e8f9;
+  box-shadow: 0 0 24px rgba(56, 189, 248, 1), 0 0 35px rgba(99, 102, 241, 0.6);
+  transform: translate(-50%, -50%) scale(1.08);
 }
 
 .slider-knob:active {
   cursor: grabbing;
+  transform: translate(-50%, -50%) scale(0.96);
 }
 
 /* Optional Range Input fallback */
@@ -834,10 +848,6 @@ body.diff-off .diff-highlight,
 body.diff-off .mock-annotation,
 body.diff-off [data-diff="annotation"] {
   display: none !important;
-}
-
-body.diff-off .diff-stat {
-  opacity: 0.35;
 }
 
 @media (max-width: 64rem) {

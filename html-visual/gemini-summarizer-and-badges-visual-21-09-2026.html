@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bản Thiết Kế: Gemini 3.5 Flash-Lite Summarizer &amp; Inline Header Badges</title>
+  <link rel="stylesheet" href="./visual-core.css">
+
+  <style>
+    /* Custom Mockup Styles for Twitter / X UI */
+    .tweet-mock {
+      background: #000000;
+      border: 1px solid #2f3336;
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: #e7e9ea;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.4;
+      max-width: 580px;
+      margin: 0 auto;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.7);
+      user-select: none;
+    }
+
+    .tweet-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .tweet-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #262626;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .tweet-user-info {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tweet-name {
+      font-weight: 700;
+      color: #f7f9f9;
+      font-size: 14px;
+    }
+
+    .tweet-handle, .tweet-time {
+      color: #71767b;
+      font-size: 14px;
+    }
+
+    .tweet-text {
+      color: #e7e9ea;
+      font-size: 14px;
+      line-height: 1.45;
+      margin-bottom: 12px;
+      word-break: break-word;
+    }
+
+    /* Warning Box Legacy (Before) */
+    .warning-box-old {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin: 8px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .warning-old-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      color: #ef4444;
+    }
+
+    .warning-old-desc {
+      font-size: 12px;
+      color: #d4d4d8;
+      line-height: 1.35;
+    }
+
+    .btn-show-old {
+      background: #262626;
+      border: 1px solid #404040;
+      color: #ffffff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      width: fit-content;
+      transition: background 0.15s;
+    }
+    .btn-show-old:hover {
+      background: #333333;
+    }
+
+    /* Warning Box Modern with Gemini AI (After) */
+    .warning-box-modern {
+      background: #09090b;
+      border: 1px solid #27272a;
+      border-left: 3px solid #ef4444;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin: 8px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .warning-modern-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .warning-badge-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .shield-icon {
+      color: #ef4444;
+      font-size: 14px;
+    }
+
+    .warning-title-text {
+      font-weight: 600;
+      font-size: 12.5px;
+      color: #f4f4f5;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .warning-conf-pill {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+
+    .warning-actions-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-gemini-summary {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(168, 85, 247, 0.15));
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      color: #d8b4fe;
+      padding: 5px 11px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-gemini-summary:hover {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(168, 85, 247, 0.25));
+      border-color: #a855f7;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .btn-uncollapse {
+      background: #18181b;
+      border: 1px solid #27272a;
+      color: #a1a1aa;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-uncollapse:hover {
+      background: #27272a;
+      color: #f4f4f5;
+    }
+
+    /* AI Summary Results Container */
+    .summary-card {
+      background: #050507;
+      border: 1px solid #1f1f23;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-top: 4px;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .summary-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #18181b;
+    }
+
+    .summary-model-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      color: #a855f7;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 600;
+    }
+
+    .summary-bullets {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .summary-bullets li {
+      position: relative;
+      padding-left: 14px;
+      font-size: 11.5px;
+      color: #e4e4e7;
+      line-height: 1.4;
+    }
+
+    .summary-bullets li::before {
+      content: "•";
+      position: absolute;
+      left: 2px;
+      top: 0;
+      color: #a855f7;
+      font-weight: 700;
+    }
+
+    /* Inline Header Badges (Vercel Style) */
+    .inline-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #09090b;
+      border: 1px solid #27272a;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      color: #ededed;
+      vertical-align: middle;
+      margin-left: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+
+    .color-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-ragebait { background: #ef4444; }
+    .dot-political { background: #a855f7; }
+    .dot-toxic { background: #f97316; }
+    .dot-scam { background: #eab308; }
+
+    .pill-confidence {
+      color: #71717a;
+      font-weight: 400;
+    }
+
+    /* Interactive Switch Box */
+    .interactive-control-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #111115;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+    }
+
+    .control-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #a1a1aa;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .toggle-pill-btn {
+      background: #18181b;
+      border: 1px solid #3f3f46;
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s;
+    }
+    .toggle-pill-btn:hover {
+      background: #27272a;
+      border-color: #52525b;
+    }
+
+    /* Annotations */
+    .pin {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      line-height: 1.2;
+    }
+    .pin.red {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .pin.green {
+      background: rgba(34, 197, 94, 0.2);
+      color: #86efac;
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+    .pin.purple {
+      background: rgba(168, 85, 247, 0.2);
+      color: #d8b4fe;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. STICKY TOPBAR -->
+  <header class="nav-header">
+    <div class="brand-title"><span>⚡</span> SOCIAL ANTI-RAGEBAIT: GEMINI AI &amp; INLINE PILL CRAFT</div>
+    <nav class="tab-group" role="tablist">
+      <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('summarize')">📌 Tóm Lược</button>
+      <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('explain')">🔍 Giải Thích Chi Tiết</button>
+    </nav>
+  </header>
+
+  <div class="container">
+
+    <!-- =================================================================
+         TAB 1: TÓM LƯỢC (DEFAULT) - 6 CARDS (2 TASKS TRỌNG TÂM)
+         ================================================================= -->
+    <main id="tab-summarize" class="tab-pane">
+
+      <section class="callout">
+        <h2>🗣️ TÓM LƯỢC &amp; Ý CHÍNH 🗣️</h2>
+        <p>Bố m đã tích hợp trọn vẹn nút tóm tắt AI 3 gạch đầu dòng siêu tốc bằng Gemini 3.5 Flash-Lite ngay trong hộp cảnh báo, đồng thời tái cấu trúc badge phân loại thành dạng Inline Header Pill + Color Dot tối giản chuẩn Vercel và công tắc 1-tag vs multi-tag.</p>
+      </section>
+
+      <!-- SECTION 1 HEADER -->
+      <div style="margin: 2.5rem 0 1rem; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.1rem; font-weight: 700; color: #a855f7;">⚡ CHỦ ĐỀ 1:</span>
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: #ffffff;">TÍCH HỢP TÓM TẮT 3 GẠCH ĐẦU DÒNG (GOOGLE GEMINI 3.5 FLASH-LITE)</h3>
+      </div>
+
+      <!-- CARD 1: COMPARISON SLIDER -->
+      <article class="card-wrapper card-slider">
+        <div class="card-header-bar">
+          <span class="card-badge badge-white">CARD 1: COMPARISON SLIDER (SWIPE DIFF)</span>
+          <span style="font-size: 0.85rem; color: #ffffff;">Kéo thanh trượt để so sánh hộp cảnh báo cũ vs mới có nút AI</span>
+        </div>
+        <div class="slider-viewport">
+
+          <!-- Layer Before -->
+          <div class="slider-layer slider-before">
+            <div class="tweet-mock">
+              <div class="tweet-header">
+                <div class="tweet-avatar">🔥</div>
+                <div class="tweet-user-info">
+                  <span class="tweet-name">Rage Baiter Pro</span>
+                  <span class="tweet-handle">@rage_trigger</span>
+                  <span class="tweet-time">· 15m</span>
+                  <span class="pin red">CŨ: KHÔNG CÓ TÓM TẮT</span>
+                </div>
+              </div>
+
+              <!-- Old Warning Box -->
+              <div class="warning-box-old">
+                <div class="warning-old-title">
+                  <span>⚠️ Cảnh báo: Bài viết có nội dung gây tranh cãi (Ragebait)</span>
+                </div>
+                <div class="warning-old-desc">
+                  Bài viết này có thể kích động cảm xúc tiêu cực. Bạn có chắc chắn muốn xem nội dung?
+                </div>
+                <button class="btn-show-old">Xem nội dung bài viết</button>
+              </div>
+
+              <div style="font-size: 11px; color: #71767b; font-style: italic; margin-top: 6px;">
+                Nhược điểm: Tò mò muốn biết gì thì phải bấm bung bài viết ra, nguy cơ dính trúng ragebait 100%!
+              </div>
+            </div>
+          </div>
+
+          <!-- Layer After -->
+          <div class="slider-layer slider-after">
+            <div class="tweet-mock">
+              <div class="tweet-header">
+                <div class="tweet-avatar">🔥</div>
+                <div class="tweet-user-info">
+                  <span class="tweet-name">Rage Baiter Pro</span>
+                  <span class="tweet-handle">@rage_trigger</span>
+                  <span class="tweet-time">· 15m</span>
+                  <span class="pin green">MỚI: GEMINI FLASH-LITE NÚT BẤM</span>
+                </div>
+              </div>
+
+              <!-- Modern Warning Box -->
+              <div class="warning-box-modern">
+                <div class="warning-modern-header">
+                  <div class="warning-badge-group">
+                    <span class="shield-icon">🛡️</span>
+                    <span class="warning-title-text">RAGEBAIT COLLAPSED</span>
+                    <span class="warning-conf-pill">96% CONF</span>
+                  </div>
+                  <div class="warning-actions-bar">
+                    <button class="btn-gemini-summary">✨ Tóm tắt (3 gạch đầu dòng)</button>
+                    <button class="btn-uncollapse">Xem bài gốc</button>
+                  </div>
+                </div>
+
+                <!-- Summarizer Result Preview -->
+                <div class="summary-card">
+                  <div class="summary-card-header">
+                    <span class="summary-model-tag">✨ GEMINI 3.5 FLASH-LITE SUMMARY</span>
+                    <span style="font-size: 9px; color: #71717a;">3 BULLETS</span>
+                  </div>
+                  <ul class="summary-bullets">
+                    <li>Tác giả đưa ra phát biểu quy chụp gay gắt về một nhóm đối tượng xã hội nhằm câu view.</li>
+                    <li>Sử dụng từ ngữ công kích cá nhân và ngụy biện nhị nguyên trắng - đen cực đoan.</li>
+                    <li>Mục đích chính là kích thích cãi vã, đéo mang lại giá trị thảo luận xây dựng nào.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div style="font-size: 11px; color: #22c55e; font-weight: 500; margin-top: 6px;">
+                Ưu điểm: Đọc 3 ý chính cực súc tích mà đéo cần mở bài gốc, bảo vệ não bộ an toàn tuyệt đối!
+              </div>
+            </div>
+          </div>
+
+          <div class="slider-divider">
+            <div class="slider-knob">⇄</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- CARD 2: BEFORE ONLY -->
+      <article class="card-wrapper card-before">
+        <div class="card-header-bar">
+          <span class="card-badge badge-red">CARD 2: BEFORE ONLY (CẢNH BÁO THÔ SƠ)</span>
+          <span style="font-size: 0.85rem; color: #fca5a5;">Chỉ có 1 nút mở bài duy nhất, dễ kích động tâm lý tò mò</span>
+        </div>
+        <div class="tweet-mock">
+          <div class="tweet-header">
+            <div class="tweet-avatar">⚠️</div>
+            <div class="tweet-user-info">
+              <span class="tweet-name">Drama Hunter</span>
+              <span class="tweet-handle">@drama_queen</span>
+              <span class="tweet-time">· 1h</span>
+              <span class="pin red">THIẾU AI SUMMARIZER</span>
+            </div>
+          </div>
+
+          <div class="warning-box-old">
+            <div class="warning-old-title">
+              <span>⚠️ Cảnh báo: Ragebait / Toxic Content</span>
+            </div>
+            <div class="warning-old-desc">
+              Bài viết đã bị ẩn để bảo vệ bạn. Hãy cân nhắc trước khi mở.
+            </div>
+            <button class="btn-show-old">Bấm vào đây để đọc bài</button>
+          </div>
+
+          <div style="margin-top: 10px; padding: 8px; background: rgba(239, 68, 68, 0.05); border-radius: 6px; border: 1px dashed rgba(239, 68, 68, 0.3);">
+            <div style="font-size: 11px; color: #f87171; font-weight: 600;">🚨 HẠN CHẾ CHÍ MẠNG:</div>
+            <div style="font-size: 11px; color: #d4d4d8; margin-top: 2px;">
+              Người dùng lướt feed gặp bài này vẫn bị cảm giác "FOMO" hoặc tò mò thôi thúc bấm vào. Khi đã bấm "Đọc bài", toàn bộ độc hại ập vào mắt mà đéo có tấm khiên bảo vệ nào.
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- CARD 3: AFTER ONLY (INTERACTIVE) -->
+      <article class="card-wrapper card-after">
+        <div class="card-header-bar">
+          <span class="card-badge badge-green">CARD 3: AFTER ONLY (TƯƠNG TÁC THẬT BẤM NÚT TÓM TẮT AI)</span>
+          <span style="font-size: 0.85rem; color: #86efac;">Thử bấm nút '✨ Tóm tắt' bên dưới để kích hoạt Gemini 3.5 Flash-Lite</span>
+        </div>
+        <div class="tweet-mock">
+          <div class="tweet-header">
+            <div class="tweet-avatar">⚡</div>
+            <div class="tweet-user-info">
+              <span class="tweet-name">Toxic Influencer</span>
+              <span class="tweet-handle">@toxic_takes</span>
+              <span class="tweet-time">· 3m</span>
+              <span class="inline-pill"><span class="color-dot dot-ragebait"></span>Ragebait <span class="pill-confidence">97%</span></span>
+              <span class="pin green">INTERACTIVE LIVE MOCK</span>
+            </div>
+          </div>
+
+          <!-- Modern Warning with real JS Interactive Action -->
+          <div class="warning-box-modern">
+            <div class="warning-modern-header">
+              <div class="warning-badge-group">
+                <span class="shield-icon">🛡️</span>
+                <span class="warning-title-text">NỘI DUNG ĐÃ BỊ THU GỌN</span>
+                <span class="warning-conf-pill">TOP 1 RAGEBAIT</span>
+              </div>
+              <div class="warning-actions-bar">
+                <button id="live-summarize-btn" class="btn-gemini-summary" onclick="triggerInteractiveSummary()">
+                  <span>✨ Tóm tắt (3 gạch đầu dòng)</span>
+                </button>
+                <button class="btn-uncollapse" onclick="alert('Post text vẫn được an toàn che giấu!')">Mở bài gốc</button>
+              </div>
+            </div>
+
+            <!-- Dynamic Target Container -->
+            <div id="live-summary-container" style="display: none;"></div>
+          </div>
+
+          <div style="margin-top: 10px; padding: 8px; background: rgba(34, 197, 94, 0.05); border-radius: 6px; border: 1px dashed rgba(34, 197, 94, 0.3);">
+            <div style="font-size: 11px; color: #4ade80; font-weight: 600;">✨ TÍNH NĂNG VƯỢT TRỘI:</div>
+            <div style="font-size: 11px; color: #d4d4d8; margin-top: 2px;">
+              Dùng API key Gemini 3.5 Flash-Lite siêu nhẹ, độ trễ cực thấp (&lt; 600ms). Trả lời chuẩn 3 gạch đầu dòng trung lập, không thêm văn vở, cache ngay trong session.
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- SECTION 2 HEADER -->
+      <div style="margin: 3.5rem 0 1rem; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.1rem; font-weight: 700; color: #3b82f6;">⚡ CHỦ ĐỀ 2:</span>
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: #ffffff;">INLINE HEADER PILL + COLOR DOT &amp; CÔNG TẮC 1-TAG VS MULTI-TAG</h3>
+      </div>
+
+      <!-- CARD 4: COMPARISON SLIDER -->
+      <article class="card-wrapper card-slider">
+        <div class="card-header-bar">
+          <span class="card-badge badge-white">CARD 4: COMPARISON SLIDER (SWIPE DIFF)</span>
+          <span style="font-size: 0.85rem; color: #ffffff;">Kéo thanh trượt so sánh Tag thô lơ lửng vs Inline Header Pill</span>
+        </div>
+        <div class="slider-viewport">
+
+          <!-- Layer Before -->
+          <div class="slider-layer slider-before">
+            <div class="tweet-mock">
+              <div class="tweet-header">
+                <div class="tweet-avatar">👤</div>
+                <div class="tweet-user-info">
+                  <span class="tweet-name">Tech Commentator</span>
+                  <span class="tweet-handle">@tech_guy</span>
+                  <span class="tweet-time">· 45m</span>
+                </div>
+              </div>
+
+              <!-- Old Tag Overlay (Big, ugly, intrusive) -->
+              <div style="background: #2a1215; border: 1px solid #7f1d1d; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; display: inline-flex; align-items: center; gap: 8px;">
+                <span style="font-size: 14px;">🏷️</span>
+                <span style="font-size: 12px; font-weight: 700; color: #f87171;">BADGE CŨ: TAG TO BÈ LƠ LỬNG [RAGEBAIT - CONFIDENCE: 92%]</span>
+              </div>
+
+              <div class="tweet-text">
+                Framework này đã chết cmnr, ai dùng nó bây giờ đúng là thiểu năng trí tuệ không biết cập nhật công nghệ mới...
+              </div>
+
+              <div style="font-size: 11px; color: #fca5a5;">
+                Nhược điểm: Tag phân loại to bè, chiếm diện tích riêng, làm vỡ nhịp đọc feed của người dùng.
+              </div>
+            </div>
+          </div>
+
+          <!-- Layer After -->
+          <div class="slider-layer slider-after">
+            <div class="tweet-mock">
+              <div class="tweet-header">
+                <div class="tweet-avatar">👤</div>
+                <div class="tweet-user-info">
+                  <span class="tweet-name">Tech Commentator</span>
+                  <span class="tweet-handle">@tech_guy</span>
+                  <span class="tweet-time">· 45m</span>
+                  <!-- New Inline Header Pill -->
+                  <span class="inline-pill"><span class="color-dot dot-ragebait"></span>Ragebait <span class="pill-confidence">92%</span></span>
+                  <span class="pin green">INLINE CÙNG DÒNG AUTHOR</span>
+                </div>
+              </div>
+
+              <div class="tweet-text">
+                Framework này đã chết cmnr, ai dùng nó bây giờ đúng là thiểu năng trí tuệ không biết cập nhật công nghệ mới...
+              </div>
+
+              <div style="font-size: 11px; color: #86efac;">
+                Ưu điểm: Đặt ngay cạnh handle, tinh tế chuẩn Vercel Monochrome, dot màu phân loại trực quan!
+              </div>
+            </div>
+          </div>
+
+          <div class="slider-divider">
+            <div class="slider-knob">⇄</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- CARD 5: BEFORE ONLY -->
+      <article class="card-wrapper card-before">
+        <div class="card-header-bar">
+          <span class="card-badge badge-red">CARD 5: BEFORE ONLY (CÁCH HIỂN THỊ CŨ)</span>
+          <span style="font-size: 0.85rem; color: #fca5a5;">Độ tin cậy dính chặt nhãn, thiếu hệ thống dot màu phân cấp</span>
+        </div>
+        <div class="tweet-mock">
+          <div class="tweet-header">
+            <div class="tweet-avatar">💬</div>
+            <div class="tweet-user-info">
+              <span class="tweet-name">Political Debate</span>
+              <span class="tweet-handle">@pol_watch</span>
+              <span class="tweet-time">· 2h</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+            <div style="background: #18181b; border: 1px solid #3f3f46; padding: 4px 8px; border-radius: 9999px; font-size: 11px; color: #ef4444; font-weight: 600;">
+              Political: 89% (Độ tin cậy cao)
+            </div>
+            <div style="background: #18181b; border: 1px solid #3f3f46; padding: 4px 8px; border-radius: 9999px; font-size: 11px; color: #a855f7; font-weight: 600;">
+              Ragebait: 78% (Độ tin cậy cao)
+            </div>
+          </div>
+
+          <div class="tweet-text">
+            Chính sách này sẽ hủy diệt hoàn toàn nền kinh tế, tất cả các chuyên gia đều phải đồng ý rằng đây là thảm họa!
+          </div>
+
+          <div style="font-size: 11px; color: #71767b; font-style: italic;">
+            Nhược điểm: Bệnh pill 9999px bo tròn lòe loẹt, chữ dài dòng chiếm spotlight của nội dung chính.
+          </div>
+        </div>
+      </article>
+
+      <!-- CARD 6: AFTER ONLY (INTERACTIVE SINGLE VS MULTI-TAG) -->
+      <article class="card-wrapper card-after">
+        <div class="card-header-bar">
+          <span class="card-badge badge-green">CARD 6: AFTER ONLY (CÔNG TẮC CHUYỂN 1-TAG VS MULTI-TAGS)</span>
+          <span style="font-size: 0.85rem; color: #86efac;">Thử bấm chuyển chế độ để xem phản hồi của Tweet Header</span>
+        </div>
+        <div class="tweet-mock">
+
+          <!-- Interactive Control Bar -->
+          <div class="interactive-control-bar">
+            <span class="control-label">CHẾ ĐỘ HIỂN THỊ TAG:</span>
+            <button class="toggle-pill-btn" onclick="toggleTagMode()">
+              <span id="tag-mode-icon">🎯</span>
+              <span id="tag-mode-text">Chế độ: 1 Tag duy nhất (Top 1)</span>
+            </button>
+          </div>
+
+          <div class="tweet-header">
+            <div class="tweet-avatar">⚡</div>
+            <div class="tweet-user-info">
+              <span class="tweet-name">Political Debate</span>
+              <span class="tweet-handle">@pol_watch</span>
+              <span class="tweet-time">· 2h</span>
+
+              <!-- Live Dynamic Tag Target -->
+              <span id="live-header-tags" style="display: inline-flex; align-items: center; gap: 4px;">
+                <span class="inline-pill"><span class="color-dot dot-political"></span>Political <span class="pill-confidence">89%</span></span>
+              </span>
+            </div>
+          </div>
+
+          <div class="tweet-text">
+            Chính sách này sẽ hủy diệt hoàn toàn nền kinh tế, tất cả các chuyên gia đều phải đồng ý rằng đây là thảm họa!
+          </div>
+
+          <div style="margin-top: 10px; padding: 8px; background: rgba(59, 130, 246, 0.05); border-radius: 6px; border: 1px dashed rgba(59, 130, 246, 0.3);">
+            <div style="font-size: 11px; color: #60a5fa; font-weight: 600;">🎯 VERCEL RESTRAINT DESIGN:</div>
+            <div style="font-size: 11px; color: #d4d4d8; margin-top: 2px;">
+              Bán kính bo chuẩn 4px, font số JetBrains Mono sắc gọn, tỷ lệ tương phản cao, tự động co giãn theo Twitter DOM mà đéo làm lệch dòng author.
+            </div>
+          </div>
+        </div>
+      </article>
+
+    </main>
+
+    <!-- =================================================================
+         TAB 2: GIẢI THÍCH CHI TIẾT (4 TẦNG ZOOM-IN 2 CỘT)
+         ================================================================= -->
+    <section id="tab-explain" class="tab-pane" style="display: none;">
+
+      <!-- TẦNG 1: VĨ MÔ / FOLDER LEVEL -->
+      <section class="explain-section">
+        <div class="explain-layout">
+          <!-- Cột Trái: Text Explain (30rem) -->
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 1/4 • VĨ MÔ</div>
+            <h3>📁 1. Kiến Trúc Thư Mục &amp; Module</h3>
+            <p>Tách bạch rõ ràng giữa Extension Service Worker (chịu trách nhiệm bảo mật API key và vượt giới hạn CORS), Content Script tiêm trực tiếp vào Twitter DOM, và Userscript độc lập có tích hợp GM_xmlhttpRequest.</p>
+            <div class="meta-tag-group">
+              <span class="meta-tag green">MV3 Service Worker</span>
+              <span class="meta-tag blue">Twitter Injector</span>
+              <span class="meta-tag yellow">31/31 Tests Passed</span>
+            </div>
+          </div>
+
+          <!-- Cột Phải: Visual Show (48rem) -->
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots">
+                  <span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span>
+                </div>
+                <div class="file-dropdown-wrapper">
+                  <button class="file-dropdown-trigger" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleFileDropdown(this)">
+                    <span>📁 social-anti-ragebait/</span><span class="chevron">▼</span>
+                  </button>
+                  <div class="file-dropdown-menu">
+                    <div class="file-dropdown-header"><span>TẬP TIN</span><span>REPO</span></div>
+                    <a class="file-dropdown-item ide" href="vscode://file/c:/Users/ADMIN/Desktop/social-anti-ragebait/background.js">Mở background.js</a>
+                    <button class="file-dropdown-item path" type="button" onclick="copyFilePath('background.js')">Sao chép đường dẫn</button>
+                  </div>
+                </div>
+              </div>
+              <div class="code-actions">
+                <span class="diff-stat"><span class="stat-add">+2,513</span> <span class="stat-del">-662</span></span>
+                <span class="code-lang-badge"><span class="lang-dot structure"></span> REPO STRUCTURE</span>
+                <button class="btn-copy-code" type="button" onclick="copyCodeBlock(this)">Sao chép</button>
+              </div>
+            </div>
+
+            <div class="code-body">
+              <div class="c-line"><span class="c-sign"></span><span class="c-text"><span class="tg">├── </span>📄 manifest.json</span><span class="c-comment"># thêm permission host generativelanguage</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text"><span class="tg">├── </span>📄 background.js</span><span class="c-comment"># Gemini 3.5 Flash-Lite summarizer handler</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text"><span class="tg">├── </span>📄 content.js</span><span class="c-comment"># inline header badges + summarizer trigger DOM</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text"><span class="tg">├── </span>📄 content.css</span><span class="c-comment"># Vercel color dots, warning box, shimmer style</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text"><span class="tg">├── </span>📄 popup.html &amp; popup.js</span><span class="c-comment"># settings: Gemini key &amp; single/multi switch</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text"><span class="tg">├── </span>📄 social-anti-ragebait.user.js</span><span class="c-comment"># tampermonkey / violentmonkey sync</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text"><span class="tg">└── </span>📁 test/classifier.test.js</span><span class="c-comment"># 31 unit &amp; integration tests under Bun</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TẦNG 2: FILE & COMPONENTS LEVEL -->
+      <section class="explain-section">
+        <div class="explain-layout">
+          <!-- Cột Trái: Text Explain (30rem) -->
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 2/4 • UI &amp; COMPONENT</div>
+            <h3>🧩 2. Cấu Trúc Warning Box &amp; Inline Badge</h3>
+            <p>Thành phần DOM của Warning Box được thiết kế độc lập, bảo toàn tính riêng tư của bài tweet gốc. Inline Badge được cấy trực tiếp vào container tên tác giả của Twitter `[data-testid="User-Name"]` với flex resilience chống tràn.</p>
+            <div class="meta-tag-group">
+              <span class="meta-tag green">Zero Layout Shift</span>
+              <span class="meta-tag purple">Flex-Resilient</span>
+            </div>
+          </div>
+
+          <!-- Cột Phải: Visual Show (48rem) -->
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots">
+                  <span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span>
+                </div>
+                <div class="file-dropdown-wrapper">
+                  <button class="file-dropdown-trigger" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleFileDropdown(this)">
+                    <span>📄 content.js / content.css</span><span class="chevron">▼</span>
+                  </button>
+                  <div class="file-dropdown-menu">
+                    <div class="file-dropdown-header"><span>TẬP TIN</span><span>COMPONENT</span></div>
+                    <a class="file-dropdown-item ide" href="vscode://file/c:/Users/ADMIN/Desktop/social-anti-ragebait/content.js">Mở content.js</a>
+                    <button class="file-dropdown-item path" type="button" onclick="copyFilePath('content.js')">Sao chép đường dẫn</button>
+                  </div>
+                </div>
+              </div>
+              <div class="code-actions">
+                <span class="diff-stat"><span class="stat-add">+199</span> <span class="stat-del">-42</span></span>
+                <span class="code-lang-badge"><span class="lang-dot tsx"></span> DOM COMPONENT</span>
+                <button class="btn-copy-code" type="button" onclick="copyCodeBlock(this)">Sao chép</button>
+              </div>
+            </div>
+
+            <div class="code-body">
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">&lt;div class="anti-rage-warning-box"&gt;</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  &lt;div class="warning-header"&gt;</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">    &lt;span class="badge"&gt;Ragebait (96%)&lt;/span&gt;</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">    &lt;button class="btn-summarize"&gt;✨ Tóm tắt (3 gạch đầu dòng)&lt;/button&gt;</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">    &lt;button class="btn-expand"&gt;Xem bài viết&lt;/button&gt;</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  &lt;/div&gt;</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  &lt;div class="gemini-summary-panel hidden"&gt;</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">    &lt;ul class="summary-list"&gt; ...3 bullets... &lt;/ul&gt;</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  &lt;/div&gt;</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">&lt;/div&gt;</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TẦNG 3: FUNCTION & CALL TREE LEVEL -->
+      <section class="explain-section">
+        <div class="explain-layout">
+          <!-- Cột Trái: Text Explain (30rem) -->
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 3/4 • RUNTIME &amp; CALL TREE</div>
+            <h3>🌳 3. Luồng Tin Nhắn &amp; Gọi API Gemini</h3>
+            <p>Trình bày chính xác call stack khi người dùng ấn nút: Message được dispatch từ Content Script sang Service Worker, kiểm tra in-memory cache, nếu chưa có thì gửi payload JSON sang endpoint của Google AI Studio.</p>
+            <div class="meta-tag-group">
+              <span class="meta-tag green">Zero-Leak Key</span>
+              <span class="meta-tag blue">CORS Bypassed</span>
+            </div>
+          </div>
+
+          <!-- Cột Phải: Visual Show (48rem) -->
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots">
+                  <span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span>
+                </div>
+                <div class="file-dropdown-wrapper">
+                  <button class="file-dropdown-trigger" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleFileDropdown(this)">
+                    <span>📄 background.js:handleSummarize</span><span class="chevron">▼</span>
+                  </button>
+                  <div class="file-dropdown-menu">
+                    <div class="file-dropdown-header"><span>HÀM</span><span>CALL TREE</span></div>
+                    <a class="file-dropdown-item ide" href="vscode://file/c:/Users/ADMIN/Desktop/social-anti-ragebait/background.js">Mở background.js</a>
+                    <button class="file-dropdown-item path" type="button" onclick="copyFilePath('background.js')">Sao chép đường dẫn</button>
+                  </div>
+                </div>
+              </div>
+              <div class="code-actions">
+                <span class="diff-stat"><span class="stat-add">+73</span> <span class="stat-del">-0</span></span>
+                <span class="code-lang-badge"><span class="lang-dot flow"></span> CALL FLOW</span>
+                <button class="btn-copy-code" type="button" onclick="copyCodeBlock(this)">Sao chép</button>
+              </div>
+            </div>
+
+            <div class="code-body">
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">onUserClickSummarize(tweetId, postText)</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  renderShimmerLoading(tweetId)</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  chrome.runtime.sendMessage({ action: 'summarizePost', text: postText })</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">    └── background.js:handleSummarize(request, sendResponse)</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">          ├── checkCache(postHash) -&gt; return cached if found</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">          ├── fetchApiKeyFromStorage()</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">          ├── callGeminiFlashLite(prompt, apiKey)</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">          │     └── POST /v1beta/models/gemini-3.5-flash-lite:generateContent</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">          ├── parseThreeBulletMarkdown(response)</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">          └── sendResponse({ success: true, bullets: [...] })</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  renderBulletPointsInDOM(tweetId, bullets)</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TẦNG 4: ALGORITHM & LOGIC LEVEL -->
+      <section class="explain-section">
+        <div class="explain-layout">
+          <!-- Cột Trái: Text Explain (30rem) -->
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 4/4 • LOGIC &amp; ALGORITHM</div>
+            <h3>⚙️ 4. Prompt Engineering &amp; Parsing Logic</h3>
+            <p>Hệ thống ràng buộc Gemini 3.5 Flash-Lite chỉ xuất đúng 3 gạch đầu dòng, cấm tuyệt đối văn mẫu chào hỏi, markdown thừa hay nhận xét lan man. Kèm thuật toán bóc tách regex siêu tốc.</p>
+            <div class="meta-tag-group">
+              <span class="meta-tag green">Strict 3-Bullet Constraint</span>
+              <span class="meta-tag yellow">Regex Fast Parse</span>
+            </div>
+          </div>
+
+          <!-- Cột Phải: Visual Show (48rem) -->
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots">
+                  <span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span>
+                </div>
+                <div class="file-dropdown-wrapper">
+                  <button class="file-dropdown-trigger" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleFileDropdown(this)">
+                    <span>📄 Gemini 3.5 Prompt &amp; Parser</span><span class="chevron">▼</span>
+                  </button>
+                  <div class="file-dropdown-menu">
+                    <div class="file-dropdown-header"><span>LOGIC</span><span>ALGORITHM</span></div>
+                    <a class="file-dropdown-item ide" href="vscode://file/c:/Users/ADMIN/Desktop/social-anti-ragebait/background.js">Mở background.js</a>
+                    <button class="file-dropdown-item path" type="button" onclick="copyFilePath('background.js')">Sao chép đường dẫn</button>
+                  </div>
+                </div>
+              </div>
+              <div class="code-actions">
+                <span class="diff-stat"><span class="stat-add">+45</span> <span class="stat-del">-2</span></span>
+                <span class="code-lang-badge"><span class="lang-dot logic"></span> PSEUDOCODE</span>
+                <button class="btn-copy-code" type="button" onclick="copyCodeBlock(this)">Sao chép</button>
+              </div>
+            </div>
+
+            <div class="code-body">
+              <div class="c-line"><span class="c-sign"></span><span class="c-text"><span class="kwd">const</span> <span class="prop">SYSTEM_PROMPT</span> = `</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">You are an objective content summarizer.</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">Summarize the following social media post into EXACTLY 3 neutral bullet points.</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">Each bullet must be under 20 words. No introductory or concluding remarks.`;</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text"></span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text"><span class="kwd">function</span> <span class="fn">parseBullets</span>(<span class="prop">rawText</span>): <span class="prop">string</span>[] {</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  <span class="kwd">const</span> <span class="prop">lines</span> = rawText.split('\n')</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">    .map(line =&gt; line.replace(/^[\s*•\-–]+/, '').trim())</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">    .filter(Boolean);</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  <span class="kwd">return</span> lines.slice(0, 3);</span><span class="c-comment"># đảm bảo đúng 3 gạch đầu dòng</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">}</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </section>
+
+  </div>
+
+  <!-- Nút Inspector Toggle Fixed -->
+  <button id="inspector-toggle" onclick="toggleDiff()">
+    <span>🔍 Check Diff</span>
+    <span id="diffStatusTag">[BẬT]</span>
+  </button>
+
+  <!-- Script Tương Tác Cụ Thể Của Task Này -->
+  <script>
+    // Live Interactive Mock: Gemini Summarize
+    let isSummarized = false;
+    function triggerInteractiveSummary() {
+      const btn = document.getElementById('live-summarize-btn');
+      const container = document.getElementById('live-summary-container');
+
+      if (isSummarized) {
+        // Toggle Off
+        container.style.display = 'none';
+        btn.innerHTML = '<span>✨ Tóm tắt (3 gạch đầu dòng)</span>';
+        isSummarized = false;
+        return;
+      }
+
+      // Simulate loading state
+      btn.innerHTML = '<span>⏳ Đang gọi Gemini 3.5 Flash-Lite...</span>';
+      btn.style.opacity = '0.7';
+
+      setTimeout(() => {
+        container.innerHTML = `
+          <div class="summary-card">
+            <div class="summary-card-header">
+              <span class="summary-model-tag">✨ GEMINI 3.5 FLASH-LITE (280ms)</span>
+              <span style="font-size: 9px; color: #4ade80; font-weight: 700;">● STREAMED</span>
+            </div>
+            <ul class="summary-bullets">
+              <li>Bài viết sử dụng từ ngữ giật gân, cáo buộc các nhà khoa học đang lừa dối dư luận.</li>
+              <li>Trích dẫn số liệu cắt xén không có nguồn kiểm chứng độc lập nhằm gây hoang mang.</li>
+              <li>Kêu gọi người theo dõi chia sẻ bài viết để tạo hiệu ứng phẫn nộ tập thể.</li>
+            </ul>
+          </div>
+        `;
+        container.style.display = 'block';
+        btn.innerHTML = '<span>✕ Ẩn tóm tắt</span>';
+        btn.style.opacity = '1';
+        isSummarized = true;
+      }, 500);
+    }
+
+    // Live Interactive Mock: Single vs Multi Tag Toggle
+    let isSingleTag = true;
+    function toggleTagMode() {
+      const tagContainer = document.getElementById('live-header-tags');
+      const modeText = document.getElementById('tag-mode-text');
+      const modeIcon = document.getElementById('tag-mode-icon');
+
+      if (isSingleTag) {
+        // Switch to Multi-Tag
+        isSingleTag = false;
+        modeIcon.textContent = '📚';
+        modeText.textContent = 'Chế độ: Đa nhãn (Multi-Tags)';
+        tagContainer.innerHTML = `
+          <span class="inline-pill"><span class="color-dot dot-political"></span>Political <span class="pill-confidence">89%</span></span>
+          <span class="inline-pill"><span class="color-dot dot-ragebait"></span>Ragebait <span class="pill-confidence">76%</span></span>
+          <span class="inline-pill"><span class="color-dot dot-toxic"></span>Toxic <span class="pill-confidence">54%</span></span>
+        `;
+      } else {
+        // Switch to Single-Tag
+        isSingleTag = true;
+        modeIcon.textContent = '🎯';
+        modeText.textContent = 'Chế độ: 1 Tag duy nhất (Top 1)';
+        tagContainer.innerHTML = `
+          <span class="inline-pill"><span class="color-dot dot-political"></span>Political <span class="pill-confidence">89%</span></span>
+        `;
+      }
+    }
+  </script>
+
+  <!-- Dual-Mode: Dùng script visual-core.js -->
+  <script src="./visual-core.js"></script>
+</body>
+</html>
