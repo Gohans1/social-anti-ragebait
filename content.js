@@ -1,5 +1,5 @@
-// Universal Social Shield (Threads, Facebook, X) - Anti-Rage, Anti-Scam, Anti-Seeding, Monk Mode
-// Powered by Jev Zero-shot AI (classifier.dev) & Client-side Vision Metadata
+// Social Shield for X (Twitter) - AI Content Filtering & Feed Focus Guard
+// Powered by Jev Zero-shot AI (classifier.dev) & Gemini 3.5 Flash-Lite
 (function () {
   'use strict';
 
@@ -13,28 +13,11 @@
     batchDebounceMs: 120,
     confidenceThreshold: 0.30,
     categoryActions: {
-      motivational: 'show',
-      meme: 'show',
-      deepdive: 'show',
-      wholesome: 'show',
-      doom: 'hide',
-      fomo: 'hide',
       casual: 'show',
     },
-    filterMotivationalEnabled: true,
-    filterMemeEnabled: true,
-    filterDeepDiveEnabled: true,
-    filterWholesomeEnabled: true,
-    filterDoomEnabled: true,
-    filterFomoEnabled: true,
     filterCasualEnabled: true,
     focusModeEnabled: true,
-    focusWhitelistTags: ['motivational', 'meme', 'deepdive', 'wholesome', 'custom'],
-    monkModeEnabled: true,       // Hardcore Monk Mode: Block all photos/videos with women & goon-bait
-    blockReelsEnabled: true,     // Block Reels pop-ups & short videos on Facebook
-    autoBlurRageEnabled: true,
-    blockScamsEnabled: true,
-    collapseSeedingEnabled: true,
+    focusWhitelistTags: ['casual', 'custom'],
     hideFloatingPill: false,
     singleTagMode: false,
     customLabels: [],
@@ -42,35 +25,16 @@
 
   let scannedCount = 0;
   let saveScannedDebounceTimer = null;
-  let monkModeBlockedCount = 0;
-  let blockedRageCount = 0;
-  let blockedScamCount = 0;
-  let cleanedSeedingCount = 0;
-  let motivationalCount = 0;
-  let memeCount = 0;
-  let deepDiveCount = 0;
-  let wholesomeCount = 0;
-  let doomCount = 0;
-  let fomoCount = 0;
   let casualCount = 0;
   let customCount = 0;
   let focusCollapsedCount = 0;
 
   function getPlatform() {
-    const host = window.location.hostname.toLowerCase();
-    if (host.includes('threads.net') || host.includes('threads.com')) return 'threads';
-    if (host.includes('facebook.com') || host.includes('fb.com')) return 'facebook';
-    if (host.includes('instagram.com')) return 'instagram';
-    if (host.includes('youtube.com')) return 'youtube';
     return 'x';
   }
 
-  // Regex pattern matching women visual tags in Meta/X alt-text and captions
-  const WOMEN_OR_GOONBAIT_REGEX =
-    /(\b(woman|women|girl|girls|female|lady|ladies|bikini|cleavage|swimwear|selfie|thirst\s*trap|goon|gooning|onlyfans|fansly)\b|phụ nữ|con gái|cô gái|gái xinh|nữ sinh|hot girl|mặc hở|khoe thân|áo tắm|nội y|gái|mlem)/i;
-
   // Fast synchronous session cache (0ms instant response on reload)
-  const CACHE_KEY = `social_guardian_cache_v4_${getPlatform()}`;
+  const CACHE_KEY = `social_guardian_cache_v5_x`;
   const textCache = new Map();
   try {
     const raw = sessionStorage.getItem(CACHE_KEY);
@@ -89,7 +53,7 @@
     } catch (e) {}
   }
 
-  const COUNTED_KEY = `social_guardian_counted_v1_${getPlatform()}`;
+  const COUNTED_KEY = `social_guardian_counted_v2_x`;
   const countedTexts = new Set();
   try {
     const rawCounted = sessionStorage.getItem(COUNTED_KEY);
@@ -105,58 +69,21 @@
     } catch (e) {}
   }
 
-  const REVEALED_KEY = `social_guardian_revealed_v1_${getPlatform()}`;
-  const revealedTexts = new Set();
-  try {
-    const rawRevealed = sessionStorage.getItem(REVEALED_KEY);
-    if (rawRevealed) {
-      JSON.parse(rawRevealed).forEach((t) => revealedTexts.add(t));
-    }
-  } catch (e) {}
-
-  function saveRevealedToStorage() {
-    try {
-      const arr = Array.from(revealedTexts).slice(-500);
-      sessionStorage.setItem(REVEALED_KEY, JSON.stringify(arr));
-    } catch (e) {}
-  }
-
   // Load saved settings from Chrome Storage
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
     chrome.storage.local.get(
       [
-        'filterMotivationalEnabled',
-        'filterMemeEnabled',
-        'filterDeepDiveEnabled',
-        'filterWholesomeEnabled',
-        'filterDoomEnabled',
-        'filterFomoEnabled',
+        'categoryActions',
         'filterCasualEnabled',
         'customLabels',
-        'monkModeEnabled',
-        'blockReelsEnabled',
-        'autoBlurRageEnabled',
-        'blockScamsEnabled',
-        'collapseSeedingEnabled',
         'hideFloatingPill',
         'singleTagMode',
         'confidenceThreshold',
-        'monkModeBlockedCount',
-        'blockedRageCount',
-        'blockedScamCount',
-        'cleanedSeedingCount',
-        'motivationalCount',
-        'memeCount',
-        'deepDiveCount',
-        'wholesomeCount',
-        'doomCount',
-        'fomoCount',
         'casualCount',
         'customCount',
         'focusModeEnabled',
         'focusWhitelistTags',
         'focusCollapsedCount',
-        'categoryActions',
         'scannedCount',
         'geminiApiKey',
         'geminiPrompt',
@@ -173,48 +100,24 @@
           config.geminiPrompt = DEFAULT_GEMINI_PROMPT;
         }
         if (res.categoryActions && typeof res.categoryActions === 'object') {
-          config.categoryActions = { ...config.categoryActions, ...res.categoryActions };
+          config.categoryActions = {
+            casual: res.categoryActions.casual || 'show',
+          };
           if (typeof res.focusModeEnabled === 'boolean') config.focusModeEnabled = res.focusModeEnabled;
         } else {
-          // Backward-compatibility migration for upgrading users who haven't opened popup yet
-          const legacyKeep = Array.isArray(res.focusWhitelistTags)
-            ? res.focusWhitelistTags
-            : ['motivational', 'meme', 'deepdive', 'wholesome', 'custom'];
-          const isLegacyFocus = res.focusModeEnabled === true;
           config.categoryActions = {
-            motivational: res.filterMotivationalEnabled === false ? 'off' : (isLegacyFocus && !legacyKeep.includes('motivational') ? 'hide' : 'show'),
-            meme: res.filterMemeEnabled === false ? 'off' : (isLegacyFocus && !legacyKeep.includes('meme') ? 'hide' : 'show'),
-            deepdive: res.filterDeepDiveEnabled === false ? 'off' : (isLegacyFocus && !legacyKeep.includes('deepdive') ? 'hide' : 'show'),
-            wholesome: res.filterWholesomeEnabled === false ? 'off' : (isLegacyFocus && !legacyKeep.includes('wholesome') ? 'hide' : 'show'),
-            doom: res.filterDoomEnabled === false ? 'off' : (isLegacyFocus && legacyKeep.includes('doom') ? 'show' : 'hide'),
-            fomo: res.filterFomoEnabled === false ? 'off' : (isLegacyFocus && legacyKeep.includes('fomo') ? 'show' : 'hide'),
-            casual: res.filterCasualEnabled === false ? 'off' : (isLegacyFocus && !legacyKeep.includes('casual') ? 'hide' : 'show'),
+            casual: res.filterCasualEnabled === false ? 'off' : 'show',
           };
-          config.focusModeEnabled = Object.values(config.categoryActions).includes('hide');
+          config.focusModeEnabled = config.categoryActions.casual === 'hide';
         }
         if (Array.isArray(res.customLabels)) config.customLabels = res.customLabels;
         if (Array.isArray(res.focusWhitelistTags)) config.focusWhitelistTags = res.focusWhitelistTags;
-        if (typeof res.monkModeEnabled === 'boolean') config.monkModeEnabled = res.monkModeEnabled;
-        if (typeof res.blockReelsEnabled === 'boolean') config.blockReelsEnabled = res.blockReelsEnabled;
-        if (typeof res.autoBlurRageEnabled === 'boolean') config.autoBlurRageEnabled = res.autoBlurRageEnabled;
-        if (typeof res.blockScamsEnabled === 'boolean') config.blockScamsEnabled = res.blockScamsEnabled;
-        if (typeof res.collapseSeedingEnabled === 'boolean') config.collapseSeedingEnabled = res.collapseSeedingEnabled;
         if (typeof res.hideFloatingPill === 'boolean') config.hideFloatingPill = res.hideFloatingPill;
         if (typeof res.singleTagMode === 'boolean') config.singleTagMode = res.singleTagMode;
         if (typeof res.confidenceThreshold === 'number') {
           config.confidenceThreshold = res.confidenceThreshold;
         }
 
-        if (typeof res.monkModeBlockedCount === 'number') monkModeBlockedCount = res.monkModeBlockedCount;
-        if (typeof res.blockedRageCount === 'number') blockedRageCount = res.blockedRageCount;
-        if (typeof res.blockedScamCount === 'number') blockedScamCount = res.blockedScamCount;
-        if (typeof res.cleanedSeedingCount === 'number') cleanedSeedingCount = res.cleanedSeedingCount;
-        if (typeof res.motivationalCount === 'number') motivationalCount = res.motivationalCount;
-        if (typeof res.memeCount === 'number') memeCount = res.memeCount;
-        if (typeof res.deepDiveCount === 'number') deepDiveCount = res.deepDiveCount;
-        if (typeof res.wholesomeCount === 'number') wholesomeCount = res.wholesomeCount;
-        if (typeof res.doomCount === 'number') doomCount = res.doomCount;
-        if (typeof res.fomoCount === 'number') fomoCount = res.fomoCount;
         if (typeof res.casualCount === 'number') casualCount = res.casualCount;
         if (typeof res.customCount === 'number') customCount = res.customCount;
         if (typeof res.focusCollapsedCount === 'number') focusCollapsedCount = res.focusCollapsedCount;
@@ -227,27 +130,15 @@
 
     const TAXONOMY_KEYS = [
       'categoryActions',
-      'filterMotivationalEnabled',
-      'filterMemeEnabled',
-      'filterDeepDiveEnabled',
-      'filterWholesomeEnabled',
-      'filterDoomEnabled',
-      'filterFomoEnabled',
       'filterCasualEnabled',
       'customLabels',
-      'autoBlurRageEnabled',
-      'blockScamsEnabled',
-      'collapseSeedingEnabled',
-      'confidenceThreshold',
     ];
 
     function isTaxonomyPayloadAltered(oldCfg, newCfg) {
-      const stdCats = ['motivational', 'meme', 'deepdive', 'wholesome', 'doom', 'fomo', 'casual'];
-      for (const cat of stdCats) {
-        const oldOff = (oldCfg?.categoryActions?.[cat] || 'show') === 'off';
-        const newOff = (newCfg?.categoryActions?.[cat] || 'show') === 'off';
-        if (oldOff !== newOff) return true;
-      }
+      const oldCasualOff = (oldCfg?.categoryActions?.casual || 'show') === 'off';
+      const newCasualOff = (newCfg?.categoryActions?.casual || 'show') === 'off';
+      if (oldCasualOff !== newCasualOff) return true;
+
       const oldCustomActive = (Array.isArray(oldCfg?.customLabels) ? oldCfg.customLabels : [])
         .filter((c) => (typeof c === 'object' ? (c.action || (c.enabled === false ? 'off' : 'show')) : 'show') !== 'off')
         .map((c) => ({
@@ -281,19 +172,8 @@
         if (request.config.categoryActions && typeof request.config.categoryActions === 'object') {
           config.categoryActions = { ...config.categoryActions, ...request.config.categoryActions };
         }
-        if (typeof request.config.filterMotivationalEnabled === 'boolean') config.filterMotivationalEnabled = request.config.filterMotivationalEnabled;
-        if (typeof request.config.filterMemeEnabled === 'boolean') config.filterMemeEnabled = request.config.filterMemeEnabled;
-        if (typeof request.config.filterDeepDiveEnabled === 'boolean') config.filterDeepDiveEnabled = request.config.filterDeepDiveEnabled;
-        if (typeof request.config.filterWholesomeEnabled === 'boolean') config.filterWholesomeEnabled = request.config.filterWholesomeEnabled;
-        if (typeof request.config.filterDoomEnabled === 'boolean') config.filterDoomEnabled = request.config.filterDoomEnabled;
-        if (typeof request.config.filterFomoEnabled === 'boolean') config.filterFomoEnabled = request.config.filterFomoEnabled;
         if (typeof request.config.filterCasualEnabled === 'boolean') config.filterCasualEnabled = request.config.filterCasualEnabled;
         if (Array.isArray(request.config.customLabels)) config.customLabels = request.config.customLabels;
-        if (typeof request.config.monkModeEnabled === 'boolean') config.monkModeEnabled = request.config.monkModeEnabled;
-        if (typeof request.config.blockReelsEnabled === 'boolean') config.blockReelsEnabled = request.config.blockReelsEnabled;
-        if (typeof request.config.autoBlurRageEnabled === 'boolean') config.autoBlurRageEnabled = request.config.autoBlurRageEnabled;
-        if (typeof request.config.blockScamsEnabled === 'boolean') config.blockScamsEnabled = request.config.blockScamsEnabled;
-        if (typeof request.config.collapseSeedingEnabled === 'boolean') config.collapseSeedingEnabled = request.config.collapseSeedingEnabled;
         if (typeof request.config.focusModeEnabled === 'boolean') config.focusModeEnabled = request.config.focusModeEnabled;
         if (Array.isArray(request.config.focusWhitelistTags)) config.focusWhitelistTags = request.config.focusWhitelistTags;
         if (typeof request.config.hideFloatingPill === 'boolean') config.hideFloatingPill = request.config.hideFloatingPill;
@@ -316,27 +196,15 @@
         applyStateToDOM();
         sendResponse({ status: 'ok' });
       } else if (request.type === 'RESET_STATS') {
-        motivationalCount = 0;
-        memeCount = 0;
-        deepDiveCount = 0;
-        wholesomeCount = 0;
-        doomCount = 0;
-        fomoCount = 0;
         casualCount = 0;
         customCount = 0;
         focusCollapsedCount = 0;
-        monkModeBlockedCount = 0;
-        blockedRageCount = 0;
-        blockedScamCount = 0;
-        cleanedSeedingCount = 0;
         scannedCount = 0;
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
           chrome.storage.local.set({ scannedCount: 0 });
         }
         countedTexts.clear();
         saveCountedToStorage();
-        revealedTexts.clear();
-        saveRevealedToStorage();
         updatePill();
         sendResponse({ status: 'ok' });
       }
@@ -349,21 +217,10 @@
         let taxonomyChanged = false;
         [
           'categoryActions',
-          'filterMotivationalEnabled',
-          'filterMemeEnabled',
-          'filterDeepDiveEnabled',
-          'filterWholesomeEnabled',
-          'filterDoomEnabled',
-          'filterFomoEnabled',
           'filterCasualEnabled',
           'customLabels',
           'focusModeEnabled',
           'focusWhitelistTags',
-          'monkModeEnabled',
-          'blockReelsEnabled',
-          'autoBlurRageEnabled',
-          'blockScamsEnabled',
-          'collapseSeedingEnabled',
           'confidenceThreshold',
           'hideFloatingPill',
           'singleTagMode',
@@ -399,19 +256,9 @@
           }
         });
 
-        if (changes.motivationalCount) motivationalCount = changes.motivationalCount.newValue || 0;
-        if (changes.memeCount) memeCount = changes.memeCount.newValue || 0;
-        if (changes.deepDiveCount) deepDiveCount = changes.deepDiveCount.newValue || 0;
-        if (changes.wholesomeCount) wholesomeCount = changes.wholesomeCount.newValue || 0;
-        if (changes.doomCount) doomCount = changes.doomCount.newValue || 0;
-        if (changes.fomoCount) fomoCount = changes.fomoCount.newValue || 0;
         if (changes.casualCount) casualCount = changes.casualCount.newValue || 0;
         if (changes.customCount) customCount = changes.customCount.newValue || 0;
         if (changes.focusCollapsedCount) focusCollapsedCount = changes.focusCollapsedCount.newValue || 0;
-        if (changes.monkModeBlockedCount) monkModeBlockedCount = changes.monkModeBlockedCount.newValue || 0;
-        if (changes.blockedRageCount) blockedRageCount = changes.blockedRageCount.newValue || 0;
-        if (changes.blockedScamCount) blockedScamCount = changes.blockedScamCount.newValue || 0;
-        if (changes.cleanedSeedingCount) cleanedSeedingCount = changes.cleanedSeedingCount.newValue || 0;
 
         if (taxonomyChanged) {
           textCache.clear();
@@ -427,85 +274,6 @@
   }
 
   const TAXONOMY_CATALOG = {
-    'self-improvement / motivational': {
-      tagKey: 'motivational',
-      configKey: 'filterMotivationalEnabled',
-      instruction: 'personal growth, discipline, fitness, productivity lessons, inspiring mindsets, self-help, stoicism.',
-      badge: {
-        text: 'Motivational',
-        desc: 'Personal growth & mindset',
-        bg: '#000000',
-        border: '#262626',
-        color: '#ededed',
-        dotColor: '#c084fc',
-      },
-    },
-    'meme / humor / satire': {
-      tagKey: 'meme',
-      configKey: 'filterMemeEnabled',
-      instruction: 'lighthearted jokes, funny memes, sarcastic humor, parody, troll posts.',
-      badge: {
-        text: 'Meme',
-        desc: 'Jokes, satire & memes',
-        bg: '#000000',
-        border: '#262626',
-        color: '#ededed',
-        dotColor: '#fbbf24',
-      },
-    },
-    'deep dive / technical breakdown / industry insider': {
-      tagKey: 'deepdive',
-      configKey: 'filterDeepDiveEnabled',
-      instruction: 'in-depth technical threads, architectural teardowns, insider industry analysis, comprehensive teardowns of complex problems.',
-      badge: {
-        text: 'Teardown',
-        desc: 'Technical breakdowns & analysis',
-        bg: '#000000',
-        border: '#262626',
-        color: '#ededed',
-        dotColor: '#38bdf8',
-      },
-    },
-    'wholesome / positive': {
-      tagKey: 'wholesome',
-      configKey: 'filterWholesomeEnabled',
-      instruction: 'uplifting, heartwarming, kind, peaceful, constructive positive stories, wholesome moments.',
-      badge: {
-        text: 'Wholesome',
-        desc: 'Heartwarming & good news',
-        bg: '#000000',
-        border: '#262626',
-        color: '#ededed',
-        dotColor: '#4ade80',
-      },
-    },
-    'fearmongering / doom': {
-      tagKey: 'doom',
-      configKey: 'filterDoomEnabled',
-      instruction: 'alarming, sensationalized bad news, apocalyptic anxiety, catastrophic predictions, fearmongering.',
-      badge: {
-        text: 'Doom',
-        desc: 'Alarmist news & fearmongering',
-        bg: '#000000',
-        border: '#262626',
-        color: '#ededed',
-        dotColor: '#f97316',
-      },
-    },
-    'fomo / hype': {
-      tagKey: 'fomo',
-      configKey: 'filterFomoEnabled',
-      countKey: 'fomoCount',
-      badge: {
-        text: 'FOMO',
-        desc: 'Hype, fake urgency & flexes',
-        bg: '#000000',
-        border: '#262626',
-        color: '#ededed',
-        dotColor: '#f59e0b',
-      },
-      instruction: 'exaggerated breakthrough hype, urgency inducing claims, overnight wealth promises, or artificial urgency.',
-    },
     'other / casual discussion': {
       tagKey: 'casual',
       configKey: 'filterCasualEnabled',
@@ -520,50 +288,18 @@
       },
       instruction: 'everyday personal chatter, news, generic talk, or any content that does not fit the other categories.',
     },
-    'rage bait / toxic / hostile / dismissive negativity': {
-      configKey: 'autoBlurRageEnabled',
-      instruction: 'provocative content designed to incite outrage, anger, toxic drama, hostile or dismissive negativity, cynicism, or insults.',
-    },
-    'scam / fraudulent scheme': {
-      configKey: 'blockScamsEnabled',
-      instruction: 'online fraud, deceptive financial schemes, crypto Ponzi, fake high-yield investment, or fake remote job scams.',
-    },
-    'bot seeding / affiliate spam / fake review': {
-      configKey: 'collapseSeedingEnabled',
-      instruction: 'commercial astroturfing, bot farming, fake praise, affiliate link spam, or deceptive promotional clone comments.',
-    },
   };
 
   const CATCH_ALL_LABEL = 'other / casual discussion';
   const CATCH_ALL_INSTRUCTION = 'everyday personal chatter, news, generic talk, or any content that does not fit the other categories.';
 
   const BADGE_MAP = {
-    'self-improvement / motivational': TAXONOMY_CATALOG['self-improvement / motivational'].badge,
-    'meme / humor / satire': TAXONOMY_CATALOG['meme / humor / satire'].badge,
-    'deep dive / technical breakdown / industry insider': TAXONOMY_CATALOG['deep dive / technical breakdown / industry insider'].badge,
-    'wholesome / positive': TAXONOMY_CATALOG['wholesome / positive'].badge,
-    'fearmongering / doom': TAXONOMY_CATALOG['fearmongering / doom'].badge,
-    'fomo / hype': TAXONOMY_CATALOG['fomo / hype'].badge,
     'other / casual discussion': TAXONOMY_CATALOG['other / casual discussion'].badge,
   };
 
   function getActiveTaxonomy(cfg = {}) {
     const activeLabels = [];
     const instructionsList = [];
-
-    Object.entries(TAXONOMY_CATALOG).forEach(([label, def]) => {
-      if (label === CATCH_ALL_LABEL) return; // Always appended at the end
-      let isEnabled = true;
-      if (cfg && cfg.categoryActions && def.tagKey) {
-        isEnabled = cfg.categoryActions[def.tagKey] !== 'off';
-      } else if (cfg && cfg[def.configKey] !== undefined) {
-        isEnabled = cfg[def.configKey] !== false;
-      }
-      if (isEnabled) {
-        activeLabels.push(label);
-        instructionsList.push(`"${label}": ${def.instruction}`);
-      }
-    });
 
     if (Array.isArray(cfg?.customLabels)) {
       cfg.customLabels.forEach((c) => {
@@ -583,10 +319,6 @@
           instructionsList.push(`"${name}": ${/[.!?:]$/.test(instruction) ? instruction : instruction + '.'}`);
         }
       });
-    }
-
-    if (activeLabels.length === 0) {
-      return { labels: [], instructions: '' };
     }
 
     activeLabels.push(CATCH_ALL_LABEL);
@@ -681,36 +413,14 @@
       return;
     }
     initPill();
-    const pName = getPlatform().toUpperCase();
     const parts = [
-      `${pName}: <span style="color:#ededed; font-family:'Geist Mono',monospace;">ON</span>`,
+      `X: <span style="color:#ededed; font-family:'Geist Mono',monospace;">ON</span>`,
       `Scanned: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${scannedCount}</span>`,
     ];
     if (config.focusModeEnabled && focusCollapsedCount > 0) {
       parts.push(`<span class="x-jev-pill-focus-toggle" title="Click to pause feed filtering" style="cursor:pointer;">Filtered: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${focusCollapsedCount}</span></span>`);
     } else if (focusCollapsedCount > 0 && !config.focusModeEnabled) {
       parts.push(`<span class="x-jev-pill-focus-toggle" title="Click to resume feed filtering" style="cursor:pointer;opacity:0.6;">Filtered: <span style="color:#fb923c; font-family:'Geist Mono',monospace;">PAUSED</span></span>`);
-    }
-    if (config.autoBlurRageEnabled) {
-      parts.push(`Rage: <span style="color:#ef4444; font-family:'Geist Mono',monospace;">${blockedRageCount}</span>`);
-    }
-    if ((config.categoryActions?.motivational || (config.filterMotivationalEnabled ? 'show' : 'off')) !== 'off' && motivationalCount > 0) {
-      parts.push(`Motivational: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${motivationalCount}</span>`);
-    }
-    if ((config.categoryActions?.meme || (config.filterMemeEnabled ? 'show' : 'off')) !== 'off' && memeCount > 0) {
-      parts.push(`Meme: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${memeCount}</span>`);
-    }
-    if ((config.categoryActions?.deepdive || (config.filterDeepDiveEnabled ? 'show' : 'off')) !== 'off' && deepDiveCount > 0) {
-      parts.push(`Teardown: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${deepDiveCount}</span>`);
-    }
-    if ((config.categoryActions?.wholesome || (config.filterWholesomeEnabled ? 'show' : 'off')) !== 'off' && wholesomeCount > 0) {
-      parts.push(`Wholesome: <span style="color:#ededed; font-family:'Geist Mono',monospace;">${wholesomeCount}</span>`);
-    }
-    if ((config.categoryActions?.doom || (config.filterDoomEnabled ? 'show' : 'off')) !== 'off' && doomCount > 0) {
-      parts.push(`Doom: <span style="color:#fb923c; font-family:'Geist Mono',monospace;">${doomCount}</span>`);
-    }
-    if ((config.categoryActions?.fomo || (config.filterFomoEnabled ? 'show' : 'off')) !== 'off' && fomoCount > 0) {
-      parts.push(`FOMO: <span style="color:#fde047; font-family:'Geist Mono',monospace;">${fomoCount}</span>`);
     }
     if ((config.categoryActions?.casual || (config.filterCasualEnabled ? 'show' : 'off')) !== 'off' && casualCount > 0) {
       parts.push(`Casual: <span style="color:#888888; font-family:'Geist Mono',monospace;">${casualCount}</span>`);
@@ -729,31 +439,12 @@
   }
 
   updatePill();
-  pill.title = 'Social Shield: All-in-One Protection (Click to toggle master state)';
+  pill.title = 'Social Shield: Feed Focus Guard (Click to toggle filter pause)';
   pill.addEventListener('click', (e) => {
     if (e.target.closest('.x-jev-pill-close')) return;
-    if (e.target.closest('.x-jev-pill-focus-toggle')) {
-      config.focusModeEnabled = !config.focusModeEnabled;
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.set({ focusModeEnabled: config.focusModeEnabled });
-      }
-      updatePill();
-      applyStateToDOM();
-      return;
-    }
-    const allOn = config.monkModeEnabled || config.autoBlurRageEnabled || config.blockScamsEnabled || config.collapseSeedingEnabled;
-    config.monkModeEnabled = !allOn;
-    config.autoBlurRageEnabled = !allOn;
-    config.blockScamsEnabled = !allOn;
-    config.collapseSeedingEnabled = !allOn;
-
+    config.focusModeEnabled = !config.focusModeEnabled;
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.set({
-        monkModeEnabled: config.monkModeEnabled,
-        autoBlurRageEnabled: config.autoBlurRageEnabled,
-        blockScamsEnabled: config.blockScamsEnabled,
-        collapseSeedingEnabled: config.collapseSeedingEnabled,
-      });
+      chrome.storage.local.set({ focusModeEnabled: config.focusModeEnabled });
     }
     updatePill();
     applyStateToDOM();
@@ -767,9 +458,6 @@
 
   function applyStateToDOM() {
     if (document.body) {
-      document.body.classList.toggle('x-jev-no-rage-blur', !config.autoBlurRageEnabled);
-      document.body.classList.toggle('x-jev-no-monk-blur', !config.monkModeEnabled);
-      document.body.classList.toggle('x-jev-no-scam-blur', !config.blockScamsEnabled);
       document.body.classList.toggle('x-jev-hide-pill', !!config.hideFloatingPill);
       document.body.classList.toggle('x-jev-single-tag-mode', !!config.singleTagMode);
       const hasAnyHide = config.focusModeEnabled !== false && (
@@ -778,114 +466,9 @@
         (!config.categoryActions && !!config.focusModeEnabled)
       );
       document.body.classList.toggle('x-jev-no-focus', !hasAnyHide);
-      const disableAll = !config.autoBlurRageEnabled && !config.monkModeEnabled && !config.blockScamsEnabled;
-      document.body.classList.toggle('x-jev-disable-all-blur', disableAll);
     }
 
-    // 0. Facebook Reels & Video Popups State
-    document.querySelectorAll('[data-monk-reels-blocked="true"]').forEach((dialog) => {
-      const overlay = dialog.querySelector('.x-monk-reels-overlay');
-      if (config.monkModeEnabled || config.blockReelsEnabled) {
-        if (!dialog.classList.contains('monk-revealed')) {
-          if (overlay) overlay.style.display = 'flex';
-          dialog.querySelectorAll('video').forEach((v) => { try { v.pause(); v.muted = true; } catch (e) {} });
-        }
-      } else {
-        dialog.classList.add('monk-revealed');
-        if (overlay) overlay.style.display = 'none';
-      }
-    });
-
-    document.querySelectorAll('[data-monk-tray-blocked="true"]').forEach((tray) => {
-      const banner = tray.querySelector('.x-monk-tray-banner');
-      if (config.monkModeEnabled || config.blockReelsEnabled) {
-        if (!tray.classList.contains('monk-revealed')) {
-          if (banner) banner.style.display = 'flex';
-        }
-      } else {
-        tray.classList.add('monk-revealed');
-        if (banner) banner.style.display = 'none';
-      }
-    });
-
-    // 1. Monk Mode State
-    document.querySelectorAll('[data-monk-blocked="true"]').forEach((post) => {
-      const box = post.querySelector('.x-monk-warning-box');
-      if (config.monkModeEnabled) {
-        if (!post.hasAttribute('data-user-revealed')) {
-          post.classList.remove('monk-revealed');
-          post.removeAttribute('data-monk-revealed');
-          if (box) box.style.display = 'flex';
-        }
-      } else {
-        post.classList.add('monk-revealed');
-        post.setAttribute('data-monk-revealed', 'true');
-        post.querySelectorAll('img, video, .monk-blur-media').forEach((m) => {
-          m.style.setProperty('filter', 'none', 'important');
-          m.style.setProperty('opacity', '1', 'important');
-          m.style.setProperty('pointer-events', 'auto', 'important');
-        });
-        if (box) box.style.display = 'none';
-      }
-    });
-
-    // 2. Rage Bait state
-    document.querySelectorAll('[data-jev-rage="true"]').forEach((post) => {
-      const warning = post.querySelector('.x-jev-warning-box');
-      if (config.autoBlurRageEnabled) {
-        if (!post.hasAttribute('data-user-revealed')) {
-          post.classList.remove('x-jev-revealed');
-          post.removeAttribute('data-jev-revealed');
-          if (warning) warning.style.display = 'flex';
-        }
-      } else {
-        post.classList.add('x-jev-revealed');
-        post.setAttribute('data-jev-revealed', 'true');
-        post.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
-          el.style.setProperty('filter', 'none', 'important');
-          el.style.setProperty('opacity', '1', 'important');
-          el.style.setProperty('pointer-events', 'auto', 'important');
-          el.style.setProperty('user-select', 'auto', 'important');
-        });
-        if (warning) warning.style.display = 'none';
-      }
-    });
-
-    // 3. Scam state
-    document.querySelectorAll('[data-jev-scam="true"]').forEach((post) => {
-      const scamBox = post.querySelector('.x-jev-scam-box');
-      if (config.blockScamsEnabled) {
-        if (!post.hasAttribute('data-user-revealed')) {
-          post.classList.remove('x-jev-revealed');
-          post.removeAttribute('data-jev-revealed');
-          if (scamBox) scamBox.style.display = 'flex';
-        }
-      } else {
-        post.classList.add('x-jev-revealed');
-        post.setAttribute('data-jev-revealed', 'true');
-        post.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video').forEach((el) => {
-          el.style.setProperty('filter', 'none', 'important');
-          el.style.setProperty('opacity', '1', 'important');
-          el.style.setProperty('pointer-events', 'auto', 'important');
-        });
-        if (scamBox) scamBox.style.display = 'none';
-      }
-    });
-
-    // 4. Seeding collapse state
-    document.querySelectorAll('[data-jev-seeding="true"]').forEach((post) => {
-      const bar = post.querySelector('.x-jev-seeding-collapsed');
-      const content = post.querySelector('[data-jev-seeding-content]');
-      if (config.collapseSeedingEnabled) {
-        if (bar) bar.style.display = 'flex';
-        if (content) content.classList.add('x-jev-collapsed-body');
-      } else {
-        if (bar) bar.style.display = 'none';
-        if (content) content.classList.remove('x-jev-collapsed-body');
-      }
-    });
-
-    // 5. Curated & Custom Badges State
+    // Curated & Custom Badges State
     document.querySelectorAll('.x-jev-badge').forEach((badge) => {
       const cat = badge.getAttribute('data-jev-badge-category');
       const def = TAXONOMY_CATALOG[cat];
@@ -916,14 +499,13 @@
       }
     });
 
-    // 6. Restore bypassed posts if taxonomy is enabled
+    // Restore bypassed posts if taxonomy is enabled
     const activeTaxonomy = getActiveTaxonomy(config);
-    if (activeTaxonomy.labels && activeTaxonomy.labels.length > 1) {
+    if (activeTaxonomy.labels && activeTaxonomy.labels.length > 0) {
       let restoredCount = 0;
       document.querySelectorAll('[data-jev-bypassed="true"]').forEach((post) => {
         post.removeAttribute('data-jev-bypassed');
         post.removeAttribute('data-jev-scanned');
-        post.removeAttribute('data-jev-cmt-scanned');
         post.removeAttribute('data-jev-handled');
         restoredCount++;
       });
@@ -932,8 +514,7 @@
       }
     }
 
-    // 7. Feed Content Filter & Focus Mode: Re-evaluate state on all classified posts
-    let currentFocusCount = 0;
+    // Feed Content Filter & Focus Mode: Re-evaluate state on all classified posts
     document.querySelectorAll('[data-jev-assigned-label]').forEach((post) => {
       const assignedLabel = post.getAttribute('data-jev-assigned-label');
       const shouldHide = isPostHidden(assignedLabel);
@@ -941,11 +522,10 @@
       const textEl = post.querySelector('[data-jev-tracked-text="true"]') || post.querySelector('span[dir="auto"], div[dir="auto"]');
 
       if (shouldHide) {
-        currentFocusCount++;
         post.setAttribute('data-jev-focus-offtag', 'true');
         if (textEl) textEl.classList.add('x-jev-focus-collapsed-content');
-        post.querySelectorAll('img, video, .x-jev-badge, .x-jev-badge-container, .x-jev-warning-box, .x-jev-scam-box, .x-monk-warning-box, .x-jev-seeding-collapsed, .x-jev-summary-box').forEach((m) => {
-          if (!m.closest('a[href*="/@"]')) m.classList.add('x-jev-focus-collapsed-content');
+        post.querySelectorAll('img, video, .x-jev-badge, .x-jev-badge-container, .x-jev-summary-box').forEach((m) => {
+          if (!m.closest('a[href*="/@"]') && !m.closest('[data-testid="Tweet-User-Avatar"]')) m.classList.add('x-jev-focus-collapsed-content');
         });
         if (!bar && textEl) {
           createFocusBar(post, textEl, assignedLabel);
@@ -966,120 +546,17 @@
         post.classList.remove('x-jev-focus-expanded');
       }
     });
-
-    focusCollapsedCount = currentFocusCount;
-    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.set({ focusCollapsedCount });
-    }
   }
 
-  // --- HARDCORE MONK MODE: CLIENT-SIDE INSTANT MEDIA SCANNER ---
-  // Inspects non-avatar images & videos for Meta AI accessibility alt-tags and captions
-  function checkAndApplyMonkMode(postEl, text) {
-    if (!config.monkModeEnabled) return false;
-    if (postEl.hasAttribute('data-monk-blocked')) return true;
-
-    const mediaList = postEl.querySelectorAll('img, video');
-    if (mediaList.length === 0) return false;
-
-    let hasWomenMedia = false;
-    let detectedReason = '';
-
-    // Check media alt tags and aria labels
-    mediaList.forEach((media) => {
-      const isAvatar = (media.closest('a[href*="/@"]') && (media.width < 50 || media.height < 50)) ||
-                       media.alt?.toLowerCase().includes('avatar') ||
-                       media.alt?.toLowerCase().includes('profile') ||
-                       media.src?.includes('profile_images');
-      if (isAvatar) return;
-
-      const altText = (media.alt || '') + ' ' + (media.getAttribute('aria-label') || '') + ' ' + (media.title || '');
-      if (WOMEN_OR_GOONBAIT_REGEX.test(altText)) {
-        hasWomenMedia = true;
-        detectedReason = 'Female imagery detected (Meta AI Alt-Tag)';
-      }
-    });
-
-    // Also check if text caption has strong goon-bait signals
-    if (!hasWomenMedia && WOMEN_OR_GOONBAIT_REGEX.test(text)) {
-      hasWomenMedia = true;
-      detectedReason = 'Goon-baiting / Thirst trap content';
-    }
-
-    if (hasWomenMedia) {
-      postEl.setAttribute('data-monk-blocked', 'true');
-      monkModeBlockedCount++;
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.set({ monkModeBlockedCount });
-      }
-      updatePill();
-
-      // Create Monk Mode Warning Bar
-      if (!postEl.querySelector('.x-monk-warning-box')) {
-        const box = document.createElement('div');
-        box.className = 'x-monk-warning-box';
-        box.innerHTML = `
-          <div class="x-monk-warning-text">
-            <span>🧘</span>
-            <div>
-              <b>Monk Mode: Media blurred to preserve focus.</b>
-              <div style="font-size:10.5px;font-weight:400;opacity:0.9;margin-top:1px;">${detectedReason}</div>
-            </div>
-          </div>
-        `;
-
-        const btn = document.createElement('button');
-        btn.className = 'x-monk-reveal-btn';
-        btn.textContent = 'Reveal media';
-        btn.onclick = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const isRevealed = postEl.classList.toggle('monk-revealed');
-          if (isRevealed) {
-            postEl.setAttribute('data-monk-revealed', 'true');
-            postEl.setAttribute('data-user-revealed', 'true');
-            postEl.querySelectorAll('img, video, .monk-blur-media').forEach((m) => {
-              m.style.setProperty('filter', 'none', 'important');
-              m.style.setProperty('opacity', '1', 'important');
-              m.style.setProperty('pointer-events', 'auto', 'important');
-            });
-            btn.textContent = 'Hide media';
-          } else {
-            postEl.removeAttribute('data-monk-revealed');
-            postEl.removeAttribute('data-user-revealed');
-            postEl.querySelectorAll('img, video, .monk-blur-media').forEach((m) => {
-              m.style.removeProperty('filter');
-              m.style.removeProperty('opacity');
-              m.style.removeProperty('pointer-events');
-            });
-            btn.textContent = 'Reveal media';
-          }
-        };
-
-        box.appendChild(btn);
-
-        // Insert at the top of media or before first image
-        const firstMedia = Array.from(mediaList).find((m) => !m.closest('a[href*="/@"]'));
-        if (firstMedia && firstMedia.parentElement) {
-          firstMedia.parentElement.insertBefore(box, firstMedia);
-        } else {
-          postEl.prepend(box);
-        }
-      }
-
-      postEl.classList.remove('monk-revealed');
-      return true;
-    }
-
-    return false;
-  }
-
-  // Call Jev API: Route via background service worker to bypass page CSP
   // Call Jev API: Route via background service worker to bypass page CSP
   async function callJevBatch(inputs) {
     const taxonomy = getActiveTaxonomy(config);
-    if (!taxonomy.labels || taxonomy.labels.length <= 1) {
-      return inputs.map(() => ({ label: CATCH_ALL_LABEL, confidence: 1 }));
+    if (!taxonomy.labels || taxonomy.labels.length < 2) {
+      return inputs.map(() => ({
+        label: CATCH_ALL_LABEL,
+        confidence: 1,
+        scores: { [CATCH_ALL_LABEL]: 1 },
+      }));
     }
 
     console.log(`[Social Shield] 📡 Sending ${inputs.length} text samples to Jev AI (active labels: ${taxonomy.labels.length})...`);
@@ -1118,8 +595,12 @@
   async function directFetch(inputs, activeTax) {
     try {
       const tax = activeTax || getActiveTaxonomy(config);
-      if (!tax.labels || tax.labels.length <= 1) {
-        return inputs.map(() => ({ label: CATCH_ALL_LABEL, confidence: 1 }));
+      if (!tax.labels || tax.labels.length < 2) {
+        return inputs.map(() => ({
+          label: CATCH_ALL_LABEL,
+          confidence: 1,
+          scores: { [CATCH_ALL_LABEL]: 1 },
+        }));
       }
       const res = await fetch(config.apiEndpoint, {
         method: 'POST',
@@ -1141,67 +622,7 @@
     }
   }
 
-  function isProfileOnlyLink(el) {
-    if (!el) return false;
-    if (el.closest('[data-testid="User-Name"]') || el.closest('[data-testid="Tweet-User-Avatar"]') || el.closest('[data-testid="UserAvatar-Container"]')) return true;
-    const a = el.closest('a[href*="/@"]');
-    if (!a) return false;
-    const href = a.getAttribute('href') || '';
-    // If href contains /post/ or /t/, it links to post content, NOT a user profile link!
-    return !href.includes('/post/') && !href.includes('/t/');
-  }
-
-  function syncRevealState(targetEl, isRevealed, text) {
-    if (text) {
-      if (isRevealed) revealedTexts.add(text);
-      else revealedTexts.delete(text);
-      saveRevealedToStorage();
-    }
-
-    const apply = (el) => {
-      el.classList.toggle('x-jev-revealed', isRevealed);
-      if (isRevealed) el.setAttribute('data-jev-revealed', 'true');
-      else el.removeAttribute('data-jev-revealed');
-    };
-
-    apply(targetEl);
-
-    let p = targetEl.parentElement;
-    while (p && p !== document.body) {
-      if (p.hasAttribute('data-jev-rage') || p.hasAttribute('data-jev-scam') || p.hasAttribute('data-jev-scanned')) {
-        apply(p);
-      }
-      p = p.parentElement;
-    }
-    targetEl.querySelectorAll('[data-jev-rage="true"], [data-jev-scam="true"], [data-jev-scanned="true"]').forEach((child) => {
-      apply(child);
-    });
-  }
-
-  function applyInlineUnblur(postEl, isRevealed) {
-    const targets = postEl.querySelectorAll('[data-jev-blur-item="true"], span[dir="auto"], div[dir="auto"], img, video');
-    if (isRevealed) {
-      targets.forEach((el) => {
-        el.style.setProperty('filter', 'none', 'important');
-        el.style.setProperty('opacity', '1', 'important');
-        el.style.setProperty('pointer-events', 'auto', 'important');
-      });
-    } else {
-      targets.forEach((el) => {
-        el.style.removeProperty('filter');
-        el.style.removeProperty('opacity');
-        el.style.removeProperty('pointer-events');
-      });
-    }
-  }
-
   function getPostTagKey(label) {
-    if (label === 'self-improvement / motivational') return 'motivational';
-    if (label === 'meme / humor / satire') return 'meme';
-    if (label === 'deep dive / technical breakdown / industry insider') return 'deepdive';
-    if (label === 'wholesome / positive') return 'wholesome';
-    if (label === 'fearmongering / doom') return 'doom';
-    if (label === 'fomo / hype') return 'fomo';
     if (label === 'other / casual discussion') return 'casual';
     if (Array.isArray(config.customLabels)) {
       const isCustom = config.customLabels.some(
@@ -1213,16 +634,7 @@
   }
 
   function getDisplayLabelName(label) {
-    if (label === 'self-improvement / motivational') return 'Motivational';
-    if (label === 'meme / humor / satire') return 'Meme';
-    if (label === 'deep dive / technical breakdown / industry insider') return 'Teardown';
-    if (label === 'wholesome / positive') return 'Wholesome';
-    if (label === 'fearmongering / doom') return 'Doom';
-    if (label === 'fomo / hype') return 'FOMO';
     if (label === 'other / casual discussion') return 'Casual';
-    if (label === 'scam / fraudulent scheme') return 'Scam';
-    if (label === 'rage bait / toxic / hostile / dismissive negativity') return 'Rage';
-    if (label === 'bot seeding / affiliate spam / fake review') return 'Seeding';
     return label || 'Other';
   }
 
@@ -1234,7 +646,6 @@
       : (typeof labels === 'string' ? labels.split('|') : []);
     if (labelList.length === 0) return false;
 
-    // 1. Unified categoryActions takes precedence
     if (config.categoryActions && typeof config.categoryActions === 'object') {
       return labelList.some((lbl) => {
         const tagKey = getPostTagKey(lbl);
@@ -1253,18 +664,6 @@
       });
     }
 
-    // 2. Legacy focus mode fallback (only when categoryActions is not present)
-    if (config.focusModeEnabled) {
-      const allowedTags = Array.isArray(config.focusWhitelistTags) ? config.focusWhitelistTags : [];
-      if (allowedTags.length > 0) {
-        const matchesAllowed = labelList.some((lbl) => {
-          const tagKey = getPostTagKey(lbl);
-          return tagKey && allowedTags.includes(tagKey);
-        });
-        if (!matchesAllowed) return true;
-      }
-    }
-
     return false;
   }
 
@@ -1276,7 +675,7 @@
     const displayTag = labelList.map((l) => getDisplayLabelName(l)).join(', ') || 'Other';
 
     if (existingBar) {
-      const boldTag = existingBar.querySelector('.x-jev-focus-info span:last-child');
+      const boldTag = existingBar.querySelector('.x-jev-focus-info b');
       if (boldTag) boldTag.textContent = displayTag;
       return;
     }
@@ -1331,7 +730,7 @@
       const wasHidden = postEl.hasAttribute('data-jev-focus-offtag');
       postEl.setAttribute('data-jev-focus-offtag', 'true');
       textEl.classList.add('x-jev-focus-collapsed-content');
-      postEl.querySelectorAll('img, video, .x-jev-badge, .x-jev-badge-container, .x-jev-warning-box, .x-jev-scam-box, .x-monk-warning-box, .x-jev-seeding-collapsed, .x-jev-summary-box').forEach((m) => {
+      postEl.querySelectorAll('img, video, .x-jev-badge, .x-jev-badge-container, .x-jev-summary-box').forEach((m) => {
         if (!m.closest('a[href*="/@"]')) m.classList.add('x-jev-focus-collapsed-content');
       });
       createFocusBar(postEl, textEl, labels);
@@ -1464,9 +863,6 @@
     const { postEl, textEl } = item;
     if (!textEl || !textEl.parentElement) return;
 
-    // Check Monk Mode first
-    checkAndApplyMonkMode(postEl, item.text);
-
     if (postEl.hasAttribute('data-jev-handled')) return;
     if (!res || typeof res !== 'object') return;
 
@@ -1475,271 +871,15 @@
       : (res.label ? { [res.label]: res.confidence || 0 } : {});
     const parentContainer = textEl.parentElement;
 
-    const matchedLabels = Object.entries(scores)
-      .filter(([, s]) => typeof s === 'number' && Number.isFinite(s) && s >= config.confidenceThreshold)
-      .map(([l, s]) => `${l} (${Math.round(s * 100)}%)`);
-    console.log(`[Social Shield 🔍] "${item.text.slice(0, 35)}..." => ${matchedLabels.join(', ') || 'no match'}`);
-
-    // --- PRIORITY 1: SCAM / FRAUDULENT SCHEME ---
-    const rawScam = scores['scam / fraudulent scheme'];
-    const scamScore = typeof rawScam === 'number' && Number.isFinite(rawScam) ? rawScam : 0;
-    if (scamScore >= config.confidenceThreshold) {
-      postEl.setAttribute('data-jev-handled', 'true');
-      postEl.setAttribute('data-jev-scam', 'true');
-      console.info(`[Social Shield 🛑 BLOCKED SCAM]`, item.text);
-      blockedScamCount++;
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.set({ blockedScamCount });
-      }
-      updatePill();
-
-      // Remove any lingering badges or container (including sibling container on comments)
-      postEl.querySelectorAll('.x-jev-badge-container, .x-jev-badge').forEach((b) => b.remove());
-      if (postEl.previousElementSibling && postEl.previousElementSibling.classList.contains('x-jev-badge-container')) {
-        postEl.previousElementSibling.remove();
-      }
-
-      textEl.setAttribute('data-jev-blur-item', 'true');
-      postEl.querySelectorAll('img, video').forEach((m) => {
-        if (!m.closest('a[href*="/@"]')) m.setAttribute('data-jev-blur-item', 'true');
-      });
-
-      if (!postEl.querySelector('.x-jev-scam-box')) {
-        const box = document.createElement('div');
-        box.className = 'x-jev-scam-box';
-        const pct = Math.round(scamScore * 100);
-        box.innerHTML = `
-          <div class="x-jev-scam-text">
-            <span>🛑</span>
-            <div>
-              <b>Scam Warning (${pct}%)</b>
-              <div style="font-size:11px;font-weight:400;opacity:0.9;margin-top:2px;">Suspicious financial promises or deceptive links detected.</div>
-            </div>
-          </div>
-        `;
-
-        const btn = document.createElement('button');
-        btn.className = 'x-jev-reveal-btn';
-        btn.textContent = 'Reveal post';
-        btn.onclick = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const isRevealed = !postEl.classList.contains('x-jev-revealed') && !postEl.hasAttribute('data-jev-revealed');
-          syncRevealState(postEl, isRevealed, item.text);
-          if (isRevealed) {
-            postEl.setAttribute('data-jev-revealed', 'true');
-            postEl.setAttribute('data-user-revealed', 'true');
-            applyInlineUnblur(postEl, true);
-            btn.textContent = 'Re-blur';
-          } else {
-            postEl.removeAttribute('data-jev-revealed');
-            postEl.removeAttribute('data-user-revealed');
-            applyInlineUnblur(postEl, false);
-            btn.textContent = 'Reveal post';
-          }
-        };
-
-        box.appendChild(btn);
-        parentContainer.insertBefore(box, textEl);
-      }
-
-      const isScamRevealedByUser = revealedTexts.has(item.text);
-      if (isScamRevealedByUser) {
-        postEl.classList.add('x-jev-revealed');
-        postEl.setAttribute('data-jev-revealed', 'true');
-        postEl.setAttribute('data-user-revealed', 'true');
-        applyInlineUnblur(postEl, true);
-        const scamBtn = postEl.querySelector('.x-jev-scam-box .x-jev-reveal-btn');
-        if (scamBtn) scamBtn.textContent = 'Re-blur';
-      } else if (config.blockScamsEnabled) {
-        postEl.classList.remove('x-jev-revealed');
-        postEl.removeAttribute('data-jev-revealed');
-        postEl.removeAttribute('data-user-revealed');
-        applyInlineUnblur(postEl, false);
-        const scamBtn = postEl.querySelector('.x-jev-scam-box .x-jev-reveal-btn');
-        if (scamBtn) scamBtn.textContent = 'Reveal post';
-      } else {
-        postEl.classList.add('x-jev-revealed');
-        postEl.setAttribute('data-jev-revealed', 'true');
-        applyInlineUnblur(postEl, true);
-      }
-      checkAndApplyFocusCollapse(postEl, textEl, 'scam / fraudulent scheme');
-      return;
-    }
-
-    // --- PRIORITY 2: RAGE BAIT / TOXIC / DISMISSIVE NEGATIVITY ---
-    const rawRage =
-      scores['rage bait / toxic / hostile / dismissive negativity'] || scores['rage bait / outrage'];
-    const rageScore = typeof rawRage === 'number' && Number.isFinite(rawRage) ? rawRage : 0;
-    if (rageScore >= config.confidenceThreshold) {
-      postEl.setAttribute('data-jev-handled', 'true');
-      postEl.setAttribute('data-jev-rage', 'true');
-      console.info(`[Social Shield 🚨 BLOCKED RAGE BAIT / TOXIC]`, item.text);
-      blockedRageCount++;
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.set({ blockedRageCount });
-      }
-      updatePill();
-
-      // Remove any lingering badges or container (including sibling container on comments)
-      postEl.querySelectorAll('.x-jev-badge-container, .x-jev-badge').forEach((b) => b.remove());
-      if (postEl.previousElementSibling && postEl.previousElementSibling.classList.contains('x-jev-badge-container')) {
-        postEl.previousElementSibling.remove();
-      }
-
-      textEl.setAttribute('data-jev-blur-item', 'true');
-      postEl.querySelectorAll('span[dir="auto"], div[dir="auto"]').forEach((span) => {
-        if (!span.closest('button') && !span.closest('time') && !isProfileOnlyLink(span)) {
-          span.setAttribute('data-jev-blur-item', 'true');
-        }
-      });
-      postEl.querySelectorAll('img, video').forEach((m) => {
-        if (!isProfileOnlyLink(m)) m.setAttribute('data-jev-blur-item', 'true');
-      });
-
-      if (!postEl.querySelector('.x-jev-warning-box')) {
-        const warningBox = document.createElement('div');
-        warningBox.className = 'x-jev-warning-box';
-        const pct = Math.round(rageScore * 100);
-        warningBox.innerHTML = `
-          <div class="x-jev-warning-text">
-            <span>🛡️</span>
-            <div>
-              <b>Rage Bait Warning (${pct}%)</b>
-              <div style="font-size:11px;font-weight:400;opacity:0.9;margin-top:2px;">Hostile, outrage-inducing, or toxic content blurred.</div>
-            </div>
-          </div>
-        `;
-
-        const revealBtn = document.createElement('button');
-        revealBtn.className = 'x-jev-reveal-btn';
-        revealBtn.textContent = 'Reveal post';
-        revealBtn.onclick = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const isRevealed = !postEl.classList.contains('x-jev-revealed') && !postEl.hasAttribute('data-jev-revealed');
-          syncRevealState(postEl, isRevealed, item.text);
-          if (isRevealed) {
-            postEl.setAttribute('data-jev-revealed', 'true');
-            postEl.setAttribute('data-user-revealed', 'true');
-            applyInlineUnblur(postEl, true);
-            revealBtn.textContent = 'Re-blur';
-          } else {
-            postEl.removeAttribute('data-jev-revealed');
-            postEl.removeAttribute('data-user-revealed');
-            applyInlineUnblur(postEl, false);
-            revealBtn.textContent = 'Reveal post';
-          }
-        };
-
-        warningBox.appendChild(revealBtn);
-        parentContainer.insertBefore(warningBox, textEl);
-      }
-
-      const isRageRevealedByUser = revealedTexts.has(item.text);
-      if (isRageRevealedByUser) {
-        postEl.classList.add('x-jev-revealed');
-        postEl.setAttribute('data-jev-revealed', 'true');
-        postEl.setAttribute('data-user-revealed', 'true');
-        applyInlineUnblur(postEl, true);
-        const rBtn = postEl.querySelector('.x-jev-warning-box .x-jev-reveal-btn');
-        if (rBtn) rBtn.textContent = 'Re-blur';
-      } else if (config.autoBlurRageEnabled) {
-        postEl.classList.remove('x-jev-revealed');
-        postEl.removeAttribute('data-jev-revealed');
-        postEl.removeAttribute('data-user-revealed');
-        applyInlineUnblur(postEl, false);
-        const rBtn = postEl.querySelector('.x-jev-warning-box .x-jev-reveal-btn');
-        if (rBtn) rBtn.textContent = 'Reveal post';
-      } else {
-        postEl.classList.add('x-jev-revealed');
-        postEl.setAttribute('data-jev-revealed', 'true');
-        applyInlineUnblur(postEl, true);
-      }
-      checkAndApplyFocusCollapse(postEl, textEl, 'rage bait / toxic / hostile / dismissive negativity');
-      return;
-    }
-
-    // --- PRIORITY 3: BOT SEEDING / AFFILIATE SPAM / FAKE REVIEW ---
-    const rawSeeding =
-      scores['bot seeding / affiliate spam / fake review'] || scores['bot seeding / affiliate spam'];
-    const seedingScore = typeof rawSeeding === 'number' && Number.isFinite(rawSeeding) ? rawSeeding : 0;
-    if (seedingScore >= config.confidenceThreshold) {
-      postEl.setAttribute('data-jev-handled', 'true');
-      postEl.setAttribute('data-jev-seeding', 'true');
-      console.info(`[Social Shield 🧹 COLLAPSED SEEDING]`, item.text);
-      cleanedSeedingCount++;
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.set({ cleanedSeedingCount });
-      }
-      updatePill();
-
-      // Remove any lingering badges or container (including sibling container on comments)
-      postEl.querySelectorAll('.x-jev-badge-container, .x-jev-badge').forEach((b) => b.remove());
-      if (postEl.previousElementSibling && postEl.previousElementSibling.classList.contains('x-jev-badge-container')) {
-        postEl.previousElementSibling.remove();
-      }
-
-      textEl.setAttribute('data-jev-seeding-content', 'true');
-
-      if (!postEl.querySelector('.x-jev-seeding-collapsed')) {
-        const bar = document.createElement('div');
-        bar.className = 'x-jev-seeding-collapsed';
-        const pct = Math.round(seedingScore * 100);
-        bar.innerHTML = `
-          <div class="x-jev-seeding-label">
-            <span>Suspected <b>bot seeding / spam</b> comment (${pct}%)</span>
-          </div>
-          <span class="x-jev-expand-icon">View comment ▾</span>
-        `;
-
-        bar.onclick = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const isCollapsed = textEl.classList.toggle('x-jev-collapsed-body');
-          const expandBtn = bar.querySelector('.x-jev-expand-icon');
-          if (expandBtn) expandBtn.textContent = isCollapsed ? 'View comment ▾' : 'Collapse ▴';
-        };
-
-        parentContainer.insertBefore(bar, textEl);
-
-        if (config.collapseSeedingEnabled) {
-          textEl.classList.add('x-jev-collapsed-body');
-        }
-      }
-      checkAndApplyFocusCollapse(postEl, textEl, 'bot seeding / affiliate spam / fake review');
-      return;
-    }
-
-    // --- PRIORITY 4: MULTI-TAG CONTENT BADGES ---
-    const isActivity = window.location.pathname.includes('/activity');
     const eligibleBadges = [];
 
     Object.entries(scores).forEach(([candidateLabel, score]) => {
       if (typeof score !== 'number' || !Number.isFinite(score) || score < config.confidenceThreshold) return;
-      if (
-        candidateLabel === 'scam / fraudulent scheme' ||
-        candidateLabel === 'rage bait / toxic / hostile / dismissive negativity' ||
-        candidateLabel === 'rage bait / outrage' ||
-        candidateLabel === 'bot seeding / affiliate spam / fake review' ||
-        candidateLabel === 'bot seeding / affiliate spam'
-      ) {
-        return;
-      }
+
       if (candidateLabel === 'other / casual discussion') {
-        if (isActivity) return;
+        if (window.location.pathname.includes('/activity')) return;
         if (config.categoryActions && config.categoryActions.casual === 'off') return;
         if (!config.categoryActions && config.filterCasualEnabled === false) return;
-      }
-
-      const def = TAXONOMY_CATALOG[candidateLabel];
-      if (def) {
-        if (config.categoryActions && def.tagKey && config.categoryActions[def.tagKey] === 'off') {
-          return;
-        }
-        if (!config.categoryActions && config[def.configKey] === false) {
-          return;
-        }
       }
 
       let isCustom = false;
@@ -1770,7 +910,6 @@
       }
     });
 
-    // Sort by score descending and cap to top 4 badges
     eligibleBadges.sort((a, b) => b.score - a.score);
     const selectedBadges = eligibleBadges.slice(0, 4);
 
@@ -1785,25 +924,7 @@
 
         let storageUpdates = {};
         selectedBadges.forEach(({ label, isCustom }) => {
-          if (label === 'self-improvement / motivational') {
-            motivationalCount++;
-            storageUpdates.motivationalCount = motivationalCount;
-          } else if (label === 'meme / humor / satire') {
-            memeCount++;
-            storageUpdates.memeCount = memeCount;
-          } else if (label === 'deep dive / technical breakdown / industry insider') {
-            deepDiveCount++;
-            storageUpdates.deepDiveCount = deepDiveCount;
-          } else if (label === 'wholesome / positive') {
-            wholesomeCount++;
-            storageUpdates.wholesomeCount = wholesomeCount;
-          } else if (label === 'fearmongering / doom') {
-            doomCount++;
-            storageUpdates.doomCount = doomCount;
-          } else if (label === 'fomo / hype') {
-            fomoCount++;
-            storageUpdates.fomoCount = fomoCount;
-          } else if (label === 'other / casual discussion') {
+          if (label === 'other / casual discussion') {
             casualCount++;
             storageUpdates.casualCount = casualCount;
           } else if (isCustom) {
@@ -1823,11 +944,9 @@
       const caretEl = postEl.querySelector('[data-testid="caret"]');
       let container = null;
 
-      // Clean up any lingering uncontained badge
       if (textEl.previousElementSibling && textEl.previousElementSibling.classList.contains('x-jev-badge')) {
         textEl.previousElementSibling.remove();
       }
-      // If we are now inserting into header, clean up any previous sibling container before textEl
       if ((caretEl || userNameHeader) && textEl.previousElementSibling && textEl.previousElementSibling.classList.contains('x-jev-badge-container')) {
         textEl.previousElementSibling.remove();
       }
@@ -1847,7 +966,6 @@
           userNameHeader.appendChild(container);
         }
       } else {
-        // Fallback for non-X platforms or comments without User-Name
         container = (textEl.previousElementSibling && textEl.previousElementSibling.classList.contains('x-jev-badge-container'))
           ? textEl.previousElementSibling
           : null;
@@ -1947,9 +1065,10 @@
         container.appendChild(summaryBtn);
       }
     }
+    const topEntry = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
     const assignedLabels = selectedBadges.length > 0
       ? selectedBadges.map((b) => b.label)
-      : [Object.entries(scores).sort((a, b) => b[1] - a[1])[0]?.[0] || 'other / casual discussion'];
+      : (topEntry && topEntry[1] >= config.confidenceThreshold ? [topEntry[0]] : []);
     checkAndApplyFocusCollapse(postEl, textEl, assignedLabels);
     postEl.setAttribute('data-jev-handled', 'true');
   }
@@ -1958,7 +1077,7 @@
     if (queue.length === 0) return;
 
     const taxonomy = getActiveTaxonomy(config);
-    if (!taxonomy.labels || taxonomy.labels.length <= 1) {
+    if (!taxonomy.labels || taxonomy.labels.length === 0) {
       const allBypassed = queue.splice(0);
       allBypassed.forEach((item) => {
         item.postEl.setAttribute('data-jev-bypassed', 'true');
@@ -1990,17 +1109,14 @@
             renderClassification(item, res);
           } else if (item && item.postEl) {
             item.postEl.removeAttribute('data-jev-scanned');
-            item.postEl.removeAttribute('data-jev-cmt-scanned');
           }
         });
         saveCacheToStorage();
       } else {
-        // Clear data-jev-scanned and data-jev-cmt-scanned on failure so posts can be retried on next scroll
         uncachedIndices.forEach((idx) => {
           const item = currentBatch[idx];
           if (item && item.postEl) {
             item.postEl.removeAttribute('data-jev-scanned');
-            item.postEl.removeAttribute('data-jev-cmt-scanned');
           }
         });
       }
@@ -2011,663 +1127,33 @@
     }
   }
 
-  // --- FACEBOOK REELS & VIDEO POPUPS / TRAYS SCANNER ---
-  function scanFacebookReels() {
-    if (getPlatform() !== 'facebook') return;
-    if (!config.monkModeEnabled && !config.blockReelsEnabled) return;
-
-    // 1. Target Reels Pop-up / Modal Dialogs / Tahoe Video Player / Floating Miniplayer
-    const dialogs = document.querySelectorAll(
-      'div[role="dialog"], div[data-pagelet*="Tahoe"], div[data-pagelet*="FloatingVideo"]'
-    );
-
-    dialogs.forEach((dialog) => {
-      const videos = dialog.querySelectorAll('video');
-      if (videos.length === 0) return;
-
-      const hasReelLink = dialog.querySelector('a[href*="/reel/"], a[href*="/reels/"], a[href*="/watch"]');
-      const isReelUrl = window.location.pathname.includes('/reel') || window.location.pathname.includes('/watch');
-      const isTahoeOrFloating = dialog.getAttribute('data-pagelet')?.includes('Tahoe') ||
-                                dialog.getAttribute('data-pagelet')?.includes('FloatingVideo');
-
-      if (hasReelLink || isReelUrl || isTahoeOrFloating || dialog.getAttribute('role') === 'dialog') {
-        if (!dialog.hasAttribute('data-monk-reels-blocked')) {
-          dialog.setAttribute('data-monk-reels-blocked', 'true');
-          monkModeBlockedCount++;
-          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-            chrome.storage.local.set({ monkModeBlockedCount });
-          }
-          updatePill();
-        }
-
-        // Pause & mute videos if not revealed
-        if (!dialog.classList.contains('monk-revealed')) {
-          videos.forEach((vid) => {
-            try {
-              vid.pause();
-              vid.muted = true;
-            } catch (e) {}
-            if (!vid.dataset.monkHooked) {
-              vid.dataset.monkHooked = 'true';
-              vid.addEventListener('play', () => {
-                if (!dialog.classList.contains('monk-revealed')) {
-                  try {
-                    vid.pause();
-                    vid.muted = true;
-                  } catch (e) {}
-                }
-              });
-            }
-          });
-        }
-
-        // Mount Overlay and Floating Re-blur Button
-        if (!dialog.querySelector('.x-monk-reels-overlay')) {
-          const overlay = document.createElement('div');
-          overlay.className = 'x-monk-reels-overlay';
-          overlay.innerHTML = `
-            <div class="x-monk-reels-card">
-              <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Reels Blocked</div>
-              <div class="x-monk-reels-desc">Short-form video paused to protect your focus.</div>
-              <div class="x-monk-reels-actions">
-                <button class="x-monk-btn-reveal">▶ Play Reel</button>
-                <button class="x-monk-btn-close">✕ Close Pop-up</button>
-              </div>
-            </div>
-          `;
-
-          const floatingReblur = document.createElement('button');
-          floatingReblur.className = 'x-monk-re-blur-floating';
-          floatingReblur.innerHTML = `<span>🧘</span><span>Re-blur Reel</span>`;
-          floatingReblur.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            dialog.classList.remove('monk-revealed');
-            videos.forEach((v) => {
-              try {
-                v.pause();
-                v.muted = true;
-              } catch (err) {}
-            });
-          };
-
-          const revealBtn = overlay.querySelector('.x-monk-btn-reveal');
-          revealBtn.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            dialog.classList.add('monk-revealed');
-            videos.forEach((v) => {
-              try {
-                v.muted = false;
-                v.play();
-              } catch (err) {}
-            });
-          };
-
-          const closeBtn = overlay.querySelector('.x-monk-btn-close');
-          closeBtn.onclick = (e) => {
-            e.preventDefault();
-            const closeSvg = dialog.querySelector('svg[aria-label*="Close" i], svg[aria-label*="Đóng" i]');
-            if (closeSvg && closeSvg.closest('button, div[role="button"]')) {
-              closeSvg.closest('button, div[role="button"]').click();
-            } else {
-              const esc = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true });
-              document.dispatchEvent(esc);
-              window.dispatchEvent(esc);
-            }
-          };
-
-          dialog.style.position = 'relative';
-          dialog.appendChild(overlay);
-          dialog.appendChild(floatingReblur);
-        }
-      }
-    });
-
-    // 2. Feed Reels Tray (`aria-label="Reels"`, `aria-label="Thước phim"`)
-    const reelTrays = document.querySelectorAll(
-      'div[aria-label="Reels"], div[aria-label*="Thước phim" i], div[data-pagelet*="Reels" i], div[data-pagelet*="Tahoe" i]'
-    );
-    reelTrays.forEach((tray) => {
-      const vids = tray.querySelectorAll('video');
-      if (vids.length > 0 || tray.querySelector('a[href*="/reel/"]')) {
-        vids.forEach((v) => {
-          try { v.pause(); v.muted = true; } catch (e) {}
-        });
-
-        if (!tray.querySelector('.x-monk-tray-banner')) {
-          const banner = document.createElement('div');
-          banner.className = 'x-monk-tray-banner';
-          banner.innerHTML = `
-            <div class="x-monk-tray-content">
-              <span>🧘</span>
-              <div>
-                <b>Monk Mode: Facebook Reels shelf hidden</b>
-                <div style="font-size:11px;opacity:0.85;margin-top:1px;">Short-form video shelf hidden to preserve focus.</div>
-              </div>
-            </div>
-            <button class="x-monk-tray-toggle">Show Reels</button>
-          `;
-
-          const toggleBtn = banner.querySelector('.x-monk-tray-toggle');
-          toggleBtn.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const isRevealed = tray.classList.toggle('monk-revealed');
-            toggleBtn.textContent = isRevealed ? 'Hide Reels' : 'Show Reels';
-          };
-
-          tray.prepend(banner);
-        }
-      }
-    });
-
-    // 3. Standalone / Direct Reel URL (`facebook.com/reel/...`)
-    if (window.location.pathname.startsWith('/reel/')) {
-      const mainReel = document.querySelector('div[role="main"], div[data-pagelet="Tahoe"]');
-      if (mainReel && !mainReel.hasAttribute('data-monk-reels-blocked')) {
-        const vids = mainReel.querySelectorAll('video');
-        if (vids.length > 0) {
-          mainReel.setAttribute('data-monk-reels-blocked', 'true');
-          vids.forEach((v) => {
-            try { v.pause(); v.muted = true; } catch (e) {}
-          });
-          if (!mainReel.querySelector('.x-monk-reels-overlay')) {
-            const overlay = document.createElement('div');
-            overlay.className = 'x-monk-reels-overlay';
-            overlay.innerHTML = `
-              <div class="x-monk-reels-card">
-                <div class="x-monk-reels-icon">🧘</div>
-                <div class="x-monk-reels-title">Monk Mode: Reel Blocked</div>
-                <div class="x-monk-reels-desc">Short-form video paused to protect your focus.</div>
-                <div class="x-monk-reels-actions">
-                  <button class="x-monk-btn-reveal">▶ Play Reel</button>
-                </div>
-              </div>
-            `;
-            const revealBtn = overlay.querySelector('.x-monk-btn-reveal');
-            revealBtn.onclick = (e) => {
-              e.preventDefault();
-              mainReel.classList.add('monk-revealed');
-              vids.forEach((v) => { try { v.muted = false; v.play(); } catch (err) {} });
-            };
-            const wrapper = mainReel.querySelector('div:has(> video)') || vids[0]?.parentElement || mainReel;
-            wrapper.style.position = 'relative';
-            wrapper.appendChild(overlay);
-          }
-        }
-      }
-    }
-  }
-
-  // --- INSTAGRAM REELS SCANNER ---
-  function scanInstagramReels() {
-    if (getPlatform() !== 'instagram') return;
-    if (!config.monkModeEnabled && !config.blockReelsEnabled) return;
-
-    // 1. Direct Reels Page (`instagram.com/reels/` or `instagram.com/reel/...`)
-    if (window.location.pathname.includes('/reel')) {
-      const mainEl = document.querySelector('main[role="main"]') || document.body;
-      const videos = mainEl.querySelectorAll('video');
-      if (videos.length > 0) {
-        mainEl.setAttribute('data-monk-reels-blocked', 'true');
-        if (!mainEl.hasAttribute('data-monk-reels-counted')) {
-          mainEl.setAttribute('data-monk-reels-counted', 'true');
-          monkModeBlockedCount++;
-          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-            chrome.storage.local.set({ monkModeBlockedCount });
-          }
-          updatePill();
-        }
-
-        if (!mainEl.classList.contains('monk-revealed')) {
-          videos.forEach((vid) => {
-            try { vid.pause(); vid.muted = true; } catch (e) {}
-            if (!vid.dataset.monkHooked) {
-              vid.dataset.monkHooked = 'true';
-              vid.addEventListener('play', () => {
-                if (!mainEl.classList.contains('monk-revealed')) {
-                  try { vid.pause(); vid.muted = true; } catch (e) {}
-                }
-              });
-            }
-          });
-        }
-
-        if (!mainEl.querySelector('.x-monk-reels-overlay')) {
-          const overlay = document.createElement('div');
-          overlay.className = 'x-monk-reels-overlay';
-          overlay.innerHTML = `
-            <div class="x-monk-reels-card">
-              <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Reel Blocked</div>
-              <div class="x-monk-reels-desc">Short-form video paused to protect your focus.</div>
-              <div class="x-monk-reels-actions">
-                <button class="x-monk-btn-reveal">▶ Play Reel</button>
-                <button class="x-monk-btn-home">🏠 Return to Feed</button>
-              </div>
-            </div>
-          `;
-          const revealBtn = overlay.querySelector('.x-monk-btn-reveal');
-          revealBtn.onclick = (e) => {
-            e.preventDefault();
-            mainEl.classList.add('monk-revealed');
-            videos.forEach((v) => { try { v.muted = false; v.play(); } catch (err) {} });
-          };
-          const homeBtn = overlay.querySelector('.x-monk-btn-home');
-          homeBtn.onclick = (e) => {
-            e.preventDefault();
-            window.location.href = 'https://www.instagram.com/';
-          };
-          const wrapper = mainEl.querySelector('div:has(> video)') || videos[0]?.parentElement || mainEl;
-          wrapper.style.position = 'relative';
-          wrapper.appendChild(overlay);
-        }
-      }
-    }
-
-    // 2. Modal Dialogs (`role="dialog"` containing reel link or video)
-    const dialogs = document.querySelectorAll('div[role="dialog"]');
-    dialogs.forEach((dialog) => {
-      const hasReel = dialog.querySelector('a[href*="/reel/"], a[href*="/reels/"]') ||
-                      window.location.pathname.includes('/reel') ||
-                      dialog.querySelector('video');
-      const videos = dialog.querySelectorAll('video');
-      if (hasReel && videos.length > 0) {
-        if (!dialog.hasAttribute('data-monk-reels-blocked')) {
-          dialog.setAttribute('data-monk-reels-blocked', 'true');
-          monkModeBlockedCount++;
-          if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-            chrome.storage.local.set({ monkModeBlockedCount });
-          }
-          updatePill();
-        }
-
-        if (!dialog.classList.contains('monk-revealed')) {
-          videos.forEach((vid) => {
-            try { vid.pause(); vid.muted = true; } catch (e) {}
-            if (!vid.dataset.monkHooked) {
-              vid.dataset.monkHooked = 'true';
-              vid.addEventListener('play', () => {
-                if (!dialog.classList.contains('monk-revealed')) {
-                  try { vid.pause(); vid.muted = true; } catch (e) {}
-                }
-              });
-            }
-          });
-        }
-
-        if (!dialog.querySelector('.x-monk-reels-overlay')) {
-          const overlay = document.createElement('div');
-          overlay.className = 'x-monk-reels-overlay';
-          overlay.innerHTML = `
-            <div class="x-monk-reels-card">
-              <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Reel Pop-up Blocked</div>
-              <div class="x-monk-reels-desc">Short-form video paused to protect your focus.</div>
-              <div class="x-monk-reels-actions">
-                <button class="x-monk-btn-reveal">▶ Play Reel</button>
-                <button class="x-monk-btn-close">✕ Close Pop-up</button>
-              </div>
-            </div>
-          `;
-
-          const floatingReblur = document.createElement('button');
-          floatingReblur.className = 'x-monk-re-blur-floating';
-          floatingReblur.innerHTML = `<span>🧘</span><span>Re-blur Reel</span>`;
-          floatingReblur.onclick = (e) => {
-            e.preventDefault();
-            dialog.classList.remove('monk-revealed');
-            videos.forEach((v) => { try { v.pause(); v.muted = true; } catch (err) {} });
-          };
-
-          const revealBtn = overlay.querySelector('.x-monk-btn-reveal');
-          revealBtn.onclick = (e) => {
-            e.preventDefault();
-            dialog.classList.add('monk-revealed');
-            videos.forEach((v) => { try { v.muted = false; v.play(); } catch (err) {} });
-          };
-
-          const closeBtn = overlay.querySelector('.x-monk-btn-close');
-          closeBtn.onclick = (e) => {
-            e.preventDefault();
-            const closeSvg = dialog.querySelector('svg[aria-label*="Close" i], svg[aria-label*="Đóng" i]');
-            if (closeSvg && closeSvg.closest('button, div[role="button"]')) {
-              closeSvg.closest('button, div[role="button"]').click();
-            } else {
-              const esc = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true });
-              document.dispatchEvent(esc);
-              window.dispatchEvent(esc);
-            }
-          };
-
-          const wrapper = dialog.querySelector('div:has(> video)') || videos[0]?.parentElement || dialog;
-          wrapper.style.position = 'relative';
-          wrapper.appendChild(overlay);
-          wrapper.appendChild(floatingReblur);
-        }
-      }
-    });
-
-    // 3. In-Feed Reels / Clips (`article:has(video)` with reel link or clip)
-    document.querySelectorAll('article:not([data-monk-reels-handled])').forEach((article) => {
-      const hasReel = article.querySelector('a[href*="/reel/"], a[href*="/reels/"]');
-      const videos = article.querySelectorAll('video');
-      if (hasReel && videos.length > 0) {
-        article.setAttribute('data-monk-reels-handled', 'true');
-        article.setAttribute('data-monk-reels-blocked', 'true');
-        monkModeBlockedCount++;
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-          chrome.storage.local.set({ monkModeBlockedCount });
-        }
-        updatePill();
-
-        videos.forEach((vid) => {
-          try { vid.pause(); vid.muted = true; } catch (e) {}
-        });
-
-        if (!article.querySelector('.x-monk-warning-box')) {
-          const box = document.createElement('div');
-          box.className = 'x-monk-warning-box';
-          box.innerHTML = `
-            <div class="x-monk-warning-text">
-              <span>🧘</span>
-              <div>
-                <b>Monk Mode: Reel hidden from feed</b>
-                <div style="font-size:10.5px;opacity:0.85;margin-top:1px;">Hidden to prevent endless short-form video scrolling.</div>
-              </div>
-            </div>
-          `;
-          const btn = document.createElement('button');
-          btn.className = 'x-monk-reveal-btn';
-          btn.textContent = 'Play Reel';
-          btn.onclick = (e) => {
-            e.preventDefault();
-            const isRev = article.classList.toggle('monk-revealed');
-            btn.textContent = isRev ? 'Hide Reel' : 'Play Reel';
-            videos.forEach((v) => { try { if (isRev) { v.muted = false; v.play(); } else { v.muted = true; v.pause(); } } catch (err) {} });
-          };
-          box.appendChild(btn);
-          const firstVid = videos[0];
-          if (firstVid && firstVid.parentElement) {
-            firstVid.parentElement.insertBefore(box, firstVid);
-          } else {
-            article.prepend(box);
-          }
-        }
-      }
-    });
-
-    // 4. Explore Grid Items (`a[href*="/reel/"]`)
-    document.querySelectorAll('a[href*="/reel/"]:not([data-monk-explore-handled])').forEach((link) => {
-      link.setAttribute('data-monk-explore-handled', 'true');
-      const img = link.querySelector('img');
-      const vid = link.querySelector('video');
-      if (img) img.style.filter = 'blur(20px) grayscale(80%)';
-      if (vid) {
-        vid.style.filter = 'blur(20px) grayscale(80%)';
-        try { vid.pause(); vid.muted = true; } catch (e) {}
-      }
-    });
-  }
-
-  // --- YOUTUBE SHORTS SCANNER ---
-  function scanYouTubeShorts() {
-    if (getPlatform() !== 'youtube') return;
-    if (!config.monkModeEnabled && !config.blockReelsEnabled) return;
-
-    // 1. Direct / Standalone YouTube Shorts (`youtube.com/shorts/...`)
-    if (window.location.pathname.startsWith('/shorts')) {
-      const shortsContainer = document.querySelector('ytd-shorts, #shorts-container, ytd-reel-video-renderer[is-active]');
-      const videos = document.querySelectorAll('ytd-shorts video, #shorts-player video, ytd-reel-video-renderer video');
-
-      if (videos.length > 0) {
-        videos.forEach((vid) => {
-          try { vid.pause(); vid.muted = true; } catch (e) {}
-          if (!vid.dataset.monkHooked) {
-            vid.dataset.monkHooked = 'true';
-            vid.addEventListener('play', () => {
-              const parent = vid.closest('ytd-reel-video-renderer') || shortsContainer;
-              if (!parent || !parent.classList.contains('monk-revealed')) {
-                try { vid.pause(); vid.muted = true; } catch (e) {}
-              }
-            });
-          }
-        });
-      }
-
-      if (shortsContainer && !shortsContainer.hasAttribute('data-monk-reels-blocked')) {
-        shortsContainer.setAttribute('data-monk-reels-blocked', 'true');
-        monkModeBlockedCount++;
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-          chrome.storage.local.set({ monkModeBlockedCount });
-        }
-        updatePill();
-
-        if (!shortsContainer.querySelector('.x-monk-reels-overlay')) {
-          const overlay = document.createElement('div');
-          overlay.className = 'x-monk-reels-overlay';
-          overlay.style.position = 'fixed';
-          overlay.innerHTML = `
-            <div class="x-monk-reels-card">
-              <div class="x-monk-reels-icon">🧘</div>
-              <div class="x-monk-reels-title">Monk Mode: Shorts Blocked</div>
-              <div class="x-monk-reels-desc">Short-form video paused to preserve focus.</div>
-              <div class="x-monk-reels-actions">
-                <button class="x-monk-btn-reveal">▶ Play Shorts</button>
-                <button class="x-monk-btn-home">🏠 Return to Home</button>
-              </div>
-            </div>
-          `;
-
-          const revealBtn = overlay.querySelector('.x-monk-btn-reveal');
-          revealBtn.onclick = (e) => {
-            e.preventDefault();
-            shortsContainer.classList.add('monk-revealed');
-            videos.forEach((v) => { try { v.muted = false; v.play(); } catch (err) {} });
-          };
-
-          const homeBtn = overlay.querySelector('.x-monk-btn-home');
-          homeBtn.onclick = (e) => {
-            e.preventDefault();
-            window.location.href = 'https://www.youtube.com/';
-          };
-
-          shortsContainer.appendChild(overlay);
-        }
-      }
-    }
-
-    // 2. Feed Shorts Shelves (`ytd-rich-shelf-renderer[is-shorts]`, `ytd-reel-shelf-renderer`)
-    const shelves = document.querySelectorAll(
-      'ytd-rich-shelf-renderer[is-shorts]:not([data-monk-tray-handled]), ytd-reel-shelf-renderer:not([data-monk-tray-handled]), ytd-rich-section-renderer:has(ytd-rich-shelf-renderer[is-shorts]):not([data-monk-tray-handled])'
-    );
-
-    shelves.forEach((shelf) => {
-      shelf.setAttribute('data-monk-tray-handled', 'true');
-      shelf.setAttribute('data-monk-tray-blocked', 'true');
-      monkModeBlockedCount++;
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        chrome.storage.local.set({ monkModeBlockedCount });
-      }
-      updatePill();
-
-      shelf.querySelectorAll('video').forEach((v) => {
-        try { v.pause(); v.muted = true; } catch (e) {}
-      });
-
-      if (!shelf.querySelector('.x-monk-tray-banner')) {
-        const banner = document.createElement('div');
-        banner.className = 'x-monk-tray-banner';
-        banner.innerHTML = `
-          <div class="x-monk-tray-content">
-            <span>🧘</span>
-            <div>
-              <b>Monk Mode: YouTube Shorts shelf hidden</b>
-              <div style="font-size:11px;opacity:0.85;margin-top:1px;">Short-form shelf hidden to prevent endless scrolling.</div>
-            </div>
-          </div>
-          <button class="x-monk-tray-toggle">Show Shorts</button>
-        `;
-
-        const toggleBtn = banner.querySelector('.x-monk-tray-toggle');
-        toggleBtn.onclick = (e) => {
-          e.preventDefault();
-          const isRevealed = shelf.classList.toggle('monk-revealed');
-          toggleBtn.textContent = isRevealed ? 'Hide Shorts' : 'Show Shorts';
-        };
-
-        shelf.prepend(banner);
-      }
-    });
-  }
-
-  // Scanner for Posts & Comments
+  // Scanner for Posts on X
   function scanFeed() {
-    const platform = getPlatform();
-
-    if (platform === 'threads') {
-      const postContainers = new Set();
-      document.querySelectorAll('div[data-pressable-container="true"], div[role="article"], article, div[data-testid*="post"], div[data-testid*="thread"]').forEach((el) => {
-        if (!el.hasAttribute('data-jev-scanned')) postContainers.add(el);
-      });
-      document.querySelectorAll('a[href*="/post/"], a[href*="/t/"]').forEach((link) => {
-        let container = link.closest('div[data-pressable-container="true"]') || link.closest('div[role="article"]') || link.closest('article');
-        if (!container) {
-          let curr = link.parentElement;
-          let depth = 0;
-          while (curr && curr !== document.body && depth < 5) {
-            if (curr.querySelector('span[dir="auto"], div[dir="auto"]') && curr.querySelectorAll('svg').length >= 1) {
-              container = curr;
-              break;
-            }
-            curr = curr.parentElement;
-            depth++;
-          }
-        }
-        if (container && !container.hasAttribute('data-jev-scanned')) {
-          postContainers.add(container);
-        }
-      });
-
-      const candidateContainers = Array.from(postContainers).filter((el) => {
-        return !Array.from(postContainers).some((other) => other !== el && el.contains(other));
-      });
-
-      candidateContainers.forEach((post) => {
-        // Fast instant client-side check for Monk Mode on any images before waiting for text
-        checkAndApplyMonkMode(post, post.innerText || '');
-
-        const textEls = post.querySelectorAll('span[dir="auto"], div[dir="auto"]');
-        const candidateEls = [];
-
-        textEls.forEach((el) => {
-          if (el.closest('button') || el.closest('time') || isProfileOnlyLink(el) || el.classList.contains('x-jev-badge') || el.closest('.x-jev-badge-container')) return;
-          let t = el.innerText.trim();
-          t = t.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
-          if (t.length < 2) return;
-          if (/^\d+(\.\d+)?(k|m|b)?\s*(likes?|replies?|views?|lượt thích|câu trả lời|bình luận|chia sẻ)?$/i.test(t)) return;
-          if (/^(\d+\s*(s|m|h|d|w|y|giây|phút|giờ|ngày|tuần|tháng|năm)|just now|vừa xong)$/i.test(t)) return;
-          if (/^(translate|xem bản dịch|reply|trả lời|like|thích|share|chia sẻ|follow|theo dõi|following|đang theo dõi|edited|đã chỉnh sửa)$/i.test(t)) return;
-          if (/^@?[\w\.]+(\s+and\s+\d+\s+others)?(\s+\d+[smhdw])?$/i.test(t)) return;
-
-          if (el.children.length > 5) return;
-
-          candidateEls.push({ el, text: t });
-        });
-
-        if (candidateEls.length > 0) {
-          // On Activity notifications with quoted text + reply: the incoming reply is the LAST element!
-          // On regular posts: pick the longest text candidate.
-          let targetItem = candidateEls[candidateEls.length - 1];
-          if (!window.location.pathname.includes('/activity')) {
-            candidateEls.forEach((item) => {
-              if (item.text.length > targetItem.text.length) targetItem = item;
-            });
-          }
-
+    let newScanned = false;
+    document.querySelectorAll('article[data-testid="tweet"]:not([data-jev-scanned]), div[data-testid="cellInnerDiv"]:not(:has(article[data-testid="tweet"])):not([data-jev-scanned])').forEach((post) => {
+      const textEl = post.querySelector('div[data-testid="tweetText"]');
+      if (textEl) {
+        let text = textEl.innerText.trim();
+        text = text.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
+        if (text.length >= 2) {
           post.setAttribute('data-jev-scanned', 'true');
           scannedCount++;
-          updatePill();
-          const cleanText = targetItem.text;
-          if (textCache.has(cleanText)) {
-            renderClassification({ postEl: post, text: cleanText, textEl: targetItem.el }, textCache.get(cleanText));
+          newScanned = true;
+          if (textCache.has(text)) {
+            renderClassification({ postEl: post, text, textEl }, textCache.get(text));
           } else {
-            queue.push({ postEl: post, text: cleanText, textEl: targetItem.el });
+            queue.push({ postEl: post, text, textEl });
           }
         }
-      });
-    } else if (platform === 'facebook') {
-      // 1. Scan Facebook Reels, Pop-up video player, and Feed Trays
-      scanFacebookReels();
+      }
+    });
 
-      // 2. Scan standard feed units
-      document.querySelectorAll('div[data-pagelet^="FeedUnit_"]:not([data-jev-scanned]):not(:has([role="article"])), div[role="article"]:not([data-jev-scanned]), div[role="feed"] > div:not([data-jev-scanned]):not(:has([data-pagelet])):not(:has([role="article"]))').forEach((post) => {
-        checkAndApplyMonkMode(post, post.innerText || '');
-
-        const msgEl = post.querySelector('div[data-ad-rendering-role="story_message"], div[data-ad-preview="message"]') ||
-                      Array.from(post.querySelectorAll('div[dir="auto"], span[dir="auto"]')).find((el) => el.innerText.trim().length >= 10);
-        if (msgEl) {
-          let text = msgEl.innerText.trim();
-          text = text.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
-          if (text.length >= 2) {
-            post.setAttribute('data-jev-scanned', 'true');
-            scannedCount++;
-            updatePill();
-            if (textCache.has(text)) {
-              renderClassification({ postEl: post, text, textEl: msgEl }, textCache.get(text));
-            } else {
-              queue.push({ postEl: post, text, textEl: msgEl });
-            }
-          }
-        }
-      });
-
-      // Individual comments
-      document.querySelectorAll('div[aria-label*="bình luận"]:not([data-jev-cmt-scanned]), div[aria-label*="Comment"]:not([data-jev-cmt-scanned]), ul > li div[dir="auto"]:not([data-jev-cmt-scanned])').forEach((cmt) => {
-        if (cmt.closest('.x-jev-seeding-collapsed') || cmt.closest('.x-jev-scam-box') || cmt.closest('.x-jev-warning-box')) return;
-        let t = cmt.innerText.trim();
-        t = t.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
-        if (t.length >= 2 && t.length <= 600) {
-          cmt.setAttribute('data-jev-cmt-scanned', 'true');
-          scannedCount++;
-          updatePill();
-          if (textCache.has(t)) {
-            renderClassification({ postEl: cmt, text: t, textEl: cmt }, textCache.get(t));
-          } else {
-            queue.push({ postEl: cmt, text: t, textEl: cmt });
-          }
-        }
-      });
-    } else if (platform === 'instagram') {
-      scanInstagramReels();
-    } else if (platform === 'youtube') {
-      scanYouTubeShorts();
-    } else if (platform === 'x') {
-      document.querySelectorAll('article[data-testid="tweet"]:not([data-jev-scanned]), div[data-testid="cellInnerDiv"]:not(:has(article[data-testid="tweet"])):not([data-jev-scanned])').forEach((post) => {
-        checkAndApplyMonkMode(post, post.innerText || '');
-
-        const textEl = post.querySelector('div[data-testid="tweetText"]');
-        if (textEl) {
-          let text = textEl.innerText.trim();
-          text = text.replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
-          if (text.length >= 2) {
-            post.setAttribute('data-jev-scanned', 'true');
-            scannedCount++;
-            updatePill();
-            if (textCache.has(text)) {
-              renderClassification({ postEl: post, text, textEl }, textCache.get(text));
-            } else {
-              queue.push({ postEl: post, text, textEl });
-            }
-          }
-        }
-      });
+    if (newScanned) {
+      updatePill();
     }
 
     if (queue.length > 0) {
-      console.log(`[Social Shield] 🔎 Found ${queue.length} new items on ${platform.toUpperCase()} to classify.`);
+      console.log(`[Social Shield] 🔎 Found ${queue.length} new tweets on X to classify.`);
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(flushQueue, config.batchDebounceMs);
     }
@@ -2694,34 +1180,13 @@
       });
     }
 
-    // Safety interval for Video/Reels/Shorts on Facebook, Instagram, YouTube
-    if (['facebook', 'instagram', 'youtube'].includes(getPlatform())) {
-      setInterval(() => {
-        if (config.monkModeEnabled || config.blockReelsEnabled) {
-          if (getPlatform() === 'facebook') scanFacebookReels();
-          if (getPlatform() === 'instagram') scanInstagramReels();
-          if (getPlatform() === 'youtube') scanYouTubeShorts();
-        }
-      }, 400);
-    }
-
-    window.addEventListener('popstate', () => {
-      if (getPlatform() === 'facebook') scanFacebookReels();
-      if (getPlatform() === 'instagram') scanInstagramReels();
-      if (getPlatform() === 'youtube') scanYouTubeShorts();
-    });
-
-    if (getPlatform() === 'youtube') {
-      window.addEventListener('yt-navigate-finish', () => scanYouTubeShorts());
-    }
-
     // Safety heartbeat interval: keep pill alive against React hydration & catch missed feed updates
     setInterval(() => {
       initPill();
       scheduleScan();
     }, 1500);
 
-    // Watch for SPA URL changes (Threads, X, Facebook)
+    // Watch for SPA URL changes on X
     let lastUrl = location.href;
     setInterval(() => {
       if (location.href !== lastUrl) {
@@ -2732,5 +1197,5 @@
   }
 
   initObserver();
-  console.log(`[Social Shield + Monk Mode] Active on ${getPlatform().toUpperCase()} (${window.location.hostname}) 🛡️`);
+  console.log(`[Social Shield] Active on X (${window.location.hostname}) 🛡️`);
 })();

@@ -1724,6 +1724,131 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
       }).not.toThrow();
     }
   });
+
+  test("X-only platform detection and manifest restriction", async () => {
+    const fs = await import("node:fs");
+    const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
+
+    // Verify host_permissions only allow classifier.dev, generativelanguage, and X/Twitter
+    expect(manifest.host_permissions).toContain("*://*.x.com/*");
+    expect(manifest.host_permissions).toContain("*://*.twitter.com/*");
+    expect(manifest.host_permissions.some((p) => p.includes("facebook"))).toBe(false);
+    expect(manifest.host_permissions.some((p) => p.includes("instagram"))).toBe(false);
+    expect(manifest.host_permissions.some((p) => p.includes("threads"))).toBe(false);
+    expect(manifest.host_permissions.some((p) => p.includes("youtube"))).toBe(false);
+
+    // Verify content_scripts matches only target X/Twitter
+    const matches = manifest.content_scripts[0].matches;
+    expect(matches).toContain("*://*.x.com/*");
+    expect(matches).toContain("*://*.twitter.com/*");
+    expect(matches.some((m) => m.includes("facebook"))).toBe(false);
+    expect(matches.some((m) => m.includes("threads"))).toBe(false);
+
+    // Platform detection helper logic
+    function detectPlatform(url) {
+      if (!url) return null;
+      try {
+        const host = new URL(url).hostname.toLowerCase();
+        if (host.includes('twitter.com') || host.includes('x.com')) return 'X';
+      } catch (e) {}
+      return null;
+    }
+
+    expect(detectPlatform("https://x.com/home")).toBe("X");
+    expect(detectPlatform("https://twitter.com/i/flow")).toBe("X");
+    expect(detectPlatform("https://facebook.com")).toBe(null);
+    expect(detectPlatform("https://threads.net")).toBe(null);
+  });
+
+  test("Gemini API Key dirty-checking: Save button disabled until value differs from stored key", () => {
+    const DEFAULT_KEY = 'AIzaSyCEUfHf2SiBsA5ZLDLHJMg_1bkjebeuVoo';
+    let storedKey = DEFAULT_KEY;
+
+    function isSaveDisabled(currentInputVal, savedKey) {
+      return currentInputVal.trim() === savedKey.trim();
+    }
+
+    // Initial state: input matches saved key -> Save is disabled
+    expect(isSaveDisabled(DEFAULT_KEY, storedKey)).toBe(true);
+
+    // User types new key -> Save button enables
+    const newKey = 'AIzaSyNewCustomUserKey123';
+    expect(isSaveDisabled(newKey, storedKey)).toBe(false);
+
+    // User saves new key -> storedKey updates -> Save button disables
+    storedKey = newKey;
+    expect(isSaveDisabled(newKey, storedKey)).toBe(true);
+
+    // Typing whitespace around identical key still considered clean
+    expect(isSaveDisabled(`  ${newKey}  `, storedKey)).toBe(true);
+  });
+
+  test("Streamlined X-only taxonomy: only casual + dynamic custom labels", () => {
+    const TAXONOMY_CATALOG = {
+      'other / casual discussion': {
+        tagKey: 'casual',
+        instruction: 'everyday personal chatter, news, generic talk, or any content that does not fit the other categories.',
+      },
+    };
+
+    function getStreamlinedTaxonomy(cfg = {}) {
+      const activeLabels = [];
+      const instructionsList = [];
+
+      if (Array.isArray(cfg?.customLabels)) {
+        cfg.customLabels.forEach((c) => {
+          const rawName = typeof c === 'string' ? c : c?.name;
+          const action = typeof c === 'object' ? (c.action || (c.enabled === false ? 'off' : 'show')) : 'show';
+          if (action !== 'off' && rawName) {
+            const name = rawName.trim();
+            activeLabels.push(name);
+            const instruct = (typeof c === 'object' && c?.instruction) ? c.instruction.trim() : `content related to ${name}.`;
+            instructionsList.push(`"${name}": ${instruct}`);
+          }
+        });
+      }
+
+      activeLabels.push('other / casual discussion');
+      instructionsList.push(`"other / casual discussion": ${TAXONOMY_CATALOG['other / casual discussion'].instruction}`);
+
+      return {
+        labels: activeLabels,
+        instructions: instructionsList.map((item, idx) => `${idx + 1}. ${item}`).join(' '),
+      };
+    }
+
+    // Default configuration: only casual
+    const defaultTax = getStreamlinedTaxonomy({});
+    expect(defaultTax.labels).toEqual(['other / casual discussion']);
+    expect(defaultTax.instructions).toContain('1. "other / casual discussion"');
+
+    // With custom labels
+    const customTax = getStreamlinedTaxonomy({
+      customLabels: [{ name: 'tech', action: 'show', instruction: 'software engineering and AI.' }],
+    });
+    expect(customTax.labels).toEqual(['tech', 'other / casual discussion']);
+    expect(customTax.instructions).toContain('1. "tech": software engineering and AI.');
+    expect(customTax.instructions).toContain('2. "other / casual discussion"');
+  });
+
+  test("Fallback post assignment strictly respects confidence threshold without bypass", () => {
+    function resolveAssignedLabels(selectedBadges, scores, threshold) {
+      const topEntry = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
+      return selectedBadges.length > 0
+        ? selectedBadges.map((b) => b.label)
+        : (topEntry && topEntry[1] >= threshold ? [topEntry[0]] : []);
+    }
+
+    // Case 1: Badges selected above threshold
+    expect(resolveAssignedLabels([{ label: 'casual' }], { casual: 0.85 }, 0.3)).toEqual(['casual']);
+
+    // Case 2: No badges meet threshold, but top score is above threshold
+    expect(resolveAssignedLabels([], { custom_tech: 0.45 }, 0.3)).toEqual(['custom_tech']);
+
+    // Case 3: No badges meet threshold and top score is below threshold -> must be empty (NOT collapsed)
+    expect(resolveAssignedLabels([], { custom_tech: 0.15 }, 0.3)).toEqual([]);
+    expect(resolveAssignedLabels([], {}, 0.3)).toEqual([]);
+  });
 });
 
 

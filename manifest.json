@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Social Shield: AI Anti-Rage & Focus Guard",
-  "version": "2.5.0",
-  "description": "AI-powered feed shield: auto-blur rage bait, scams, and block short-form reels to protect focus across social feeds.",
+  "version": "3.0.0",
+  "description": "Minimalist AI focus guard and casual feed classifier for X (Twitter) powered by classifier.dev and Gemini 3.5 Flash-Lite.",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -27,40 +27,18 @@
     "https://classifier.dev/*",
     "https://classifier.dev/",
     "https://generativelanguage.googleapis.com/*",
-    "*://*.threads.net/*",
-    "*://threads.net/*",
-    "*://*.threads.com/*",
-    "*://threads.com/*",
     "*://*.x.com/*",
     "*://x.com/*",
     "*://*.twitter.com/*",
-    "*://twitter.com/*",
-    "*://*.facebook.com/*",
-    "*://facebook.com/*",
-    "*://*.fb.com/*",
-    "*://*.instagram.com/*",
-    "*://instagram.com/*",
-    "*://*.youtube.com/*",
-    "*://youtube.com/*"
+    "*://twitter.com/*"
   ],
   "content_scripts": [
     {
       "matches": [
-        "*://*.threads.net/*",
-        "*://threads.net/*",
-        "*://*.threads.com/*",
-        "*://threads.com/*",
         "*://*.x.com/*",
         "*://x.com/*",
         "*://*.twitter.com/*",
-        "*://twitter.com/*",
-        "*://*.facebook.com/*",
-        "*://facebook.com/*",
-        "*://*.fb.com/*",
-        "*://*.instagram.com/*",
-        "*://instagram.com/*",
-        "*://*.youtube.com/*",
-        "*://youtube.com/*"
+        "*://twitter.com/*"
       ],
       "js": ["content.js"],
       "css": ["content.css"],

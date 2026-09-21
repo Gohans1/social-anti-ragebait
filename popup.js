@@ -1,12 +1,6 @@
-// Popup script for Social Shield All-in-One + Monk Mode
+// Popup script for Social Shield (X / Twitter)
 document.addEventListener('DOMContentLoaded', () => {
   const DEFAULT_CATEGORY_ACTIONS = {
-    motivational: 'show',
-    meme: 'show',
-    deepdive: 'show',
-    wholesome: 'show',
-    doom: 'hide',
-    fomo: 'hide',
     casual: 'show',
   };
 
@@ -17,31 +11,19 @@ document.addEventListener('DOMContentLoaded', () => {
   let customLabels = [];
   let focusModeEnabled = true;
   let currentScannedCount = 0;
+  let savedGeminiApiKey = DEFAULT_GEMINI_API_KEY;
   let savedGeminiPrompt = DEFAULT_GEMINI_PROMPT;
 
-  const monkModeToggle = document.getElementById('monkModeToggle');
-  const blockReelsToggle = document.getElementById('blockReelsToggle');
-  const autoBlurRageToggle = document.getElementById('autoBlurRageToggle');
-  const blockScamsToggle = document.getElementById('blockScamsToggle');
-  const collapseSeedingToggle = document.getElementById('collapseSeedingToggle');
   const hideFloatingPillToggle = document.getElementById('hideFloatingPillToggle');
   const singleTagModeToggle = document.getElementById('singleTagModeToggle');
   const geminiApiKeyInput = document.getElementById('geminiApiKeyInput');
+  const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
   const geminiPromptInput = document.getElementById('geminiPromptInput');
   const savePromptBtn = document.getElementById('savePromptBtn');
   const resetPromptBtn = document.getElementById('resetPromptBtn');
   const thresholdRange = document.getElementById('thresholdRange');
   const thresholdVal = document.getElementById('thresholdVal');
 
-  const motivationalCounter = document.getElementById('motivationalCounter');
-  const memeCounter = document.getElementById('memeCounter');
-  const deepDiveCounter = document.getElementById('deepDiveCounter');
-  const rageCounter = document.getElementById('rageCounter');
-  const scamCounter = document.getElementById('scamCounter');
-  const monkCounter = document.getElementById('monkCounter');
-  const wholesomeCounter = document.getElementById('wholesomeCounter');
-  const doomCounter = document.getElementById('doomCounter');
-  const fomoCounter = document.getElementById('fomoCounter');
   const casualCounter = document.getElementById('casualCounter');
   const customCounter = document.getElementById('customCounter');
   const focusCounter = document.getElementById('focusCounter');
@@ -53,8 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const customLabelsContainer = document.getElementById('customLabelsContainer');
 
   const heroScannedCount = document.getElementById('heroScannedCount');
+  const heroCasualCount = document.getElementById('heroCasualCount');
   const heroFilteredCount = document.getElementById('heroFilteredCount');
-  const heroThreatsCount = document.getElementById('heroThreatsCount');
   const headerStatusBadge = document.getElementById('headerStatusBadge');
   const headerStatusText = document.getElementById('headerStatusText');
 
@@ -70,25 +52,21 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const activeTab = tabs && tabs[0];
       const url = activeTab ? activeTab.url : '';
-      let platform = null;
+      let isX = false;
 
       if (url) {
         try {
           const host = new URL(url).hostname.toLowerCase();
-          if (host.includes('twitter.com') || host.includes('x.com')) platform = 'X';
-          else if (host.includes('facebook.com') || host.includes('fb.com')) platform = 'Facebook';
-          else if (host.includes('instagram.com')) platform = 'Instagram';
-          else if (host.includes('threads.net') || host.includes('threads.com')) platform = 'Threads';
-          else if (host.includes('youtube.com')) platform = 'YouTube';
+          if (host.includes('twitter.com') || host.includes('x.com')) isX = true;
         } catch (e) {}
       }
 
-      if (platform) {
+      if (isX) {
         if (headerStatusBadge) {
           headerStatusBadge.classList.remove('standby');
           headerStatusBadge.classList.add('active');
         }
-        if (headerStatusText) headerStatusText.textContent = `Active on ${platform}`;
+        if (headerStatusText) headerStatusText.textContent = 'Active on X';
       } else {
         if (headerStatusBadge) {
           headerStatusBadge.classList.remove('active');
@@ -105,38 +83,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     let scanned = currentScannedCount;
     if (scanned === 0) {
-      const motivational = parseInt(motivationalCounter?.textContent || '0', 10) || 0;
-      const meme = parseInt(memeCounter?.textContent || '0', 10) || 0;
-      const deepdive = parseInt(deepDiveCounter?.textContent || '0', 10) || 0;
-      const wholesome = parseInt(wholesomeCounter?.textContent || '0', 10) || 0;
-      const doom = parseInt(doomCounter?.textContent || '0', 10) || 0;
-      const fomo = parseInt(fomoCounter?.textContent || '0', 10) || 0;
       const casual = parseInt(casualCounter?.textContent || '0', 10) || 0;
       const custom = parseInt(customCounter?.textContent || '0', 10) || 0;
-      const rage = parseInt(rageCounter?.textContent || '0', 10) || 0;
-      const scam = parseInt(scamCounter?.textContent || '0', 10) || 0;
-      const monk = parseInt(monkCounter?.textContent || '0', 10) || 0;
-      scanned = motivational + meme + deepdive + wholesome + doom + fomo + casual + custom + rage + scam + monk;
+      scanned = casual + custom;
     }
+
+    const casual = typeof data.casualCount === 'number'
+      ? data.casualCount
+      : (parseInt(casualCounter?.textContent || '0', 10) || 0);
 
     const filtered = typeof data.focusCollapsedCount === 'number'
       ? data.focusCollapsedCount
       : (parseInt(focusCounter?.textContent || '0', 10) || 0);
 
-    const rageVal = typeof data.blockedRageCount === 'number'
-      ? data.blockedRageCount
-      : (parseInt(rageCounter?.textContent || '0', 10) || 0);
-    const scamVal = typeof data.blockedScamCount === 'number'
-      ? data.blockedScamCount
-      : (parseInt(scamCounter?.textContent || '0', 10) || 0);
-    const monkVal = typeof data.monkModeBlockedCount === 'number'
-      ? data.monkModeBlockedCount
-      : (parseInt(monkCounter?.textContent || '0', 10) || 0);
-    const threats = rageVal + scamVal + monkVal;
-
     if (heroScannedCount) heroScannedCount.textContent = scanned;
+    if (heroCasualCount) heroCasualCount.textContent = casual;
     if (heroFilteredCount) heroFilteredCount.textContent = filtered;
-    if (heroThreatsCount) heroThreatsCount.textContent = threats;
   }
 
   function updateSegmentedControlUI(containerEl, activeAction) {
@@ -238,16 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const BUILTIN_KEYS = [
-    'self-improvement / motivational', 'motivational',
-    'meme / humor / satire', 'meme',
-    'deep dive / technical breakdown / industry insider', 'deepdive', 'teardown',
-    'wholesome / positive', 'wholesome',
-    'fearmongering / doom', 'doom',
-    'fomo / hype', 'fomo',
     'other / casual discussion', 'casual',
-    'rage bait / toxic / hostile / dismissive negativity', 'rage',
-    'scam / fraudulent scheme', 'scam',
-    'bot seeding / affiliate spam / fake review', 'seeding',
   ];
 
   function handleAddCustomLabel() {
@@ -317,31 +270,11 @@ document.addEventListener('DOMContentLoaded', () => {
   chrome.storage.local.get(
     [
       'categoryActions',
-      'filterMotivationalEnabled',
-      'filterMemeEnabled',
-      'filterDeepDiveEnabled',
-      'filterWholesomeEnabled',
-      'filterDoomEnabled',
-      'filterFomoEnabled',
       'filterCasualEnabled',
       'customLabels',
-      'monkModeEnabled',
-      'blockReelsEnabled',
-      'autoBlurRageEnabled',
-      'blockScamsEnabled',
-      'collapseSeedingEnabled',
       'hideFloatingPill',
       'singleTagMode',
       'confidenceThreshold',
-      'motivationalCount',
-      'memeCount',
-      'deepDiveCount',
-      'blockedRageCount',
-      'blockedScamCount',
-      'monkModeBlockedCount',
-      'wholesomeCount',
-      'doomCount',
-      'fomoCount',
       'casualCount',
       'customCount',
       'focusModeEnabled',
@@ -354,23 +287,15 @@ document.addEventListener('DOMContentLoaded', () => {
     (res) => {
       initActivePlatform();
       if (res && res.categoryActions && typeof res.categoryActions === 'object') {
-        categoryActions = { ...DEFAULT_CATEGORY_ACTIONS, ...res.categoryActions };
+        categoryActions = {
+          casual: res.categoryActions.casual || DEFAULT_CATEGORY_ACTIONS.casual,
+        };
         if (typeof res.focusModeEnabled === 'boolean') {
           focusModeEnabled = res.focusModeEnabled;
         }
       } else {
-        // Migrate legacy settings
-        const isLegacyFocus = res.focusModeEnabled === true && Array.isArray(res.focusWhitelistTags);
-        const legacyKeep = isLegacyFocus ? res.focusWhitelistTags : ['motivational', 'meme', 'deepdive', 'wholesome', 'casual'];
-
         categoryActions = {
-          motivational: res.filterMotivationalEnabled === false ? 'off' : (isLegacyFocus && !legacyKeep.includes('motivational') ? 'hide' : 'show'),
-          meme: res.filterMemeEnabled === false ? 'off' : (isLegacyFocus && !legacyKeep.includes('meme') ? 'hide' : 'show'),
-          deepdive: res.filterDeepDiveEnabled === false ? 'off' : (isLegacyFocus && !legacyKeep.includes('deepdive') ? 'hide' : 'show'),
-          wholesome: res.filterWholesomeEnabled === false ? 'off' : (isLegacyFocus && !legacyKeep.includes('wholesome') ? 'hide' : 'show'),
-          doom: res.filterDoomEnabled === false ? 'off' : (isLegacyFocus && legacyKeep.includes('doom') ? 'show' : 'hide'),
-          fomo: res.filterFomoEnabled === false ? 'off' : (isLegacyFocus && legacyKeep.includes('fomo') ? 'show' : 'hide'),
-          casual: res.filterCasualEnabled === false ? 'off' : (isLegacyFocus && !legacyKeep.includes('casual') ? 'hide' : 'show'),
+          casual: res.filterCasualEnabled === false ? 'off' : 'show',
         };
       }
 
@@ -398,21 +323,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       renderCustomLabels();
 
-      if (monkModeToggle) {
-        monkModeToggle.checked = typeof res.monkModeEnabled === 'boolean' ? res.monkModeEnabled : true;
-      }
-      if (blockReelsToggle) {
-        blockReelsToggle.checked = typeof res.blockReelsEnabled === 'boolean' ? res.blockReelsEnabled : true;
-      }
-      if (autoBlurRageToggle) {
-        autoBlurRageToggle.checked = typeof res.autoBlurRageEnabled === 'boolean' ? res.autoBlurRageEnabled : true;
-      }
-      if (blockScamsToggle) {
-        blockScamsToggle.checked = typeof res.blockScamsEnabled === 'boolean' ? res.blockScamsEnabled : true;
-      }
-      if (collapseSeedingToggle) {
-        collapseSeedingToggle.checked = typeof res.collapseSeedingEnabled === 'boolean' ? res.collapseSeedingEnabled : true;
-      }
       if (hideFloatingPillToggle && typeof res.hideFloatingPill === 'boolean') {
         hideFloatingPillToggle.checked = res.hideFloatingPill;
       }
@@ -420,9 +330,11 @@ document.addEventListener('DOMContentLoaded', () => {
         singleTagModeToggle.checked = res.singleTagMode;
       }
       if (geminiApiKeyInput) {
-        geminiApiKeyInput.value = (typeof res.geminiApiKey === 'string' && res.geminiApiKey.trim().length > 0)
-          ? res.geminiApiKey
+        savedGeminiApiKey = (typeof res.geminiApiKey === 'string' && res.geminiApiKey.trim().length > 0)
+          ? res.geminiApiKey.trim()
           : DEFAULT_GEMINI_API_KEY;
+        geminiApiKeyInput.value = savedGeminiApiKey;
+        if (saveApiKeyBtn) saveApiKeyBtn.disabled = true;
       }
       if (geminiPromptInput) {
         savedGeminiPrompt = (typeof res.geminiPrompt === 'string' && res.geminiPrompt.trim().length > 0)
@@ -437,15 +349,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // Counters
-      if (typeof res.motivationalCount === 'number' && motivationalCounter) motivationalCounter.textContent = res.motivationalCount;
-      if (typeof res.memeCount === 'number' && memeCounter) memeCounter.textContent = res.memeCount;
-      if (typeof res.deepDiveCount === 'number' && deepDiveCounter) deepDiveCounter.textContent = res.deepDiveCount;
-      if (typeof res.blockedRageCount === 'number' && rageCounter) rageCounter.textContent = res.blockedRageCount;
-      if (typeof res.blockedScamCount === 'number' && scamCounter) scamCounter.textContent = res.blockedScamCount;
-      if (typeof res.monkModeBlockedCount === 'number' && monkCounter) monkCounter.textContent = res.monkModeBlockedCount;
-      if (typeof res.wholesomeCount === 'number' && wholesomeCounter) wholesomeCounter.textContent = res.wholesomeCount;
-      if (typeof res.doomCount === 'number' && doomCounter) doomCounter.textContent = res.doomCount;
-      if (typeof res.fomoCount === 'number' && fomoCounter) fomoCounter.textContent = res.fomoCount;
       if (typeof res.casualCount === 'number' && casualCounter) casualCounter.textContent = res.casualCount;
       if (typeof res.customCount === 'number' && customCounter) customCounter.textContent = res.customCount;
       if (typeof res.focusCollapsedCount === 'number' && focusCounter) focusCounter.textContent = res.focusCollapsedCount;
@@ -459,31 +362,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const config = {
       categoryActions: categoryActions,
       customLabels: customLabels,
-
-      // Sync legacy properties for backward compatibility
-      filterMotivationalEnabled: categoryActions.motivational !== 'off',
-      filterMemeEnabled: categoryActions.meme !== 'off',
-      filterDeepDiveEnabled: categoryActions.deepdive !== 'off',
-      filterWholesomeEnabled: categoryActions.wholesome !== 'off',
-      filterDoomEnabled: categoryActions.doom !== 'off',
-      filterFomoEnabled: categoryActions.fomo !== 'off',
       filterCasualEnabled: categoryActions.casual !== 'off',
       focusModeEnabled: focusModeEnabled,
       focusWhitelistTags: [
-        ...Object.entries(categoryActions).filter(([, v]) => v === 'show').map(([k]) => k),
+        ...(categoryActions.casual === 'show' ? ['casual'] : []),
         ...(customLabels.some((c) => (c.action || (c.enabled === false ? 'off' : 'show')) === 'show') ? ['custom'] : []),
       ],
-
-      monkModeEnabled: monkModeToggle.checked,
-      blockReelsEnabled: blockReelsToggle.checked,
-      autoBlurRageEnabled: autoBlurRageToggle.checked,
-      blockScamsEnabled: blockScamsToggle.checked,
-      collapseSeedingEnabled: collapseSeedingToggle.checked,
-      hideFloatingPill: hideFloatingPillToggle.checked,
+      hideFloatingPill: hideFloatingPillToggle ? hideFloatingPillToggle.checked : false,
       singleTagMode: singleTagModeToggle ? singleTagModeToggle.checked : false,
-      geminiApiKey: (geminiApiKeyInput && geminiApiKeyInput.value.trim().length > 0)
-        ? geminiApiKeyInput.value.trim()
-        : DEFAULT_GEMINI_API_KEY,
+      geminiApiKey: savedGeminiApiKey,
       geminiPrompt: savedGeminiPrompt,
       confidenceThreshold: parseInt(thresholdRange.value, 10) / 100,
     };
@@ -503,18 +390,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  monkModeToggle.addEventListener('change', saveAndNotify);
-  blockReelsToggle.addEventListener('change', saveAndNotify);
-  autoBlurRageToggle.addEventListener('change', saveAndNotify);
-  blockScamsToggle.addEventListener('change', saveAndNotify);
-  collapseSeedingToggle.addEventListener('change', saveAndNotify);
-  hideFloatingPillToggle.addEventListener('change', saveAndNotify);
+  if (hideFloatingPillToggle) hideFloatingPillToggle.addEventListener('change', saveAndNotify);
   if (singleTagModeToggle) singleTagModeToggle.addEventListener('change', saveAndNotify);
-  if (geminiApiKeyInput) {
-    geminiApiKeyInput.addEventListener('change', saveAndNotify);
-    geminiApiKeyInput.addEventListener('blur', saveAndNotify);
+
+  // Dirty-checked Gemini API Key Save Button
+  if (geminiApiKeyInput && saveApiKeyBtn) {
+    const checkApiKeyDirty = () => {
+      const currentVal = geminiApiKeyInput.value.trim();
+      saveApiKeyBtn.disabled = (currentVal === savedGeminiApiKey);
+    };
+
+    geminiApiKeyInput.addEventListener('input', checkApiKeyDirty);
+
+    saveApiKeyBtn.addEventListener('click', () => {
+      if (saveApiKeyBtn.disabled) return;
+      const newKey = geminiApiKeyInput.value.trim() || DEFAULT_GEMINI_API_KEY;
+      savedGeminiApiKey = newKey;
+      geminiApiKeyInput.value = newKey;
+      saveApiKeyBtn.disabled = true;
+
+      const originalText = 'Save';
+      saveApiKeyBtn.textContent = 'Saved ✓';
+      setTimeout(() => {
+        saveApiKeyBtn.textContent = originalText;
+      }, 1500);
+
+      saveAndNotify();
+    });
   }
 
+  // Dirty-checked Gemini System Prompt Save Button
   if (geminiPromptInput && savePromptBtn) {
     const checkPromptDirty = () => {
       const currentVal = geminiPromptInput.value.trim();
@@ -554,34 +459,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   resetStats.addEventListener('click', () => {
     chrome.storage.local.set({
-      motivationalCount: 0,
-      memeCount: 0,
-      deepDiveCount: 0,
-      monkModeBlockedCount: 0,
-      blockedRageCount: 0,
-      blockedScamCount: 0,
-      cleanedSeedingCount: 0,
-      wholesomeCount: 0,
-      doomCount: 0,
-      fomoCount: 0,
       casualCount: 0,
       customCount: 0,
       focusCollapsedCount: 0,
       scannedCount: 0,
     });
-    if (motivationalCounter) motivationalCounter.textContent = '0';
-    if (memeCounter) memeCounter.textContent = '0';
-    if (deepDiveCounter) deepDiveCounter.textContent = '0';
-    if (rageCounter) rageCounter.textContent = '0';
-    if (scamCounter) scamCounter.textContent = '0';
-    if (monkCounter) monkCounter.textContent = '0';
-    if (wholesomeCounter) wholesomeCounter.textContent = '0';
-    if (doomCounter) doomCounter.textContent = '0';
-    if (fomoCounter) fomoCounter.textContent = '0';
     if (casualCounter) casualCounter.textContent = '0';
     if (customCounter) customCounter.textContent = '0';
     if (focusCounter) focusCounter.textContent = '0';
-    updateHeroStats({ scannedCount: 0, focusCollapsedCount: 0, blockedRageCount: 0, blockedScamCount: 0, monkModeBlockedCount: 0 });
+    updateHeroStats({ scannedCount: 0, focusCollapsedCount: 0, customCount: 0 });
 
     chrome.tabs.query({}, (tabs) => {
       if (tabs) {
@@ -594,20 +480,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (chrome.storage && chrome.storage.onChanged) {
     chrome.storage.onChanged.addListener((changes) => {
-      if (changes.motivationalCount && motivationalCounter) motivationalCounter.textContent = changes.motivationalCount.newValue || 0;
-      if (changes.memeCount && memeCounter) memeCounter.textContent = changes.memeCount.newValue || 0;
-      if (changes.deepDiveCount && deepDiveCounter) deepDiveCounter.textContent = changes.deepDiveCount.newValue || 0;
-      if (changes.blockedRageCount && rageCounter) rageCounter.textContent = changes.blockedRageCount.newValue || 0;
-      if (changes.blockedScamCount && scamCounter) scamCounter.textContent = changes.blockedScamCount.newValue || 0;
-      if (changes.monkModeBlockedCount && monkCounter) monkCounter.textContent = changes.monkModeBlockedCount.newValue || 0;
-      if (changes.wholesomeCount && wholesomeCounter) wholesomeCounter.textContent = changes.wholesomeCount.newValue || 0;
-      if (changes.doomCount && doomCounter) doomCounter.textContent = changes.doomCount.newValue || 0;
-      if (changes.fomoCount && fomoCounter) fomoCounter.textContent = changes.fomoCount.newValue || 0;
       if (changes.casualCount && casualCounter) casualCounter.textContent = changes.casualCount.newValue || 0;
       if (changes.customCount && customCounter) customCounter.textContent = changes.customCount.newValue || 0;
       if (changes.focusCollapsedCount && focusCounter) focusCounter.textContent = changes.focusCollapsedCount.newValue || 0;
-      if (changes.geminiApiKey && geminiApiKeyInput) {
-        geminiApiKeyInput.value = changes.geminiApiKey.newValue || '';
+      if (changes.geminiApiKey && geminiApiKeyInput && document.activeElement !== geminiApiKeyInput) {
+        savedGeminiApiKey = (changes.geminiApiKey.newValue || '').trim() || DEFAULT_GEMINI_API_KEY;
+        geminiApiKeyInput.value = savedGeminiApiKey;
+        if (saveApiKeyBtn) saveApiKeyBtn.disabled = true;
       }
       if (changes.geminiPrompt && geminiPromptInput && document.activeElement !== geminiPromptInput) {
         savedGeminiPrompt = (changes.geminiPrompt.newValue || '').trim() || DEFAULT_GEMINI_PROMPT;
@@ -620,22 +499,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (
         changes.scannedCount ||
         changes.focusCollapsedCount ||
-        changes.blockedRageCount ||
-        changes.blockedScamCount ||
-        changes.monkModeBlockedCount ||
-        changes.motivationalCount ||
-        changes.memeCount ||
-        changes.deepDiveCount ||
-        changes.wholesomeCount ||
-        changes.doomCount ||
-        changes.fomoCount ||
         changes.casualCount ||
         changes.customCount
       ) {
         updateHeroStats();
       }
       if (changes.categoryActions && changes.categoryActions.newValue) {
-        categoryActions = { ...DEFAULT_CATEGORY_ACTIONS, ...changes.categoryActions.newValue };
+        categoryActions = {
+          casual: changes.categoryActions.newValue.casual || DEFAULT_CATEGORY_ACTIONS.casual,
+        };
         document.querySelectorAll('.segmented-control[data-category]').forEach((ctrl) => {
           const cat = ctrl.getAttribute('data-category');
           if (categoryActions[cat]) {
