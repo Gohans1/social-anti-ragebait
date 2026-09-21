@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Social Shield: Minimalist Geometric Icon Showcase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background: #000000;
+      color: #ededed;
+      padding: 32px 24px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    header {
+      border-bottom: 1px solid #1f1f1f;
+      padding-bottom: 20px;
+      margin-bottom: 28px;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      font-family: 'Geist Mono', monospace;
+      font-size: 11px;
+      color: #22c55e;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .subtitle {
+      color: #888888;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    .section-title {
+      font-family: 'Geist Mono', monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #737373;
+      margin-bottom: 14px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .card {
+      background: #0a0a0a;
+      border: 1px solid #1f1f1f;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .card-header {
+      font-size: 12px;
+      font-weight: 500;
+      color: #ededed;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-meta {
+      font-family: 'Geist Mono', monospace;
+      font-size: 10px;
+      color: #737373;
+    }
+    .preview-box {
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      gap: 16px;
+      min-height: 120px;
+    }
+    .preview-dark {
+      background: #202124;
+      border: 1px solid #333333;
+    }
+    .preview-light {
+      background: #f1f3f4;
+      border: 1px solid #dadce0;
+    }
+    .preview-vercel {
+      background: #000000;
+      border: 1px solid #1f1f1f;
+    }
+    .toolbar-mock {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 12px;
+      border-radius: 20px;
+    }
+    .toolbar-dark {
+      background: #282a2d;
+    }
+    .toolbar-light {
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .icon-slot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+    }
+    .icon-slot:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .toolbar-light .icon-slot:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    .comparison-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .before-after-card {
+      background: #0a0a0a;
+      border: 1px solid #1f1f1f;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .tag-before {
+      color: #ef4444;
+      font-family: 'Geist Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .tag-after {
+      color: #22c55e;
+      font-family: 'Geist Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .big-icon-display {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      gap: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>
+        <svg width="22" height="22" viewBox="0 0 128 128">
+          <polygon points="64,16 24,26 24,66 64,116" fill="#F8FAFC" />
+          <polygon points="64,16 104,26 104,66 64,116" fill="#A1A1AA" />
+          <line x1="64" y1="16" x2="64" y2="116" stroke="#18181B" stroke-width="2" />
+          <polygon points="64,16 104,26 104,66 64,116 24,66 24,26" fill="none" stroke="#262626" stroke-width="3" stroke-linejoin="round" />
+        </svg>
+        Social Shield: Minimalist Geometric Icon
+        <span class="badge">Vercel Ready</span>
+      </h1>
+      <p class="subtitle">Chiseled Minimalist Shield replacing the legacy red/white cancel icon across all extension resolutions.</p>
+    </header>
+
+    <!-- Side-by-Side Comparison -->
+    <div class="section-title">Visual Upgrade: Before vs After</div>
+    <div class="comparison-row">
+      <div class="before-after-card" style="border-color: rgba(239, 68, 68, 0.2);">
+        <div class="tag-before">LEGACY ICON (PHÈN)</div>
+        <div class="big-icon-display">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: #ef4444; display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 800; font-size: 26px; font-family: sans-serif;">X</div>
+        </div>
+        <p style="font-size: 11px; color: #737373;">Trông như nút Stop / biển cấm xe / crash report</p>
+      </div>
+
+      <div class="before-after-card" style="border-color: rgba(34, 197, 94, 0.2);">
+        <div class="tag-after">NEW SOCIAL SHIELD (BÚ XỊN)</div>
+        <div class="big-icon-display">
+          <img src="../icons/icon48.png" width="48" height="48" alt="New Shield 48" />
+          <img src="../icons/icon128.png" width="48" height="48" alt="New Shield 128" />
+        </div>
+        <p style="font-size: 11px; color: #22c55e;">Khiên hình học tối giản, sang xịn, chuẩn Vercel aesthetics</p>
+      </div>
+    </div>
+
+    <!-- Toolbar Simulations -->
+    <div class="section-title">Browser Toolbar Simulation (16px & 32px Retina)</div>
+    <div class="grid">
+      <!-- Dark Theme Toolbar -->
+      <div class="card">
+        <div class="card-header">
+          <span>Dark Theme Toolbar</span>
+          <span class="card-meta">Chrome Dark (#202124)</span>
+        </div>
+        <div class="preview-box preview-dark">
+          <div class="toolbar-mock toolbar-dark">
+            <span style="font-size: 11px; color: #9aa0a6;">x.com</span>
+            <div class="icon-slot" title="Social Shield Extension">
+              <img src="../icons/icon16.png" width="16" height="16" alt="Icon 16" />
+            </div>
+            <div class="icon-slot">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="#9aa0a6"><path d="M11.5 8a2.5 2.5 0 0 0-2.5-2.5V3a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v2.5a2.5 2.5 0 0 0 0 5V13a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-2.5A2.5 2.5 0 0 0 11.5 8z"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Light Theme Toolbar -->
+      <div class="card">
+        <div class="card-header">
+          <span>Light Theme Toolbar</span>
+          <span class="card-meta">Chrome Light (#F1F3F4)</span>
+        </div>
+        <div class="preview-box preview-light">
+          <div class="toolbar-mock toolbar-light">
+            <span style="font-size: 11px; color: #5f6368;">x.com</span>
+            <div class="icon-slot" title="Social Shield Extension">
+              <img src="../icons/icon16.png" width="16" height="16" alt="Icon 16" />
+            </div>
+            <div class="icon-slot">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="#5f6368"><path d="M11.5 8a2.5 2.5 0 0 0-2.5-2.5V3a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v2.5a2.5 2.5 0 0 0 0 5V13a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-2.5A2.5 2.5 0 0 0 11.5 8z"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- All Generated Resolution Assets -->
+    <div class="section-title">All Generated Resolutions</div>
+    <div class="grid">
+      <div class="card" style="text-align: center;">
+        <div class="card-header"><span>16x16 px</span><span class="card-meta">icon16.png</span></div>
+        <div style="padding: 16px; display: flex; justify-content: center; align-items: center; min-height: 80px;">
+          <img src="../icons/icon16.png" width="16" height="16" alt="16px" />
+        </div>
+        <p style="font-size: 10px; color: #737373;">Toolbar standard icon</p>
+      </div>
+
+      <div class="card" style="text-align: center;">
+        <div class="card-header"><span>48x48 px</span><span class="card-meta">icon48.png</span></div>
+        <div style="padding: 16px; display: flex; justify-content: center; align-items: center; min-height: 80px;">
+          <img src="../icons/icon48.png" width="48" height="48" alt="48px" />
+        </div>
+        <p style="font-size: 10px; color: #737373;">Extensions manager icon</p>
+      </div>
+
+      <div class="card" style="text-align: center;">
+        <div class="card-header"><span>128x128 px</span><span class="card-meta">icon128.png</span></div>
+        <div style="padding: 16px; display: flex; justify-content: center; align-items: center; min-height: 80px;">
+          <img src="../icons/icon128.png" width="64" height="64" alt="128px" />
+        </div>
+        <p style="font-size: 10px; color: #737373;">Chrome Web Store / High DPI</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
