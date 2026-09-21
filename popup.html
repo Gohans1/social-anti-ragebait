@@ -261,8 +261,15 @@
       background: #111111;
       border: 1px solid #262626;
       border-radius: 5px;
-      padding: 4px 8px;
+      padding: 5px 8px;
       gap: 6px;
+    }
+    .custom-label-chip .chip-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+      flex: 1;
     }
     .custom-label-chip .chip-name {
       color: #ededed;
@@ -272,7 +279,20 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 120px;
+      max-width: 140px;
+    }
+    .custom-label-chip .chip-instruct {
+      font-family: 'Geist Mono', monospace;
+      font-size: 9px;
+      color: #71717a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+      line-height: 1.2;
+    }
+    .custom-label-chip .chip-instruct.custom {
+      color: #38bdf8;
     }
     .custom-label-chip .remove-btn {
       color: #737373;
@@ -536,9 +556,12 @@
         <div class="label">Custom Labels</div>
         <span style="font-family: 'Geist Mono', monospace; font-size: 9.5px; color: #737373;">AI-matched</span>
       </div>
-      <div style="display: flex; gap: 6px; margin-bottom: 8px;">
-        <input type="text" id="customLabelInput" maxlength="40" placeholder="Enter label (e.g. anime, soccer)..." style="flex: 1; background: #000000; border: 1px solid #262626; border-radius: 4px; padding: 5px 8px; color: #ededed; font-family: 'Geist', sans-serif; font-size: 11px; outline: none;">
-        <button id="addCustomLabelBtn" type="button" style="background: #ededed; border: none; border-radius: 4px; color: #000000; font-family: 'Geist', sans-serif; font-weight: 500; font-size: 11px; padding: 0 10px; cursor: pointer;">Add</button>
+      <div style="display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px;">
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="customLabelInput" maxlength="40" placeholder="Label (e.g. crypto, anime)..." style="flex: 1; background: #000000; border: 1px solid #262626; border-radius: 4px; padding: 5px 8px; color: #ededed; font-family: 'Geist', sans-serif; font-size: 11px; outline: none;">
+          <button id="addCustomLabelBtn" type="button" style="background: #ededed; border: none; border-radius: 4px; color: #000000; font-family: 'Geist', sans-serif; font-weight: 500; font-size: 11px; padding: 0 10px; cursor: pointer;">Add</button>
+        </div>
+        <input type="text" id="customInstructInput" maxlength="200" placeholder="Criteria / Instruction (optional)..." style="width: 100%; box-sizing: border-box; background: #0a0a0a; border: 1px solid #262626; border-radius: 4px; padding: 4px 8px; color: #a1a1aa; font-family: 'Geist Mono', monospace; font-size: 10px; outline: none;">
       </div>
       <div id="customLabelsContainer" style="display: flex; flex-direction: column; gap: 6px;"></div>
     </div>

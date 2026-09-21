@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const resetStats = document.getElementById('resetStats');
 
   const customLabelInput = document.getElementById('customLabelInput');
+  const customInstructInput = document.getElementById('customInstructInput');
   const addCustomLabelBtn = document.getElementById('addCustomLabelBtn');
   const customLabelsContainer = document.getElementById('customLabelsContainer');
 
@@ -171,11 +172,22 @@ document.addEventListener('DOMContentLoaded', () => {
       const action = typeof item === 'object' && item?.action
         ? item.action
         : (typeof item === 'object' && item?.enabled === false ? 'off' : 'show');
+      const instruction = typeof item === 'object' && typeof item?.instruction === 'string' ? item.instruction.trim() : '';
+
+      const chipInfo = document.createElement('div');
+      chipInfo.className = 'chip-info';
 
       const labelText = document.createElement('span');
       labelText.className = 'chip-name';
       labelText.textContent = name;
       labelText.title = name;
+      chipInfo.appendChild(labelText);
+
+      const instructText = document.createElement('span');
+      instructText.className = `chip-instruct${instruction ? ' custom' : ''}`;
+      instructText.textContent = instruction ? `↳ ${instruction}` : '↳ auto criteria';
+      instructText.title = instruction ? `Criteria: ${instruction}` : 'Using default template criteria';
+      chipInfo.appendChild(instructText);
 
       const actionsDiv = document.createElement('div');
       actionsDiv.style.display = 'flex';
@@ -194,7 +206,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => {
           const currentItem = customLabels[index];
           const labelName = typeof currentItem === 'string' ? currentItem : (currentItem?.name || name);
-          customLabels[index] = { name: labelName, action: act };
+          const labelInstruct = typeof currentItem === 'object' && currentItem?.instruction ? currentItem.instruction : '';
+          customLabels[index] = { name: labelName, action: act, instruction: labelInstruct };
           updateSegmentedControlUI(segCtrl, act);
           focusModeEnabled = Object.values(categoryActions).includes('hide') || customLabels.some((c) => c.action === 'hide');
           saveAndNotify();
@@ -218,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
       actionsDiv.appendChild(segCtrl);
       actionsDiv.appendChild(removeBtn);
 
-      chip.appendChild(labelText);
+      chip.appendChild(chipInfo);
       chip.appendChild(actionsDiv);
       customLabelsContainer.appendChild(chip);
     });
@@ -242,24 +255,43 @@ document.addEventListener('DOMContentLoaded', () => {
     let val = customLabelInput.value.replace(/["\r\n\t]/g, '').slice(0, 40).trim();
     if (!val || BUILTIN_KEYS.some((k) => k.toLowerCase() === val.toLowerCase())) {
       customLabelInput.value = '';
+      if (customInstructInput) customInstructInput.value = '';
       return;
     }
-    const exists = customLabels.some(
+    const instructVal = customInstructInput
+      ? customInstructInput.value.replace(/[\r\n\t]/g, ' ').slice(0, 200).trim()
+      : '';
+    const existsIndex = customLabels.findIndex(
       (c) => (typeof c === 'string' ? c : c?.name || '').trim().toLowerCase() === val.toLowerCase()
     );
-    if (!exists) {
-      customLabels.push({ name: val, action: 'show' });
+    if (existsIndex === -1) {
+      customLabels.push({ name: val, action: 'show', instruction: instructVal });
       customLabelInput.value = '';
+      if (customInstructInput) customInstructInput.value = '';
       renderCustomLabels();
       saveAndNotify();
     } else {
+      const existing = customLabels[existsIndex];
+      const existingAction = typeof existing === 'object' && existing?.action ? existing.action : 'show';
+      customLabels[existsIndex] = { name: val, action: existingAction, instruction: instructVal };
+      renderCustomLabels();
+      saveAndNotify();
       customLabelInput.value = '';
+      if (customInstructInput) customInstructInput.value = '';
     }
   }
 
   if (addCustomLabelBtn) addCustomLabelBtn.addEventListener('click', handleAddCustomLabel);
   if (customLabelInput) {
     customLabelInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAddCustomLabel();
+      }
+    });
+  }
+  if (customInstructInput) {
+    customInstructInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
         handleAddCustomLabel();
@@ -353,10 +385,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (Array.isArray(res.customLabels)) {
         customLabels = res.customLabels
           .map((c) => {
-            if (typeof c === 'string') return { name: c.trim(), action: 'show' };
+            if (typeof c === 'string') return { name: c.trim(), action: 'show', instruction: '' };
             return {
               name: (c?.name || '').trim(),
               action: c?.action || (c?.enabled === false ? 'off' : 'show'),
+              instruction: typeof c === 'object' && typeof c?.instruction === 'string'
+                ? c.instruction.replace(/[\r\n\t]/g, ' ').slice(0, 200).trim()
+                : '',
             };
           })
           .filter((c) => c.name);
@@ -614,10 +649,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (changes.customLabels && Array.isArray(changes.customLabels.newValue)) {
         customLabels = changes.customLabels.newValue
           .map((c) => {
-            if (typeof c === 'string') return { name: c.trim(), action: 'show' };
+            if (typeof c === 'string') return { name: c.trim(), action: 'show', instruction: '' };
             return {
               name: (c?.name || '').trim(),
               action: c?.action || (c?.enabled === false ? 'off' : 'show'),
+              instruction: typeof c === 'object' && typeof c?.instruction === 'string'
+                ? c.instruction.replace(/[\r\n\t]/g, ' ').slice(0, 200).trim()
+                : '',
             };
           })
           .filter((c) => c.name);

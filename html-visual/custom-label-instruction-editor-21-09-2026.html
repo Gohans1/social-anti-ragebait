@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bản Thiết Kế: Custom Labels Instruction &amp; Auto-Fallback</title>
+  <link rel="stylesheet" href="./visual-core.css">
+
+  <style>
+    /* Custom Mockup Styles for Extension Popup Context */
+    .popup-mock-frame {
+      width: 320px;
+      margin: 0 auto;
+      background: #000000;
+      border: 1px solid #1f1f1f;
+      border-radius: 10px;
+      padding: 14px;
+      color: #ededed;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 12px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8);
+      user-select: none;
+    }
+
+    .popup-header-mini {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #1f1f1f;
+    }
+
+    .popup-header-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      color: #ffffff;
+    }
+
+    .popup-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      color: #888888;
+      background: #0a0a0a;
+      border: 1px solid #262626;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .popup-section-card {
+      background: #0a0a0a;
+      border: 1px solid #1f1f1f;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .section-title-mini {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      color: #888888;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Custom Chip Styling */
+    .mock-chip {
+      display: flex;
+      flex-direction: column;
+      background: #111111;
+      border: 1px solid #262626;
+      border-radius: 6px;
+      padding: 6px 8px;
+      gap: 4px;
+      margin-bottom: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .mock-chip:hover {
+      border-color: #333333;
+    }
+
+    .mock-chip-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mock-chip-name {
+      font-weight: 600;
+      font-size: 11px;
+      color: #ededed;
+    }
+
+    .mock-chip-instruct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      color: #71717a;
+      line-height: 1.3;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    .mock-chip-instruct.custom-active {
+      color: #38bdf8;
+    }
+
+    .mock-chip-instruct.default-fallback {
+      color: #71717a;
+      font-style: italic;
+    }
+
+    /* Segmented Control */
+    .mock-seg-ctrl {
+      display: inline-flex;
+      background: #111111;
+      border: 1px solid #262626;
+      border-radius: 4px;
+      padding: 1px;
+      gap: 1px;
+    }
+
+    .mock-seg-btn {
+      background: transparent;
+      border: none;
+      border-radius: 3px;
+      color: #737373;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 500;
+      padding: 1px 5px;
+      cursor: pointer;
+    }
+
+    .mock-seg-btn.active {
+      background: #ededed;
+      color: #000000;
+      font-weight: 600;
+    }
+
+    /* Payload Inspector Box */
+    .payload-inspector {
+      background: #09090b;
+      border: 1px solid #27272a;
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      line-height: 1.4;
+      color: #a1a1aa;
+    }
+
+    .payload-title {
+      font-size: 10px;
+      font-weight: 600;
+      color: #e4e4e7;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. STICKY TOPBAR -->
+  <header class="nav-header">
+    <div class="brand-title"><span>🛡️</span> BẢN THIẾT KẾ: CUSTOM LABELS INSTRUCTION &amp; AUTO-FALLBACK</div>
+    <nav class="tab-group" role="tablist">
+      <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('summarize', this)">📌 Tóm Lược</button>
+      <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('explain', this)">🔍 Giải Thích Chi Tiết</button>
+    </nav>
+  </header>
+
+  <div class="container">
+    <!-- TAB 1: TÓM LƯỢC -->
+    <main id="tab-summarize" class="tab-pane">
+      <section class="callout">
+        <h2>🗣️ TÓM LƯỢC &amp; Ý CHÍNH 🗣️</h2>
+        <p>Nâng cấp Custom Labels từ việc chỉ nhập tên nhãn trơ trọi thành hệ thống 2 trường (Label + Instruction riêng biệt), cho phép tự do tinh chỉnh tiêu chí phân loại cho Jev AI, và tự động fallback về template mặc định khi bỏ trống để đảm bảo 100% không gãy dữ liệu cũ.</p>
+      </section>
+
+      <!-- CARD 1: COMPARISON SLIDER -->
+      <article class="card-wrapper card-slider">
+        <div class="card-header-bar">
+          <span class="card-badge badge-white">CARD 1: COMPARISON SLIDER</span>
+          <span style="font-size: 0.85rem; color: #ffffff;">Kéo trượt qua lại để so sánh Trước / Sau</span>
+        </div>
+        <div class="slider-viewport">
+          <div class="slider-layer slider-before">
+            <div class="popup-mock-frame">
+              <div class="popup-header-mini">
+                <div class="popup-header-title">
+                  <svg width="14" height="14" viewBox="0 0 128 128">
+                    <polygon points="64,16 24,26 24,66 64,116" fill="#F8FAFC" />
+                    <polygon points="64,16 104,26 104,66 64,116" fill="#A1A1AA" />
+                    <line x1="64" y1="16" x2="64" y2="116" stroke="#18181B" stroke-width="2" />
+                  </svg>
+                  Social Shield
+                </div>
+                <div class="popup-badge">Standby</div>
+              </div>
+
+              <div class="popup-section-card">
+                <div class="section-title-mini">
+                  <span>Custom Labels</span>
+                  <span style="color: #ef4444;">[Trước: Hardcode Prompt]</span>
+                </div>
+
+                <div style="display: flex; gap: 6px; margin-bottom: 8px;" class="annotation-target">
+                  <input type="text" value="crypto" readonly style="flex: 1; background: #000; border: 1px dashed #ef4444; border-radius: 4px; padding: 5px 8px; color: #fff; font-size: 11px;">
+                  <button type="button" style="background: #262626; border: none; border-radius: 4px; color: #888; padding: 0 10px; font-size: 11px;">Add</button>
+                  <span class="annotation-badge red" style="top: -12px; right: 0;">Chỉ có 1 ô nhập tên, thiếu chỗ viết tiêu chí!</span>
+                </div>
+
+                <div class="mock-chip annotation-target" style="border-color: rgba(239, 68, 68, 0.4);">
+                  <div class="mock-chip-header">
+                    <span class="mock-chip-name">crypto</span>
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                      <div class="mock-seg-ctrl">
+                        <span class="mock-seg-btn active">Show</span>
+                        <span class="mock-seg-btn">Hide</span>
+                        <span class="mock-seg-btn">Off</span>
+                      </div>
+                      <span style="color: #71717a; font-size: 10px;">✕</span>
+                    </div>
+                  </div>
+                  <div class="mock-chip-instruct default-fallback">
+                    Prompt gửi ngầm: "crypto": content specifically discussing, focused on, or related to crypto.
+                  </div>
+                  <span class="annotation-badge red" style="bottom: -10px; left: 10px;">Ép cứng template, AI đéo hiểu ngữ cảnh sâu!</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="slider-layer slider-after">
+            <div class="popup-mock-frame">
+              <div class="popup-header-mini">
+                <div class="popup-header-title">
+                  <svg width="14" height="14" viewBox="0 0 128 128">
+                    <polygon points="64,16 24,26 24,66 64,116" fill="#F8FAFC" />
+                    <polygon points="64,16 104,26 104,66 64,116" fill="#A1A1AA" />
+                    <line x1="64" y1="16" x2="64" y2="116" stroke="#18181B" stroke-width="2" />
+                  </svg>
+                  Social Shield
+                </div>
+                <div class="popup-badge" style="color: #22c55e; border-color: #22c55e;">Active</div>
+              </div>
+
+              <div class="popup-section-card">
+                <div class="section-title-mini">
+                  <span>Custom Labels</span>
+                  <span style="color: #22c55e;">[Sau: Tùy Biến Instruct]</span>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;" class="annotation-target">
+                  <div style="display: flex; gap: 6px;">
+                    <input type="text" value="crypto" readonly style="flex: 1; background: #000; border: 1px solid #22c55e; border-radius: 4px; padding: 5px 8px; color: #fff; font-size: 11px;">
+                    <button type="button" style="background: #ededed; border: none; border-radius: 4px; color: #000; font-weight: 500; padding: 0 10px; font-size: 11px;">Add</button>
+                  </div>
+                  <input type="text" value="tokens, web3 &amp; NFTs, ignore math crypto" readonly style="background: #09090b; border: 1px solid #27272a; border-radius: 4px; padding: 4px 8px; color: #38bdf8; font-family: 'JetBrains Mono', monospace; font-size: 10px;">
+                  <span class="annotation-badge green" style="top: -12px; right: 0;">Thêm ô nhập tiêu chí tự do, cực gọn!</span>
+                </div>
+
+                <div class="mock-chip annotation-target" style="border-color: rgba(34, 197, 94, 0.4);">
+                  <div class="mock-chip-header">
+                    <span class="mock-chip-name" style="color: #fff;">crypto</span>
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                      <div class="mock-seg-ctrl">
+                        <span class="mock-seg-btn active">Show</span>
+                        <span class="mock-seg-btn">Hide</span>
+                        <span class="mock-seg-btn">Off</span>
+                      </div>
+                      <span style="color: #71717a; font-size: 10px;">✕</span>
+                    </div>
+                  </div>
+                  <div class="mock-chip-instruct custom-active">
+                    ↳ tokens, web3 &amp; NFTs, ignore math crypto
+                  </div>
+                  <span class="annotation-badge green" style="bottom: -10px; left: 10px;">AI bám sát tiêu chí người dùng viết!</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="slider-divider">
+            <div class="slider-knob">⇄</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- CARD 2: BEFORE ONLY -->
+      <article class="card-wrapper card-before">
+        <div class="card-header-bar">
+          <span class="card-badge badge-red">CARD 2: BEFORE ONLY</span>
+          <span style="font-size: 0.85rem; color: #fca5a5;">Hiện trạng bị ép cứng câu prompt mặc định</span>
+        </div>
+
+        <div class="popup-mock-frame">
+          <div class="popup-header-mini">
+            <div class="popup-header-title">Social Shield</div>
+            <div class="popup-badge">v2.4.0</div>
+          </div>
+          <div class="popup-section-card">
+            <div class="section-title-mini">Custom Labels (Cũ)</div>
+            <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+              <input type="text" placeholder="Enter label (e.g. anime, soccer)..." value="anime" readonly style="flex: 1; background: #000; border: 1px solid #262626; border-radius: 4px; padding: 5px 8px; color: #ededed; font-size: 11px;">
+              <button type="button" style="background: #ededed; border: none; border-radius: 4px; color: #000; font-size: 11px; padding: 0 10px;">Add</button>
+            </div>
+            <div class="mock-chip">
+              <div class="mock-chip-header">
+                <span class="mock-chip-name">anime</span>
+                <div class="mock-seg-ctrl">
+                  <span class="mock-seg-btn active">Show</span>
+                  <span class="mock-seg-btn">Hide</span>
+                  <span class="mock-seg-btn">Off</span>
+                </div>
+              </div>
+              <div class="mock-chip-instruct default-fallback" style="margin-top: 4px;">
+                Prompt ngầm cố định: <code>"anime": content specifically discussing, focused on, or related to anime.</code>
+              </div>
+            </div>
+          </div>
+          <div style="font-size: 11px; color: #ef4444; line-height: 1.4;">
+            ⚠️ Nhược điểm: User muốn lọc riêng "cosplay &amp; manga" hay né "cartoon trẻ em" thì hoàn toàn bất lực vì prompt bị fix cứng trong source code!
+          </div>
+        </div>
+      </article>
+
+      <!-- CARD 3: AFTER ONLY -->
+      <article class="card-wrapper card-after">
+        <div class="card-header-bar">
+          <span class="card-badge badge-green">CARD 3: AFTER ONLY (INTERACTIVE MOCK)</span>
+          <span style="font-size: 0.85rem; color: #86efac;">Thử nhập nhãn + tiêu chí và xem payload thay đổi tức thì</span>
+        </div>
+
+        <div class="popup-mock-frame" style="width: 360px;">
+          <div class="popup-header-mini">
+            <div class="popup-header-title">
+              <svg width="14" height="14" viewBox="0 0 128 128">
+                <polygon points="64,16 24,26 24,66 64,116" fill="#F8FAFC" />
+                <polygon points="64,16 104,26 104,66 64,116" fill="#A1A1AA" />
+                <line x1="64" y1="16" x2="64" y2="116" stroke="#18181B" stroke-width="2" />
+              </svg>
+              Social Shield
+            </div>
+            <div class="popup-badge" style="color: #22c55e; border-color: #22c55e;">v2.5.0 Ready</div>
+          </div>
+
+          <div class="popup-section-card">
+            <div class="section-title-mini">
+              <span>Custom Labels &amp; Criteria</span>
+              <span style="color: #71717a;">AI-matched</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;">
+              <div style="display: flex; gap: 6px;">
+                <input type="text" id="demoLabelInput" placeholder="Label (e.g. crypto, anime)..." style="flex: 1; background: #000; border: 1px solid #333; border-radius: 4px; padding: 6px 8px; color: #fff; font-size: 11.5px; outline: none;">
+                <button type="button" id="demoAddBtn" style="background: #ededed; border: none; border-radius: 4px; color: #000; font-weight: 600; font-size: 11px; padding: 0 12px; cursor: pointer;">Add</button>
+              </div>
+              <input type="text" id="demoInstructInput" placeholder="Criteria/Instruction (optional, để trống sẽ tự sinh)..." style="background: #0a0a0a; border: 1px solid #262626; border-radius: 4px; padding: 5px 8px; color: #38bdf8; font-size: 10.5px; font-family: 'JetBrains Mono', monospace; outline: none;">
+            </div>
+
+            <div id="demoChipList" style="display: flex; flex-direction: column; gap: 6px;">
+              <div class="mock-chip" data-name="crypto">
+                <div class="mock-chip-header">
+                  <span class="mock-chip-name">crypto</span>
+                  <div style="display: flex; gap: 4px; align-items: center;">
+                    <div class="mock-seg-ctrl">
+                      <button type="button" class="mock-seg-btn active">Show</button>
+                      <button type="button" class="mock-seg-btn">Hide</button>
+                      <button type="button" class="mock-seg-btn">Off</button>
+                    </div>
+                    <button type="button" class="demo-remove-btn" style="background: none; border: none; color: #71717a; cursor: pointer; font-size: 10px;">✕</button>
+                  </div>
+                </div>
+                <div class="mock-chip-instruct custom-active">
+                  ↳ tokens, web3 &amp; NFTs, ignore math crypto
+                </div>
+              </div>
+
+              <div class="mock-chip" data-name="soccer">
+                <div class="mock-chip-header">
+                  <span class="mock-chip-name">soccer</span>
+                  <div style="display: flex; gap: 4px; align-items: center;">
+                    <div class="mock-seg-ctrl">
+                      <button type="button" class="mock-seg-btn">Show</button>
+                      <button type="button" class="mock-seg-btn active">Hide</button>
+                      <button type="button" class="mock-seg-btn">Off</button>
+                    </div>
+                    <button type="button" class="demo-remove-btn" style="background: none; border: none; color: #71717a; cursor: pointer; font-size: 10px;">✕</button>
+                  </div>
+                </div>
+                <div class="mock-chip-instruct default-fallback">
+                  ↳ content specifically discussing, focused on, or related to soccer. <span style="color: #71717a;">(auto)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="payload-inspector">
+            <div class="payload-title">
+              <span>📡 classifier.dev Prompt Output:</span>
+            </div>
+            <div id="demoPayloadPreview" style="color: #86efac; font-size: 9.5px; white-space: pre-wrap; max-height: 120px; overflow-y: auto;">
+1. "crypto": tokens, web3 &amp; NFTs, ignore math crypto.
+2. "soccer": content specifically discussing, focused on, or related to soccer.
+3. "other / casual discussion": casual banter or general statements.
+            </div>
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <!-- TAB 2: GIẢI THÍCH CHI TIẾT -->
+    <section id="tab-explain" class="tab-pane" style="display: none;">
+      <section class="explain-section">
+        <div class="explain-layout">
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 1/4 • VĨ MÔ</div>
+            <h3>📁 1. Kiến Trúc &amp; Data Model</h3>
+            <p>Mô hình lưu trữ của `customLabels` trong Chrome Storage được mở rộng thêm trường <code>instruction?: string</code>.</p>
+            <p>Đảm bảo 100% tương thích ngược: Các nhãn dạng chuỗi cũ (string) hoặc object không có instruction vẫn chạy trơn tru mà không cần migration phức tạp.</p>
+            <div class="meta-tag-group">
+              <span class="meta-tag green">Backward-Compatible</span>
+              <span class="meta-tag blue">Storage Sync</span>
+            </div>
+          </div>
+
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots">
+                  <span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span>
+                </div>
+                <div class="file-dropdown-wrapper">
+                  <button class="file-dropdown-trigger" type="button">
+                    <span>📁 data-models/custom-label.ts</span>
+                  </button>
+                </div>
+              </div>
+              <div class="code-actions">
+                <span class="code-lang-badge"><span class="lang-dot ts"></span> TS TYPE</span>
+              </div>
+            </div>
+            <div class="code-body">
+              <div class="c-line"><span class="c-sign"></span><span class="c-text"><span class="kwd">export interface</span> <span class="prop">CustomLabel</span> {</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="prop">name</span>: <span class="kwd">string</span>;</span><span class="c-comment">// Tên nhãn (tối đa 40 ký tự)</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="prop">action</span>: <span class="str">'show'</span> | <span class="str">'hide'</span> | <span class="str">'off'</span>;</span><span class="c-comment">// 3-state control</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  <span class="prop">instruction</span>?: <span class="kwd">string</span>;</span><span class="c-comment">// Tiêu chí định hướng phân loại riêng cho Jev AI</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">}</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="explain-section">
+        <div class="explain-layout">
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 2/4 • UI &amp; COMPONENT</div>
+            <h3>🎨 2. Nâng Cấp Giao Diện Popup</h3>
+            <p>Tách form thêm nhãn thành 2 dòng cực gọn theo phong cách Vercel: Dòng 1 nhập tên nhãn + Nút Add. Dòng 2 là ô input tiêu chí phụ.</p>
+            <p>Khi hiển thị chip, tiêu chí tùy biến sẽ có màu xanh cyan nổi bật, còn nhãn dùng tiêu chí mặc định sẽ hiện màu xám ghi chú (auto).</p>
+            <div class="meta-tag-group">
+              <span class="meta-tag green">Geist Mono</span>
+              <span class="meta-tag purple">Compact UX</span>
+            </div>
+          </div>
+
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots">
+                  <span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span>
+                </div>
+                <div class="file-dropdown-wrapper">
+                  <button class="file-dropdown-trigger" type="button">
+                    <span>📄 popup.html (Diff Form Input)</span>
+                  </button>
+                </div>
+              </div>
+              <div class="code-actions">
+                <span class="code-lang-badge"><span class="lang-dot structure"></span> HTML</span>
+              </div>
+            </div>
+            <div class="code-body">
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">&lt;<span class="kwd">div</span> <span class="prop">style</span>=<span class="str">"display: flex; gap: 6px; margin-bottom: 6px;"</span>&gt;</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  &lt;<span class="kwd">input</span> <span class="prop">type</span>=<span class="str">"text"</span> <span class="prop">id</span>=<span class="str">"customLabelInput"</span> <span class="prop">placeholder</span>=<span class="str">"Enter label..."</span>&gt;</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  &lt;<span class="kwd">button</span> <span class="prop">id</span>=<span class="str">"addCustomLabelBtn"</span>&gt;Add&lt;/<span class="kwd">button</span>&gt;</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">&lt;/<span class="kwd">div</span>&gt;</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">&lt;<span class="kwd">input</span> <span class="prop">type</span>=<span class="str">"text"</span> <span class="prop">id</span>=<span class="str">"customInstructInput"</span></span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  <span class="prop">placeholder</span>=<span class="str">"Criteria / Instruction (optional)..."</span></span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  <span class="prop">class</span>=<span class="str">"instruct-sub-input"</span>&gt;</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="explain-section">
+        <div class="explain-layout">
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 3/4 • RUNTIME</div>
+            <h3>📡 3. Payload Gửi Tới classifier.dev</h3>
+            <p>Hàm <code>getActiveTaxonomy</code> gom toàn bộ danh sách nhãn kèm tiêu chí đã định dạng theo đúng chuẩn <code>bulk-classify</code>.</p>
+            <p>Nhãn có instruction tự viết sẽ được giữ nguyên vẹn tiêu chí đó, giúp model zero-shot phân biệt chính xác từng ngữ cảnh chuyên biệt.</p>
+            <div class="meta-tag-group">
+              <span class="meta-tag blue">classifier.dev</span>
+              <span class="meta-tag green">High Precision</span>
+            </div>
+          </div>
+
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots">
+                  <span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span>
+                </div>
+                <div class="file-dropdown-wrapper">
+                  <button class="file-dropdown-trigger" type="button">
+                    <span>📄 background.js (API Payload)</span>
+                  </button>
+                </div>
+              </div>
+              <div class="code-actions">
+                <span class="code-lang-badge"><span class="lang-dot json"></span> JSON</span>
+              </div>
+            </div>
+            <div class="code-body">
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">{</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="prop">"labels"</span>: [<span class="str">"crypto"</span>, <span class="str">"soccer"</span>, <span class="str">"other / casual discussion"</span>],</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  <span class="prop">"instructions"</span>: <span class="str">"Analyze social media content in Vietnamese or English for any categories that apply: 1. \"crypto\": tokens, web3 &amp; NFTs, ignore math crypto. 2. \"soccer\": content specifically discussing, focused on, or related to soccer. 3. \"other / casual discussion\": casual banter..."</span>,</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="prop">"multi"</span>: <span class="kwd">true</span>,</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="prop">"max_labels"</span>: <span class="num">5</span></span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">}</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="explain-section">
+        <div class="explain-layout">
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 4/4 • LOGIC CHÍNH</div>
+            <h3>⚙️ 4. Thuật Toán Auto-Fallback An Toàn</h3>
+            <p>Trọng tâm của tính năng nằm ở khâu kiểm tra chuỗi instruction trong <code>content.js</code> và <code>social-anti-ragebait.user.js</code>.</p>
+            <p>Nếu người dùng nhập chuỗi trắng (toàn khoảng trắng hoặc rỗng), hệ thống lập tức trỏ về template mặc định. Xóa bỏ hoàn toàn nguy cơ prompt bị rỗng hoặc lỗi cú pháp.</p>
+            <div class="meta-tag-group">
+              <span class="meta-tag green">Zero Regression</span>
+              <span class="meta-tag yellow">Strict Fallback</span>
+            </div>
+          </div>
+
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots">
+                  <span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span>
+                </div>
+                <div class="file-dropdown-wrapper">
+                  <button class="file-dropdown-trigger" type="button">
+                    <span>📄 content.js (getActiveTaxonomy Refactor)</span>
+                  </button>
+                </div>
+              </div>
+              <div class="code-actions">
+                <span class="code-lang-badge"><span class="lang-dot ts"></span> JS LOGIC</span>
+              </div>
+            </div>
+            <div class="code-body">
+              <div class="c-line"><span class="c-sign"></span><span class="c-text"><span class="kwd">if</span> (<span class="prop">enabled</span> &amp;&amp; !<span class="prop">isDuplicate</span>) {</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="prop">activeLabels</span>.<span class="fn">push</span>(<span class="prop">name</span>);</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  <span class="kwd">const</span> <span class="prop">userInstruct</span> = <span class="kwd">typeof</span> <span class="prop">c</span> === <span class="str">'object'</span> ? (<span class="prop">c</span>?.<span class="prop">instruction</span> || <span class="str">''</span>).<span class="fn">trim</span>() : <span class="str">''</span>;</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  <span class="kwd">const</span> <span class="prop">finalInstruct</span> = <span class="prop">userInstruct</span> || <span class="str">`content specifically discussing, focused on, or related to ${name}.`</span>;</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="prop">instructionsList</span>.<span class="fn">push</span>(<span class="str">`"${name}": ${finalInstruct}`</span>);</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">}</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </div>
+
+  <button id="inspector-toggle" onclick="toggleDiff()">
+    <span>🔍 Check Diff</span>
+    <span id="diffStatusTag">[BẬT]</span>
+  </button>
+
+  <script src="./visual-core.js"></script>
+
+  <script>
+    (function initInteractiveCard3() {
+      const demoLabelInput = document.getElementById('demoLabelInput');
+      const demoInstructInput = document.getElementById('demoInstructInput');
+      const demoAddBtn = document.getElementById('demoAddBtn');
+      const demoChipList = document.getElementById('demoChipList');
+      const demoPayloadPreview = document.getElementById('demoPayloadPreview');
+
+      let demoItems = [
+        { name: 'crypto', action: 'show', instruction: 'tokens, web3 & NFTs, ignore math crypto' },
+        { name: 'soccer', action: 'hide', instruction: '' }
+      ];
+
+      function updatePreview() {
+        if (!demoPayloadPreview) return;
+        const activeItems = demoItems.filter(i => i.action !== 'off');
+        let lines = activeItems.map((item, idx) => {
+          const instruct = item.instruction ? item.instruction : `content specifically discussing, focused on, or related to ${item.name}.`;
+          return `${idx + 1}. "${item.name}": ${instruct}`;
+        });
+        lines.push(`${lines.length + 1}. "other / casual discussion": casual banter or general statements.`);
+        demoPayloadPreview.textContent = lines.join('\n');
+      }
+
+      function renderDemoChips() {
+        if (!demoChipList) return;
+        demoChipList.innerHTML = '';
+        demoItems.forEach((item, index) => {
+          const chip = document.createElement('div');
+          chip.className = 'mock-chip';
+
+          const hasCustom = Boolean(item.instruction && item.instruction.trim());
+          const instructText = hasCustom
+            ? `↳ ${item.instruction.trim()}`
+            : `↳ content specifically discussing, focused on, or related to ${item.name}. (auto)`;
+
+          chip.innerHTML = `
+            <div class="mock-chip-header">
+              <span class="mock-chip-name" style="color: ${hasCustom ? '#38bdf8' : '#fff'};">${item.name}</span>
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <div class="mock-seg-ctrl">
+                  <button type="button" class="mock-seg-btn ${item.action === 'show' ? 'active' : ''}" data-act="show">Show</button>
+                  <button type="button" class="mock-seg-btn ${item.action === 'hide' ? 'active' : ''}" data-act="hide">Hide</button>
+                  <button type="button" class="mock-seg-btn ${item.action === 'off' ? 'active' : ''}" data-act="off">Off</button>
+                </div>
+                <button type="button" class="demo-del-btn" style="background: none; border: none; color: #71717a; cursor: pointer; font-size: 10px; padding: 2px;">✕</button>
+              </div>
+            </div>
+            <div class="mock-chip-instruct ${hasCustom ? 'custom-active' : 'default-fallback'}">
+              ${instructText}
+            </div>
+          `;
+
+          chip.querySelectorAll('.mock-seg-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              item.action = btn.getAttribute('data-act');
+              renderDemoChips();
+              updatePreview();
+            });
+          });
+
+          chip.querySelector('.demo-del-btn').addEventListener('click', () => {
+            demoItems.splice(index, 1);
+            renderDemoChips();
+            updatePreview();
+          });
+
+          demoChipList.appendChild(chip);
+        });
+        updatePreview();
+      }
+
+      if (demoAddBtn && demoLabelInput && demoInstructInput) {
+        demoAddBtn.addEventListener('click', () => {
+          const nameVal = demoLabelInput.value.trim().toLowerCase();
+          const instructVal = demoInstructInput.value.trim();
+          if (!nameVal) return;
+          if (demoItems.some(i => i.name.toLowerCase() === nameVal)) {
+            alert('Nhãn này đã tồn tại!');
+            return;
+          }
+          demoItems.push({
+            name: nameVal,
+            action: 'show',
+            instruction: instructVal
+          });
+          demoLabelInput.value = '';
+          demoInstructInput.value = '';
+          renderDemoChips();
+          updatePreview();
+        });
+
+        demoLabelInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') demoAddBtn.click();
+        });
+        demoInstructInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') demoAddBtn.click();
+        });
+      }
+
+      renderDemoChips();
+    })();
+  </script>
+</body>
+</html>

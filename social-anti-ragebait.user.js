@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Social Shield All-in-One: Anti-Rage, Anti-Scam, Universal Reels & Monk Mode
 // @namespace    https://classifier.dev/
-// @version      2.4.0
+// @version      2.5.0
 // @description  Automatically blurs rage-bait, blocks scam posts, collapses seeding comments, and activates Monk Mode to hide thirst traps & Reels/Shorts on Instagram, YouTube, Facebook, Threads, and X.
 // @author       Antigravity
 // @match        *://*.threads.com/*
@@ -1140,7 +1140,9 @@
           activeLabels.some((l) => l.toLowerCase() === name.toLowerCase());
         if (enabled && !isDuplicate) {
           activeLabels.push(name);
-          instructionsList.push(`"${name}": content specifically discussing, focused on, or related to ${name}.`);
+          const rawInstruct = typeof c === 'object' && c?.instruction ? String(c.instruction).replace(/[\r\n\t]/g, ' ').slice(0, 200).trim() : '';
+          const instruction = rawInstruct || `content specifically discussing, focused on, or related to ${name}.`;
+          instructionsList.push(`"${name}": ${/[.!?:]$/.test(instruction) ? instruction : instruction + '.'}`);
         }
       });
     }

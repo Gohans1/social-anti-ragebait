@@ -250,10 +250,16 @@
       }
       const oldCustomActive = (Array.isArray(oldCfg?.customLabels) ? oldCfg.customLabels : [])
         .filter((c) => (typeof c === 'object' ? (c.action || (c.enabled === false ? 'off' : 'show')) : 'show') !== 'off')
-        .map((c) => (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase());
+        .map((c) => ({
+          name: (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase(),
+          instruction: typeof c === 'object' && c?.instruction ? String(c.instruction).replace(/[\r\n\t]/g, ' ').slice(0, 200).trim() : '',
+        }));
       const newCustomActive = (Array.isArray(newCfg?.customLabels) ? newCfg.customLabels : [])
         .filter((c) => (typeof c === 'object' ? (c.action || (c.enabled === false ? 'off' : 'show')) : 'show') !== 'off')
-        .map((c) => (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase());
+        .map((c) => ({
+          name: (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase(),
+          instruction: typeof c === 'object' && c?.instruction ? String(c.instruction).replace(/[\r\n\t]/g, ' ').slice(0, 200).trim() : '',
+        }));
       return JSON.stringify(oldCustomActive) !== JSON.stringify(newCustomActive);
     }
 
@@ -572,7 +578,9 @@
           activeLabels.some((l) => l.toLowerCase() === name.toLowerCase());
         if (enabled && !isDuplicate) {
           activeLabels.push(name);
-          instructionsList.push(`"${name}": content specifically discussing, focused on, or related to ${name}.`);
+          const rawInstruct = typeof c === 'object' && c?.instruction ? String(c.instruction).replace(/[\r\n\t]/g, ' ').slice(0, 200).trim() : '';
+          const instruction = rawInstruct || `content specifically discussing, focused on, or related to ${name}.`;
+          instructionsList.push(`"${name}": ${/[.!?:]$/.test(instruction) ? instruction : instruction + '.'}`);
         }
       });
     }

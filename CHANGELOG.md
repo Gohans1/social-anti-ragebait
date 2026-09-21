@@ -5,6 +5,21 @@ All notable changes to the **Social Shield: AI Anti-Rage & Focus Guard** project
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-09-21
+
+### Added
+- **Custom Label Criteria & Instruction Editor**: Users can now define explicit prompt instructions/criteria per custom label in the extension popup UI.
+- **Strict Auto-Fallback**: Custom labels with empty instructions automatically fall back to the calibrated default template (`content specifically discussing, focused on, or related to ${name}.`), ensuring 100% backward-compatibility.
+- **Criteria Badge Indicator**: Custom label chips render a Geist Mono subtitle (`↳ <criteria>`) with cyan highlight for customized rules or auto-criteria indicator.
+- **Minimalist Geometric Social Shield Iconography**: Replaced legacy red/white icon with high-contrast chiseled monochrome shield icons across all extension resolutions (16px, 48px, 128px) and popup header.
+
+### Fixed
+- **Storage Hydration Mapping**: Fixed custom labels storage load in `popup.js` (`chrome.storage.local.get` and `chrome.storage.onChanged`) to strictly preserve `instruction` attributes across popup reloads and prevent silent data loss.
+- **Taxonomy Payload Alter Detection**: Updated `isTaxonomyPayloadAltered` in `content.js` to track instruction changes, ensuring accurate classifier cache invalidation and immediate re-scoring.
+- **Label Re-submission Update**: Submitting an existing custom label now safely updates or clears its instruction without duplicate chip creation.
+
+---
+
 ## [2.4.0] - 2026-09-21
 
 ### Added

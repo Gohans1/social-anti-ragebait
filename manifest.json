@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Social Shield: AI Anti-Rage & Focus Guard",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "AI-powered feed shield: auto-blur rage bait, scams, and block short-form reels to protect focus across social feeds.",
   "icons": {
     "16": "icons/icon16.png",

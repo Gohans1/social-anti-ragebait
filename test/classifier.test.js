@@ -503,7 +503,9 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
             activeLabels.some((l) => l.toLowerCase() === name.toLowerCase());
           if (enabled && !isDuplicate) {
             activeLabels.push(name);
-            instructionsList.push(`"${name}": content specifically discussing, focused on, or related to ${name}.`);
+            const rawInstruct = typeof c === 'object' && c?.instruction ? String(c.instruction).replace(/[\r\n\t]/g, ' ').slice(0, 200).trim() : '';
+            const instruction = rawInstruct || `content specifically discussing, focused on, or related to ${name}.`;
+            instructionsList.push(`"${name}": ${instruction.endsWith('.') ? instruction : instruction + '.'}`);
           }
         });
       }
@@ -524,6 +526,7 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
       filterMemeEnabled: true,
       customLabels: [
         { name: 'anime', enabled: true },
+        { name: 'crypto', enabled: true, instruction: 'discussions on web3 and tokens' },
         { name: 'bóng đá', enabled: false }, // disabled
         { name: 'Meme / Humor / Satire', enabled: true }, // case-insensitive duplicate of catalog label
         { name: 'other / casual discussion', enabled: true }, // catch-all duplicate attempt
@@ -533,12 +536,76 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
 
     expect(taxonomy.labels).toContain('meme / humor / satire');
     expect(taxonomy.labels).toContain('anime');
+    expect(taxonomy.labels).toContain('crypto');
     expect(taxonomy.labels).not.toContain('bóng đá');
     // Ensure duplicate was not added twice and case-insensitive match was deduplicated
     expect(taxonomy.labels.filter(l => l.toLowerCase() === 'meme / humor / satire').length).toBe(1);
     // Ensure catch-all appears exactly once at the end
     expect(taxonomy.labels.filter(l => l.toLowerCase() === 'other / casual discussion').length).toBe(1);
+    // Auto fallback for empty instruction
     expect(taxonomy.instructions).toContain('"anime": content specifically discussing, focused on, or related to anime.');
+    // Custom instruction formatting
+    expect(taxonomy.instructions).toContain('"crypto": discussions on web3 and tokens.');
+  });
+
+  test("isTaxonomyPayloadAltered detects changes in customLabel instruction", () => {
+    function isTaxonomyPayloadAltered(oldCfg, newCfg) {
+      const oldCustomActive = (Array.isArray(oldCfg?.customLabels) ? oldCfg.customLabels : [])
+        .filter((c) => (typeof c === 'object' ? (c.action || (c.enabled === false ? 'off' : 'show')) : 'show') !== 'off')
+        .map((c) => ({
+          name: (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase(),
+          instruction: typeof c === 'object' && c?.instruction ? String(c.instruction).replace(/[\r\n\t]/g, ' ').slice(0, 200).trim() : '',
+        }));
+      const newCustomActive = (Array.isArray(newCfg?.customLabels) ? newCfg.customLabels : [])
+        .filter((c) => (typeof c === 'object' ? (c.action || (c.enabled === false ? 'off' : 'show')) : 'show') !== 'off')
+        .map((c) => ({
+          name: (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase(),
+          instruction: typeof c === 'object' && c?.instruction ? String(c.instruction).replace(/[\r\n\t]/g, ' ').slice(0, 200).trim() : '',
+        }));
+      return JSON.stringify(oldCustomActive) !== JSON.stringify(newCustomActive);
+    }
+
+    const cfg1 = { customLabels: [{ name: 'crypto', action: 'show', instruction: '' }] };
+    const cfg2 = { customLabels: [{ name: 'crypto', action: 'show', instruction: 'web3 & tokens' }] };
+    const cfg3 = { customLabels: [{ name: 'crypto', action: 'show', instruction: 'web3 & tokens' }] };
+
+    expect(isTaxonomyPayloadAltered(cfg1, cfg2)).toBe(true);
+    expect(isTaxonomyPayloadAltered(cfg2, cfg3)).toBe(false);
+  });
+
+  test("Popup customLabels storage hydration strictly preserves instruction across sessions", () => {
+    function hydrateCustomLabels(stored) {
+      if (!Array.isArray(stored)) return [];
+      return stored
+        .map((c) => {
+          if (typeof c === 'string') return { name: c.trim(), action: 'show', instruction: '' };
+          return {
+            name: (c?.name || '').trim(),
+            action: c?.action || (c?.enabled === false ? 'off' : 'show'),
+            instruction: typeof c === 'object' && typeof c?.instruction === 'string'
+              ? c.instruction.replace(/[\r\n\t]/g, ' ').slice(0, 200).trim()
+              : '',
+          };
+        })
+        .filter((c) => c.name);
+    }
+
+    const storedData = [
+      'legacy_string_label',
+      { name: 'legacy_object_label', action: 'show' },
+      { name: 'crypto', action: 'show', instruction: 'web3 & tokens' },
+      { name: 'empty_instruct', action: 'hide', instruction: '   ' },
+      { name: 'corrupted_instruct', action: 'show', instruction: 12345 },
+    ];
+
+    const hydrated = hydrateCustomLabels(storedData);
+    expect(hydrated).toEqual([
+      { name: 'legacy_string_label', action: 'show', instruction: '' },
+      { name: 'legacy_object_label', action: 'show', instruction: '' },
+      { name: 'crypto', action: 'show', instruction: 'web3 & tokens' },
+      { name: 'empty_instruct', action: 'hide', instruction: '' },
+      { name: 'corrupted_instruct', action: 'show', instruction: '' },
+    ]);
   });
 
   test("Live API proof: custom label with auto prompt wrapping classifies matching content", async () => {
