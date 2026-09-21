@@ -31,9 +31,12 @@
 (function () {
   'use strict';
 
+  const DEFAULT_GEMINI_PROMPT = 'Summarize the following social media post into exactly 3 concise, high-signal bullet points in the same language as the post (Vietnamese or English). No intro, no filler, strictly 3 bullet points starting with -:';
+
   const CONFIG = {
     apiEndpoint: 'https://classifier.dev',
     geminiApiKey: 'AIzaSyCEUfHf2SiBsA5ZLDLHJMg_1bkjebeuVoo',
+    geminiPrompt: DEFAULT_GEMINI_PROMPT,
     batchDebounceMs: 120,
     confidenceThreshold: 0.30,
     categoryActions: {
@@ -106,6 +109,14 @@
       savedApiKey = localStorage.getItem('social_shield_gemini_api_key') || '';
     }
     if (savedApiKey) CONFIG.geminiApiKey = String(savedApiKey).trim();
+
+    let savedPrompt = '';
+    if (typeof GM_getValue !== 'undefined') {
+      savedPrompt = GM_getValue('social_shield_gemini_prompt', '');
+    } else {
+      savedPrompt = localStorage.getItem('social_shield_gemini_prompt') || '';
+    }
+    if (savedPrompt) CONFIG.geminiPrompt = String(savedPrompt).trim();
   } catch (e) {}
 
   let scannedCount = 0;
@@ -1862,7 +1873,11 @@
         return;
       }
       const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent';
-      const prompt = 'Summarize the following social media post into exactly 3 concise, high-signal bullet points in the same language as the post (Vietnamese or English). No intro, no filler, strictly 3 bullet points starting with -:\n\n' + text.trim();
+      const baseInstruction = (CONFIG.geminiPrompt || DEFAULT_GEMINI_PROMPT).trim();
+      const formattedInstruction = baseInstruction.endsWith(':')
+        ? baseInstruction
+        : baseInstruction + ':';
+      const prompt = formattedInstruction + '\n\n' + text.trim();
       const payload = JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { maxOutputTokens: 250, temperature: 0.2 },

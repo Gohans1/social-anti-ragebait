@@ -11,11 +11,13 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const DEFAULT_GEMINI_API_KEY = 'AIzaSyCEUfHf2SiBsA5ZLDLHJMg_1bkjebeuVoo';
+  const DEFAULT_GEMINI_PROMPT = 'Summarize the following social media post into exactly 3 concise, high-signal bullet points in the same language as the post (Vietnamese or English). No intro, no filler, strictly 3 bullet points starting with -:';
 
   let categoryActions = { ...DEFAULT_CATEGORY_ACTIONS };
   let customLabels = [];
   let focusModeEnabled = true;
   let currentScannedCount = 0;
+  let savedGeminiPrompt = DEFAULT_GEMINI_PROMPT;
 
   const monkModeToggle = document.getElementById('monkModeToggle');
   const blockReelsToggle = document.getElementById('blockReelsToggle');
@@ -25,6 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const hideFloatingPillToggle = document.getElementById('hideFloatingPillToggle');
   const singleTagModeToggle = document.getElementById('singleTagModeToggle');
   const geminiApiKeyInput = document.getElementById('geminiApiKeyInput');
+  const geminiPromptInput = document.getElementById('geminiPromptInput');
+  const savePromptBtn = document.getElementById('savePromptBtn');
+  const resetPromptBtn = document.getElementById('resetPromptBtn');
   const thresholdRange = document.getElementById('thresholdRange');
   const thresholdVal = document.getElementById('thresholdVal');
 
@@ -312,6 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'focusCollapsedCount',
       'scannedCount',
       'geminiApiKey',
+      'geminiPrompt',
     ],
     (res) => {
       initActivePlatform();
@@ -383,6 +389,13 @@ document.addEventListener('DOMContentLoaded', () => {
           ? res.geminiApiKey
           : DEFAULT_GEMINI_API_KEY;
       }
+      if (geminiPromptInput) {
+        savedGeminiPrompt = (typeof res.geminiPrompt === 'string' && res.geminiPrompt.trim().length > 0)
+          ? res.geminiPrompt.trim()
+          : DEFAULT_GEMINI_PROMPT;
+        geminiPromptInput.value = savedGeminiPrompt;
+        if (savePromptBtn) savePromptBtn.disabled = true;
+      }
       if (typeof res.confidenceThreshold === 'number') {
         thresholdRange.value = Math.round(res.confidenceThreshold * 100);
         thresholdVal.textContent = `${thresholdRange.value}%`;
@@ -436,6 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
       geminiApiKey: (geminiApiKeyInput && geminiApiKeyInput.value.trim().length > 0)
         ? geminiApiKeyInput.value.trim()
         : DEFAULT_GEMINI_API_KEY,
+      geminiPrompt: savedGeminiPrompt,
       confidenceThreshold: parseInt(thresholdRange.value, 10) / 100,
     };
 
@@ -464,6 +478,49 @@ document.addEventListener('DOMContentLoaded', () => {
   if (geminiApiKeyInput) {
     geminiApiKeyInput.addEventListener('change', saveAndNotify);
     geminiApiKeyInput.addEventListener('blur', saveAndNotify);
+  }
+
+  if (geminiPromptInput && savePromptBtn) {
+    const checkPromptDirty = () => {
+      const currentVal = geminiPromptInput.value.trim();
+      savePromptBtn.disabled = (currentVal === savedGeminiPrompt);
+    };
+
+    geminiPromptInput.addEventListener('input', checkPromptDirty);
+
+    savePromptBtn.addEventListener('click', () => {
+      if (savePromptBtn.disabled) return;
+      const newPrompt = geminiPromptInput.value.trim() || DEFAULT_GEMINI_PROMPT;
+      chrome.storage.local.set({ geminiPrompt: newPrompt }, () => {
+        savedGeminiPrompt = newPrompt;
+        geminiPromptInput.value = newPrompt;
+        savePromptBtn.disabled = true;
+
+        const originalText = savePromptBtn.textContent;
+        savePromptBtn.textContent = 'Saved ✓';
+        setTimeout(() => {
+          savePromptBtn.textContent = originalText;
+        }, 1500);
+
+        chrome.tabs.query({}, (tabs) => {
+          if (tabs) {
+            tabs.forEach((tab) => {
+              chrome.tabs.sendMessage(tab.id, {
+                type: 'UPDATE_CONFIG',
+                config: { geminiPrompt: newPrompt },
+              }).catch(() => {});
+            });
+          }
+        });
+      });
+    });
+
+    if (resetPromptBtn) {
+      resetPromptBtn.addEventListener('click', () => {
+        geminiPromptInput.value = DEFAULT_GEMINI_PROMPT;
+        checkPromptDirty();
+      });
+    }
   }
 
   thresholdRange.addEventListener('input', () => {
@@ -527,6 +584,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (changes.focusCollapsedCount && focusCounter) focusCounter.textContent = changes.focusCollapsedCount.newValue || 0;
       if (changes.geminiApiKey && geminiApiKeyInput) {
         geminiApiKeyInput.value = changes.geminiApiKey.newValue || '';
+      }
+      if (changes.geminiPrompt && geminiPromptInput) {
+        savedGeminiPrompt = (changes.geminiPrompt.newValue || '').trim() || DEFAULT_GEMINI_PROMPT;
+        geminiPromptInput.value = savedGeminiPrompt;
+        if (savePromptBtn) savePromptBtn.disabled = true;
       }
       if (changes.scannedCount) {
         currentScannedCount = changes.scannedCount.newValue || 0;

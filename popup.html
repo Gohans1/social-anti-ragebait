@@ -366,6 +366,42 @@
       color: #ededed;
       border-color: #444444;
     }
+    .link-btn {
+      background: transparent;
+      border: none;
+      color: #71717a;
+      font-size: 10px;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+      font-family: 'Geist', sans-serif;
+    }
+    .link-btn:hover {
+      color: #a1a1aa;
+    }
+    .btn-save-prompt {
+      background: #ededed;
+      color: #000000;
+      border: 1px solid #ededed;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 3px 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: 'Geist', sans-serif;
+    }
+    .btn-save-prompt:hover:not(:disabled) {
+      background: #ffffff;
+      border-color: #ffffff;
+    }
+    .btn-save-prompt:disabled {
+      background: #171717;
+      color: #52525b;
+      border-color: #262626;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
   </style>
 </head>
 <body>
@@ -611,6 +647,21 @@
         <div class="sublabel">Google AI Studio key for on-demand 3-bullet post summary</div>
       </div>
       <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." style="width: 100%; box-sizing: border-box; background: #0a0a0a; border: 1px solid #262626; color: #ededed; padding: 5px 8px; border-radius: 4px; font-size: 11px; font-family: 'Geist Mono', monospace; outline: none;" />
+    </div>
+
+    <!-- Gemini 3.5 Flash-Lite System Prompt -->
+    <div class="row" style="flex-direction: column; align-items: stretch; gap: 6px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline;">
+        <div>
+          <div class="label">Gemini Summarizer Prompt</div>
+          <div class="sublabel">System instruction sent to Gemini 3.5 Flash-Lite</div>
+        </div>
+        <button type="button" id="resetPromptBtn" class="link-btn" title="Reset to default prompt">Reset</button>
+      </div>
+      <textarea id="geminiPromptInput" rows="3" placeholder="Enter system prompt instructions..." style="width: 100%; box-sizing: border-box; background: #0a0a0a; border: 1px solid #262626; color: #ededed; padding: 6px 8px; border-radius: 4px; font-size: 11px; font-family: 'Geist Mono', monospace; line-height: 1.4; resize: vertical; outline: none; transition: border-color 0.15s;"></textarea>
+      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
+        <button type="button" id="savePromptBtn" disabled class="btn-save-prompt">Save</button>
+      </div>
     </div>
   </div>
 

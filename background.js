@@ -4,16 +4,20 @@
 
 const API_ENDPOINT = 'https://classifier.dev/';
 const DEFAULT_GEMINI_API_KEY = 'AIzaSyCEUfHf2SiBsA5ZLDLHJMg_1bkjebeuVoo';
+const DEFAULT_GEMINI_PROMPT = 'Summarize the following social media post into exactly 3 concise, high-signal bullet points in the same language as the post (Vietnamese or English). No intro, no filler, strictly 3 bullet points starting with -:';
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log('[Social Anti-Ragebait] Extension installed / updated.');
-  // Set default confidence threshold and Gemini API Key in storage if not already set
-  chrome.storage.local.get(['confidenceThreshold', 'geminiApiKey'], (res) => {
+  // Set default confidence threshold, Gemini API Key and prompt in storage if not already set
+  chrome.storage.local.get(['confidenceThreshold', 'geminiApiKey', 'geminiPrompt'], (res) => {
     if (typeof res.confidenceThreshold !== 'number') {
       chrome.storage.local.set({ confidenceThreshold: 0.30 });
     }
     if (!res.geminiApiKey || typeof res.geminiApiKey !== 'string' || !res.geminiApiKey.trim()) {
       chrome.storage.local.set({ geminiApiKey: DEFAULT_GEMINI_API_KEY });
+    }
+    if (!res.geminiPrompt || typeof res.geminiPrompt !== 'string' || !res.geminiPrompt.trim()) {
+      chrome.storage.local.set({ geminiPrompt: DEFAULT_GEMINI_PROMPT });
     }
   });
 });
@@ -64,11 +68,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.type === 'SUMMARIZE_POST') {
-    const { text, apiKey } = request.payload || {};
+    const { text, apiKey, prompt: requestPrompt } = request.payload || {};
 
-    const doSummarize = (resolvedKey) => {
-      const key = (resolvedKey && typeof resolvedKey === 'string') ? resolvedKey.trim() : '';
-
+    const doSummarize = (key, systemPrompt) => {
       if (!key) {
         sendResponse({
           success: false,
@@ -83,7 +85,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
 
       const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent';
-      const prompt = 'Summarize the following social media post into exactly 3 concise, high-signal bullet points in the same language as the post (Vietnamese or English). No intro, no filler, strictly 3 bullet points starting with -:\n\n' + text.trim();
+      const baseInstruction = (typeof systemPrompt === 'string' && systemPrompt.trim().length > 0)
+        ? systemPrompt.trim()
+        : DEFAULT_GEMINI_PROMPT;
+      const formattedInstruction = baseInstruction.endsWith(':')
+        ? baseInstruction
+        : baseInstruction + ':';
+      const prompt = formattedInstruction + '\n\n' + text.trim();
 
       fetch(endpoint, {
         method: 'POST',
@@ -125,20 +133,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
     };
 
-    const resolvedKey = (apiKey && typeof apiKey === 'string' && apiKey.trim().length > 0)
-      ? apiKey.trim()
-      : null;
-
-    if (resolvedKey) {
-      doSummarize(resolvedKey);
-    } else {
-      chrome.storage.local.get(['geminiApiKey'], (storageRes) => {
-        const fallbackKey = (typeof storageRes?.geminiApiKey === 'string' && storageRes.geminiApiKey.trim())
+    chrome.storage.local.get(['geminiApiKey', 'geminiPrompt'], (storageRes) => {
+      const finalKey = (apiKey && typeof apiKey === 'string' && apiKey.trim().length > 0)
+        ? apiKey.trim()
+        : ((typeof storageRes?.geminiApiKey === 'string' && storageRes.geminiApiKey.trim())
           ? storageRes.geminiApiKey.trim()
-          : DEFAULT_GEMINI_API_KEY;
-        doSummarize(fallbackKey);
-      });
-    }
+          : DEFAULT_GEMINI_API_KEY);
+
+      const finalPrompt = (requestPrompt && typeof requestPrompt === 'string' && requestPrompt.trim().length > 0)
+        ? requestPrompt.trim()
+        : ((typeof storageRes?.geminiPrompt === 'string' && storageRes.geminiPrompt.trim())
+          ? storageRes.geminiPrompt.trim()
+          : DEFAULT_GEMINI_PROMPT);
+
+      doSummarize(finalKey, finalPrompt);
+    });
 
     return true;
   }

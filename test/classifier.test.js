@@ -1560,6 +1560,57 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(bullets.length).toBeLessThanOrEqual(3);
   }, 15000);
 
+  test("Gemini System Prompt: dirty-checking, fallback resolution, and instruction formatting", () => {
+    const DEFAULT_GEMINI_PROMPT =
+      'Summarize the following social media post into exactly 3 concise, high-signal bullet points in the same language as the post (Vietnamese or English). No intro, no filler, strictly 3 bullet points starting with -:';
+
+    // 1. Fallback resolution: empty, whitespace or null falls back to DEFAULT_GEMINI_PROMPT
+    const resolvePrompt = (customPrompt, fallback = DEFAULT_GEMINI_PROMPT) => {
+      return (typeof customPrompt === 'string' && customPrompt.trim().length > 0)
+        ? customPrompt.trim()
+        : fallback;
+    };
+
+    expect(resolvePrompt(null)).toBe(DEFAULT_GEMINI_PROMPT);
+    expect(resolvePrompt('')).toBe(DEFAULT_GEMINI_PROMPT);
+    expect(resolvePrompt('   ')).toBe(DEFAULT_GEMINI_PROMPT);
+    expect(resolvePrompt('Custom summary prompt')).toBe('Custom summary prompt');
+
+    // 2. Colon formatting: ensures instructions end with a colon before post text
+    const formatInstruction = (instruction) => {
+      const trimmed = instruction.trim();
+      return trimmed.endsWith(':') ? trimmed : trimmed + ':';
+    };
+
+    expect(formatInstruction(DEFAULT_GEMINI_PROMPT)).toBe(DEFAULT_GEMINI_PROMPT);
+    expect(formatInstruction('Summarize in 3 bullet points')).toBe('Summarize in 3 bullet points:');
+    expect(formatInstruction('Summarize in 3 bullet points: ')).toBe('Summarize in 3 bullet points:');
+
+    // 3. Dirty checking contract for Save Button
+    let savedPrompt = DEFAULT_GEMINI_PROMPT;
+    const isSaveDisabled = (inputVal) => {
+      const currentVal = (inputVal || '').trim();
+      return currentVal === savedPrompt;
+    };
+
+    // Initial state: input matches savedPrompt -> disabled
+    expect(isSaveDisabled(DEFAULT_GEMINI_PROMPT)).toBe(true);
+
+    // User edits textarea -> enabled
+    expect(isSaveDisabled('Custom prompt 123')).toBe(false);
+
+    // User types whitespace padding around original -> trimmed matches -> disabled
+    expect(isSaveDisabled('   ' + DEFAULT_GEMINI_PROMPT + '  ')).toBe(true);
+
+    // User resets to default -> if savedPrompt was custom, it's dirty; if savedPrompt was default, disabled
+    savedPrompt = 'Custom saved prompt';
+    expect(isSaveDisabled(DEFAULT_GEMINI_PROMPT)).toBe(false);
+
+    // After save action, savedPrompt updates to new value -> button disables
+    savedPrompt = 'Custom prompt 123';
+    expect(isSaveDisabled('Custom prompt 123')).toBe(true);
+  });
+
   test("Script syntax & parse integrity: content.js, background.js, and userscript parse without syntax errors", async () => {
     const fs = await import("node:fs");
     const files = ["content.js", "background.js", "social-anti-ragebait.user.js", "popup.js"];

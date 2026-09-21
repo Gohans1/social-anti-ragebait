@@ -4,10 +4,12 @@
   'use strict';
 
   const DEFAULT_GEMINI_API_KEY = 'AIzaSyCEUfHf2SiBsA5ZLDLHJMg_1bkjebeuVoo';
+  const DEFAULT_GEMINI_PROMPT = 'Summarize the following social media post into exactly 3 concise, high-signal bullet points in the same language as the post (Vietnamese or English). No intro, no filler, strictly 3 bullet points starting with -:';
 
   let config = {
     apiEndpoint: 'https://classifier.dev/',
     geminiApiKey: DEFAULT_GEMINI_API_KEY,
+    geminiPrompt: DEFAULT_GEMINI_PROMPT,
     batchDebounceMs: 120,
     confidenceThreshold: 0.30,
     categoryActions: {
@@ -157,12 +159,18 @@
         'categoryActions',
         'scannedCount',
         'geminiApiKey',
+        'geminiPrompt',
       ],
       (res) => {
         if (typeof res.geminiApiKey === 'string' && res.geminiApiKey.trim().length > 0) {
           config.geminiApiKey = res.geminiApiKey.trim();
         } else {
           config.geminiApiKey = DEFAULT_GEMINI_API_KEY;
+        }
+        if (typeof res.geminiPrompt === 'string' && res.geminiPrompt.trim().length > 0) {
+          config.geminiPrompt = res.geminiPrompt.trim();
+        } else {
+          config.geminiPrompt = DEFAULT_GEMINI_PROMPT;
         }
         if (res.categoryActions && typeof res.categoryActions === 'object') {
           config.categoryActions = { ...config.categoryActions, ...res.categoryActions };
@@ -285,6 +293,7 @@
         if (typeof request.config.hideFloatingPill === 'boolean') config.hideFloatingPill = request.config.hideFloatingPill;
         if (typeof request.config.singleTagMode === 'boolean') config.singleTagMode = request.config.singleTagMode;
         if (typeof request.config.geminiApiKey === 'string') config.geminiApiKey = request.config.geminiApiKey.trim();
+        if (typeof request.config.geminiPrompt === 'string') config.geminiPrompt = request.config.geminiPrompt.trim();
         config.confidenceThreshold = request.config.confidenceThreshold;
 
         if (taxonomyChanged) {
@@ -347,6 +356,7 @@
           'hideFloatingPill',
           'singleTagMode',
           'geminiApiKey',
+          'geminiPrompt',
         ].forEach((key) => {
           if (changes[key]) {
             if (key === 'categoryActions') {
@@ -1360,6 +1370,7 @@
             payload: {
               text: text,
               apiKey: apiKey,
+              prompt: (config.geminiPrompt || DEFAULT_GEMINI_PROMPT).trim(),
             },
           },
           (response) => {
