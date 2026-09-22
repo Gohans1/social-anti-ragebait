@@ -9,17 +9,21 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
-    }
+    },
+    "default_title": "Social Shield: AI Anti-Rage & Focus Guard"
   },
   "permissions": [
     "storage",
-    "tabs"
+    "tabs",
+    "sidePanel"
   ],
+  "side_panel": {
+    "default_path": "popup.html"
+  },
   "background": {
     "service_worker": "background.js"
   },
@@ -30,7 +34,8 @@
     "*://*.x.com/*",
     "*://x.com/*",
     "*://*.twitter.com/*",
-    "*://twitter.com/*"
+    "*://twitter.com/*",
+    "*://*.twimg.com/*"
   ],
   "content_scripts": [
     {

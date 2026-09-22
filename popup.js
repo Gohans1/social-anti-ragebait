@@ -4,14 +4,14 @@ document.addEventListener('DOMContentLoaded', () => {
     casual: 'show',
   };
 
-  const DEFAULT_GEMINI_API_KEY = 'AIzaSyCEUfHf2SiBsA5ZLDLHJMg_1bkjebeuVoo';
+  const DEFAULT_GEMINI_API_KEY = '';
   const DEFAULT_GEMINI_PROMPT = 'Summarize the following social media post into exactly 3 concise, high-signal bullet points in the same language as the post (Vietnamese or English). No intro, no filler, strictly 3 bullet points starting with -:';
 
   let categoryActions = { ...DEFAULT_CATEGORY_ACTIONS };
   let customLabels = [];
   let focusModeEnabled = true;
   let currentScannedCount = 0;
-  let savedGeminiApiKey = DEFAULT_GEMINI_API_KEY;
+  let savedGeminiApiKey = '';
   let savedGeminiPrompt = DEFAULT_GEMINI_PROMPT;
 
   const hideFloatingPillToggle = document.getElementById('hideFloatingPillToggle');
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (headerStatusText) headerStatusText.textContent = 'Active';
       return;
     }
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
       const activeTab = tabs && tabs[0];
       const url = activeTab ? activeTab.url : '';
       let isX = false;
@@ -76,6 +76,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Update active platform dynamically when user switches tabs with Side Panel open
+  if (typeof chrome !== 'undefined' && chrome.tabs) {
+    if (chrome.tabs.onActivated) {
+      chrome.tabs.onActivated.addListener(initActivePlatform);
+    }
+    if (chrome.tabs.onUpdated) {
+      chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+        if ((changeInfo.status === 'complete' || changeInfo.url) && tab && tab.active) {
+          initActivePlatform();
+        }
+      });
+    }
+  }
+  window.addEventListener('focus', initActivePlatform);
 
   function updateHeroStats(data = {}) {
     if (typeof data.scannedCount === 'number') {
@@ -332,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (geminiApiKeyInput) {
         savedGeminiApiKey = (typeof res.geminiApiKey === 'string' && res.geminiApiKey.trim().length > 0)
           ? res.geminiApiKey.trim()
-          : DEFAULT_GEMINI_API_KEY;
+          : '';
         geminiApiKeyInput.value = savedGeminiApiKey;
         if (saveApiKeyBtn) saveApiKeyBtn.disabled = true;
       }
@@ -377,13 +392,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     chrome.storage.local.set(config);
 
-    // Broadcast config to all active tabs
-    chrome.tabs.query({}, (tabs) => {
+    const broadcastConfig = {
+      ...config,
+      hasGeminiApiKey: Boolean(savedGeminiApiKey && savedGeminiApiKey.trim()),
+    };
+    delete broadcastConfig.geminiApiKey;
+
+    // Broadcast config to all active X tabs
+    chrome.tabs.query({ url: ['*://*.x.com/*', '*://*.twitter.com/*'] }, (tabs) => {
       if (tabs) {
         tabs.forEach((tab) => {
           chrome.tabs.sendMessage(tab.id, {
             type: 'UPDATE_CONFIG',
-            config: config,
+            config: broadcastConfig,
           }).catch(() => {});
         });
       }
@@ -404,7 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     saveApiKeyBtn.addEventListener('click', () => {
       if (saveApiKeyBtn.disabled) return;
-      const newKey = geminiApiKeyInput.value.trim() || DEFAULT_GEMINI_API_KEY;
+      const newKey = geminiApiKeyInput.value.trim();
       savedGeminiApiKey = newKey;
       geminiApiKeyInput.value = newKey;
       saveApiKeyBtn.disabled = true;
@@ -469,7 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (focusCounter) focusCounter.textContent = '0';
     updateHeroStats({ scannedCount: 0, focusCollapsedCount: 0, customCount: 0 });
 
-    chrome.tabs.query({}, (tabs) => {
+    chrome.tabs.query({ url: ['*://*.x.com/*', '*://*.twitter.com/*'] }, (tabs) => {
       if (tabs) {
         tabs.forEach((tab) => {
           chrome.tabs.sendMessage(tab.id, { type: 'RESET_STATS' }).catch(() => {});
@@ -484,7 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (changes.customCount && customCounter) customCounter.textContent = changes.customCount.newValue || 0;
       if (changes.focusCollapsedCount && focusCounter) focusCounter.textContent = changes.focusCollapsedCount.newValue || 0;
       if (changes.geminiApiKey && geminiApiKeyInput && document.activeElement !== geminiApiKeyInput) {
-        savedGeminiApiKey = (changes.geminiApiKey.newValue || '').trim() || DEFAULT_GEMINI_API_KEY;
+        savedGeminiApiKey = (changes.geminiApiKey.newValue || '').trim();
         geminiApiKeyInput.value = savedGeminiApiKey;
         if (saveApiKeyBtn) saveApiKeyBtn.disabled = true;
       }

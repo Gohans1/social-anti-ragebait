@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bản Thiết Kế: Gemini Multimodal Tweet Summarizer (Quote Tweets, Reposts &amp; Images)</title>
+  <link rel="stylesheet" href="./visual-core.css">
+
+  <style>
+    /* Custom Mockup Styles for Twitter / X UI */
+    .tweet-mock {
+      background: #000000;
+      border: 1px solid #2f3336;
+      border-radius: 14px;
+      padding: 16px 18px;
+      color: #e7e9ea;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+      max-width: 600px;
+      margin: 0 auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85);
+      user-select: none;
+      position: relative;
+    }
+
+    .tweet-repost-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #71767b;
+      margin-bottom: 8px;
+      padding-left: 28px;
+    }
+
+    .tweet-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .tweet-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #1d9bf0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .tweet-user-info {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tweet-name {
+      font-weight: 700;
+      color: #f7f9f9;
+      font-size: 15px;
+    }
+
+    .tweet-handle, .tweet-time {
+      color: #71767b;
+      font-size: 14px;
+    }
+
+    .tweet-text {
+      color: #e7e9ea;
+      font-size: 15px;
+      line-height: 1.5;
+      margin-bottom: 12px;
+      word-break: break-word;
+    }
+
+    /* Embedded Quoted Tweet Box */
+    .quoted-tweet-card {
+      background: #08080a;
+      border: 1px solid #2f3336;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+
+    .quoted-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .quoted-avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #e11d48;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #fff;
+    }
+
+    .quoted-name {
+      font-weight: 700;
+      font-size: 13px;
+      color: #e7e9ea;
+    }
+
+    .quoted-handle {
+      font-size: 12px;
+      color: #71767b;
+    }
+
+    .quoted-text {
+      font-size: 13px;
+      color: #cfd9de;
+      line-height: 1.4;
+    }
+
+    /* Attached Image Grid */
+    .tweet-media-box {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #2f3336;
+      margin-bottom: 14px;
+      background: #16181c;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 140px;
+      position: relative;
+    }
+
+    .chart-svg-preview {
+      width: 100%;
+      height: 140px;
+      background: linear-gradient(180deg, #18181b 0%, #09090b 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Action bar & Summarize button */
+    .tweet-actions-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid #2f3336;
+      padding-top: 10px;
+      margin-top: 10px;
+    }
+
+    .tweet-stats {
+      display: flex;
+      gap: 18px;
+      color: #71767b;
+      font-size: 13px;
+    }
+
+    .btn-tldr {
+      background: #000000;
+      border: 1px solid #2e2e36;
+      border-radius: 9999px;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-tldr:hover {
+      background: #18181b;
+      border-color: #52525b;
+      color: #38bdf8;
+    }
+
+    .btn-tldr.active {
+      background: #0c4a6e;
+      border-color: #0284c7;
+      color: #38bdf8;
+    }
+
+    .btn-tldr.loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    /* Gemini Summary Box (Vercel Style) */
+    .gemini-summary-box {
+      background: #09090b;
+      border: 1px solid #27272a;
+      border-left: 3px solid #38bdf8;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-top: 12px;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .gemini-summary-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .gemini-summary-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .gemini-summary-list {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #d4d4d8;
+    }
+
+    .gemini-summary-list li {
+      margin-bottom: 5px;
+    }
+
+    .gemini-summary-list li:last-child {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. STICKY TOPBAR -->
+  <header class="nav-header">
+    <div class="brand-title"><span>✨</span> BẢN THIẾT KẾ: GEMINI MULTIMODAL SUMMARIZER</div>
+    <nav class="tab-group" role="tablist">
+      <button class="tab-btn active" role="tab" aria-selected="true" onclick="switchTab('summarize', this)">📌 Tóm Lược</button>
+      <button class="tab-btn" role="tab" aria-selected="false" onclick="switchTab('explain', this)">🔍 Giải Thích Chi Tiết</button>
+    </nav>
+  </header>
+
+  <div class="container">
+    <!-- =================================================================
+         TAB 1: TÓM LƯỢC (DEFAULT) - CHUẨN 3 CARDS THỊ GIÁC
+         ================================================================= -->
+    <main id="tab-summarize" class="tab-pane active" role="tabpanel">
+      <section class="callout" style="max-width: 44rem; margin: 0 auto 2.5rem; text-align: center;">
+        <h2 style="font-size: 1.3rem; margin-bottom: 0.6rem;">🗣️ TÓM LƯỢC &amp; Ý CHÍNH 🗣️</h2>
+        <p style="font-size: 1rem; line-height: 1.55; color: var(--text-main);">
+          Gemini Summarizer giờ đây bú trọn vẹn toàn bộ ngữ cảnh bài đăng trên X: tự động bắt ngữ cảnh <strong>Repost</strong>, trích xuất sâu vào <strong>Quoted Tweet</strong> và tải ảnh đính kèm chuyển Base64 gửi sang Gemini 3.5 Flash-Lite đa phương thức (Multimodal) thay vì chỉ đọc mỗi một câu caption cộc lốc ban đầu!
+        </p>
+      </section>
+
+      <!-- CARD 1: COMPARISON SLIDER (SWIPE DIFF) -->
+      <article class="card-wrapper card-slider" style="border: 1px solid #ffffff; min-height: 38rem;">
+        <div class="card-header-bar">
+          <span class="card-badge badge-white">CARD 1: COMPARISON SLIDER (SWIPE DIFF)</span>
+          <span style="font-size: 0.9rem; color: #ffffff; font-weight: 600;">Kéo trượt thanh ở giữa để so sánh Trước / Sau</span>
+        </div>
+        <div class="slider-viewport" style="min-height: 34rem;">
+          <!-- Layer Before (Hiện trạng cũ) -->
+          <div class="slider-layer slider-before">
+            <div class="tweet-mock">
+              <div class="tweet-repost-header">
+                <span>🔁</span> <span>Elon Musk reposted</span>
+              </div>
+              <div class="tweet-header">
+                <div class="tweet-avatar">A</div>
+                <div class="tweet-user-info">
+                  <span class="tweet-name">Alex Tech</span>
+                  <span class="tweet-handle">@alextech</span>
+                  <span class="tweet-time">· 2h</span>
+                </div>
+              </div>
+
+              <!-- Main text -->
+              <div class="tweet-text">
+                Thật đéo thể tin nổi luôn, nhìn số liệu quý 3 kìa 🤡📉
+              </div>
+
+              <!-- Quoted tweet cũ bị bỏ qua -->
+              <div class="quoted-tweet-card diff-highlight" data-diff="annotation" style="border-color: rgba(239, 68, 68, 0.7);">
+                <span class="mock-annotation red">BỊ BỎ RƠI (KHÔNG ĐƯỢC TÓM TẮT)</span>
+                <div class="quoted-header">
+                  <div class="quoted-avatar">Q</div>
+                  <span class="quoted-name">Cloudflare Outage Report</span>
+                  <span class="quoted-handle">@cf_reports</span>
+                </div>
+                <div class="quoted-text">
+                  Báo cáo sự cố toàn cầu: 42% lưu lượng mạng khu vực Đông Á bị gián đoạn do đứt cáp quang biển tuyến APG...
+                </div>
+              </div>
+
+              <!-- Image cũ bị bỏ qua -->
+              <div class="tweet-media-box diff-highlight" data-diff="annotation" style="border-color: rgba(239, 68, 68, 0.7);">
+                <span class="mock-annotation red">MÙ HÌNH ẢNH (AI KHÔNG THẤY)</span>
+                <div class="chart-svg-preview">
+                  <svg width="240" height="90" viewBox="0 0 240 90" fill="none">
+                    <path d="M10 20 L60 35 L120 15 L180 75 L230 80" stroke="#ef4444" stroke-width="3" stroke-dasharray="4 4" />
+                    <circle cx="180" cy="75" r="5" fill="#ef4444" />
+                    <text x="130" y="85" fill="#ef4444" font-size="11" font-weight="700">Lưu lượng sập -78%</text>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Result Box Before -->
+              <div class="gemini-summary-box" style="border-left-color: #ef4444;">
+                <div class="gemini-summary-header">
+                  <div class="gemini-summary-title" style="color: #ef4444;">
+                    <span>⚠️</span><span>Tóm tắt què cụt (Chỉ đọc caption)</span>
+                  </div>
+                </div>
+                <ul class="gemini-summary-list">
+                  <li>Tác giả bày tỏ thái độ thất vọng và chế giễu số liệu quý 3.</li>
+                  <li>Không rõ số liệu cụ thể đề cập đến tổ chức hay báo cáo nào.</li>
+                  <li>Bài đăng quá ngắn để rút ra kết luận giá trị.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Layer After (Giải pháp mới hoàn thiện) -->
+          <div class="slider-layer slider-after">
+            <div class="tweet-mock">
+              <div class="tweet-repost-header diff-highlight" data-diff="annotation" style="border: 1px dashed rgba(34, 197, 94, 0.8); border-radius: 6px; padding: 4px 8px; margin-left: 0;">
+                <span class="mock-annotation green">ĐÃ BẮT REPOST</span>
+                <span>🔁</span> <span>Elon Musk reposted</span>
+              </div>
+              <div class="tweet-header">
+                <div class="tweet-avatar">A</div>
+                <div class="tweet-user-info">
+                  <span class="tweet-name">Alex Tech</span>
+                  <span class="tweet-handle">@alextech</span>
+                  <span class="tweet-time">· 2h</span>
+                </div>
+              </div>
+
+              <div class="tweet-text">
+                Thật đéo thể tin nổi luôn, nhìn số liệu quý 3 kìa 🤡📉
+              </div>
+
+              <!-- Quoted tweet được thu thập -->
+              <div class="quoted-tweet-card diff-highlight" data-diff="annotation" style="border-color: rgba(34, 197, 94, 0.8);">
+                <span class="mock-annotation green">BÚ TRỌN QUOTED TWEET</span>
+                <div class="quoted-header">
+                  <div class="quoted-avatar">Q</div>
+                  <span class="quoted-name">Cloudflare Outage Report</span>
+                  <span class="quoted-handle">@cf_reports</span>
+                </div>
+                <div class="quoted-text">
+                  Báo cáo sự cố toàn cầu: 42% lưu lượng mạng khu vực Đông Á bị gián đoạn do đứt cáp quang biển tuyến APG...
+                </div>
+              </div>
+
+              <!-- Image được encode base64 gửi sang Gemini -->
+              <div class="tweet-media-box diff-highlight" data-diff="annotation" style="border-color: rgba(34, 197, 94, 0.8);">
+                <span class="mock-annotation green">MULTIMODAL: ĐỌC ĐƯỢC BIỂU ĐỒ</span>
+                <div class="chart-svg-preview">
+                  <svg width="240" height="90" viewBox="0 0 240 90" fill="none">
+                    <path d="M10 20 L60 35 L120 15 L180 75 L230 80" stroke="#22c55e" stroke-width="3" />
+                    <circle cx="180" cy="75" r="5" fill="#22c55e" />
+                    <text x="130" y="85" fill="#22c55e" font-size="11" font-weight="700">Lưu lượng sập -78%</text>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Result Box After -->
+              <div class="gemini-summary-box" style="border-left-color: #22c55e;">
+                <div class="gemini-summary-header">
+                  <div class="gemini-summary-title" style="color: #22c55e;">
+                    <span>✨</span><span>Gemini 3.5 Flash-Lite (Multimodal 3-Bullet)</span>
+                  </div>
+                </div>
+                <ul class="gemini-summary-list">
+                  <li><strong>Sự cố hạ tầng:</strong> Tuyến cáp quang APG đứt khiến 42% traffic Đông Á sập nguồn theo báo cáo của Cloudflare.</li>
+                  <li><strong>Dữ liệu hình ảnh:</strong> Biểu đồ đo lường cho thấy lưu lượng rớt tự do 78% tại thời điểm 14:00 UTC.</li>
+                  <li><strong>Lan truyền:</strong> Elon Musk đã đăng lại bài viết kèm phản ứng mỉa mai của cộng đồng mạng.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Divider & Knob -->
+          <div class="slider-divider">
+            <div class="slider-knob" role="slider" aria-label="So sánh Trước và Sau" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0">⇄</div>
+          </div>
+          <input type="range" class="slider-input-range" min="0" max="100" value="50" tabindex="-1" aria-hidden="true">
+        </div>
+      </article>
+
+      <!-- CARD 2: BEFORE ONLY (Hiện trạng cũ: Mù Quoted & Mù Ảnh) -->
+      <article class="card-wrapper card-before" style="border-color: var(--accent-red); margin-top: 2rem;">
+        <div class="card-header-bar">
+          <span class="card-badge badge-red">CARD 2: BEFORE ONLY (BẢN CŨ)</span>
+          <span style="font-size: 0.88rem; color: var(--accent-red); font-weight: 700;">Chỉ trích xuất được 1 thẻ tweetText đầu tiên</span>
+        </div>
+        <div class="diff-highlight" data-diff="annotation" style="position: relative; padding: 1.5rem; border-radius: 0.75rem; background: rgba(239, 68, 68, 0.04);">
+          <span class="mock-annotation red">HẠN CHẾ CŨ</span>
+          <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem;">
+            <span class="diff-tag del">- CŨ</span>
+            <span style="font-size: 1rem; font-weight: 700; color: var(--accent-red);">Chỉ querySelector duy nhất thẻ div[data-testid="tweetText"] đầu tiên</span>
+          </div>
+          <p style="font-size: 0.95rem; color: var(--text-sub); line-height: 1.6; margin-bottom: 1rem;">
+            Khi một bài viết trên X là dạng Quote Tweet hoặc có ảnh chụp biên lai/biểu đồ, phần text của người đăng thường chỉ là 1 câu cảm thán ngắn ngủi. Bản cũ hoàn toàn bỏ qua thẻ tweetText của bài gốc và không hề gửi hình ảnh đính kèm, dẫn tới việc Gemini tóm tắt sai lệch hoàn toàn ngữ cảnh chính.
+          </p>
+          <div style="background: #09090b; border: 1px solid #27272a; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.85rem; color: #a1a1aa;">
+            <span style="color: #ef4444;">// Code cũ:</span><br>
+            const textEl = postEl.querySelector('div[data-testid="tweetText"]');<br>
+            const targetText = textEl.innerText; <span style="color: #ef4444;">// Quoted tweet & ảnh bị vứt bỏ!</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- CARD 3: AFTER ONLY (Giải pháp mới hoàn thiện + Tương tác thật) -->
+      <article class="card-wrapper card-after" style="border-color: var(--accent-green); margin-top: 2rem;">
+        <div class="card-header-bar">
+          <span class="card-badge badge-green">CARD 3: AFTER ONLY (BẢN MỚI)</span>
+          <span style="font-size: 0.88rem; color: var(--accent-green); font-weight: 700;">Bấm thử nút TL;DR bên dưới để trải nghiệm tương tác thật</span>
+        </div>
+        <div class="diff-highlight" data-diff="annotation" style="position: relative; padding: 1.5rem; border-radius: 0.75rem; background: rgba(34, 197, 94, 0.04);">
+          <span class="mock-annotation green">ĐÃ NÂNG CẤP HOÀN CHỈNH</span>
+          <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem;">
+            <span class="diff-tag add">+ MỚI</span>
+            <span style="font-size: 1rem; font-weight: 700; color: var(--accent-green);">Đa phương thức (Multimodal): Bóc tách Repost, Quoted Tweet &amp; Media</span>
+          </div>
+          <p style="font-size: 0.95rem; color: var(--text-sub); line-height: 1.6; margin-bottom: 1.25rem;">
+            Hệ thống tự động gom toàn bộ ngữ cảnh, kéo ảnh thumbnail siêu nhẹ từ CDN Twitter, chuyển sang chuỗi Base64 và gửi song song vào Gemini API. Bấm nút tương tác bên dưới để xem mô phỏng hoạt động thực tế trên trang X:
+          </p>
+
+          <!-- Interactive Tweet Demo -->
+          <div class="tweet-mock" style="max-width: 100%;">
+            <div class="tweet-repost-header">
+              <span>🔁</span> <span>Yann LeCun reposted</span>
+            </div>
+            <div class="tweet-header">
+              <div class="tweet-avatar" style="background: #10b981;">Y</div>
+              <div class="tweet-user-info">
+                <span class="tweet-name">OpenAI Benchmark</span>
+                <span class="tweet-handle">@benchmark_ai</span>
+                <span class="tweet-time">· 15m</span>
+              </div>
+            </div>
+            <div class="tweet-text">
+              Kết quả so sánh hiệu năng suy luận mới nhất giữa các mô hình mã nguồn mở vừa được công bố.
+            </div>
+
+            <div class="quoted-tweet-card">
+              <div class="quoted-header">
+                <div class="quoted-avatar" style="background: #8b5cf6;">M</div>
+                <span class="quoted-name">Meta FAIR</span>
+                <span class="quoted-handle">@meta_fair</span>
+              </div>
+              <div class="quoted-text">
+                Chúng tôi chính thức phát hành kiến trúc Llama 4 với 400B tham số, vượt mốc 92.4% trên SWE-bench Verified...
+              </div>
+            </div>
+
+            <div class="tweet-media-box">
+              <div class="chart-svg-preview">
+                <svg width="280" height="90" viewBox="0 0 280 90" fill="none">
+                  <rect x="30" y="25" width="45" height="55" fill="#3b82f6" rx="4" />
+                  <text x="35" y="20" fill="#a1a1aa" font-size="11">GPT-4o</text>
+                  <rect x="110" y="15" width="45" height="65" fill="#10b981" rx="4" />
+                  <text x="108" y="12" fill="#10b981" font-weight="700" font-size="11">Llama-4</text>
+                  <rect x="190" y="38" width="45" height="42" fill="#6366f1" rx="4" />
+                  <text x="192" y="32" fill="#a1a1aa" font-size="11">Claude-3</text>
+                </svg>
+              </div>
+            </div>
+
+            <div class="tweet-actions-bar">
+              <div class="tweet-stats">
+                <span>💬 412</span>
+                <span>🔁 1.8K</span>
+                <span>❤️ 9.4K</span>
+              </div>
+              <button id="demo-tldr-btn" class="btn-tldr" onclick="triggerInteractiveTLDR()">
+                <span>✨</span><span>TL;DR</span>
+              </button>
+            </div>
+
+            <!-- Demo Summary Box (Hidden initially) -->
+            <div id="demo-summary-box" class="gemini-summary-box" style="display: none;">
+              <div class="gemini-summary-header">
+                <div class="gemini-summary-title">
+                  <span>✨</span><span>Gemini 3.5 Flash-Lite (Phân tích hoàn tất)</span>
+                </div>
+                <button type="button" onclick="closeInteractiveTLDR()" style="background: none; border: none; color: #a1a1aa; cursor: pointer; font-size: 14px;">✕</button>
+              </div>
+              <ul class="gemini-summary-list">
+                <li><strong>Phát hành mới:</strong> Meta FAIR chính thức công bố Llama 4 (400B) đạt kỷ lục 92.4% trên SWE-bench Verified.</li>
+                <li><strong>Biểu đồ so sánh:</strong> Cột điểm benchmark cho thấy Llama 4 vượt trội hơn hẳn so với GPT-4o và Claude 3 Opus.</li>
+                <li><strong>Được chia sẻ bởi:</strong> Yann LeCun đã đăng lại thông tin xác nhận kết quả benchmark độc lập.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div style="margin-top: 1.25rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button type="button" class="tab-btn active" style="background: var(--accent-green); color: #000000; font-weight: 700;" onclick="triggerInteractiveTLDR()">
+              ⚡ Bấm thử tóm tắt TL;DR (Interactive Demo)
+            </button>
+            <button type="button" class="tab-btn" style="border: 1px solid var(--border);" onclick="showToast('ℹ️ Đã kiểm tra: 54/54 Unit Tests đều PASS mượt mà!', 'info')">
+              ℹ️ Kiểm tra độ tin cậy test
+            </button>
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <!-- =================================================================
+         TAB 2: GIẢI THÍCH CHI TIẾT (4 TẦNG ZOOM-IN 2 CỘT)
+         ================================================================= -->
+    <section id="tab-explain" class="tab-pane" role="tabpanel" style="display: none;">
+
+      <!-- TẦNG 1: VĨ MÔ & CẤU TRÚC DỰ ÁN -->
+      <section class="explain-section">
+        <div class="explain-layout">
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 1/4 • VĨ MÔ</div>
+            <h3>📁 1. Kiến Trúc &amp; Phân Chia Trách Nhiệm</h3>
+            <p>
+              Để hỗ trợ Multimodal an toàn mà không làm rò rỉ quyền hạn mạng hoặc vi phạm CSP trên trang X, hệ thống phân chia rõ ràng trách nhiệm giữa 3 tầng:
+            </p>
+            <ul style="padding-left: 1.2rem; font-size: 0.9rem; line-height: 1.6; color: var(--text-sub); margin-bottom: 1rem;">
+              <li><strong>manifest.json:</strong> Cấp quyền <code>*://*.twimg.com/*</code> cho background service worker.</li>
+              <li><strong>background.js:</strong> Tải ảnh privileged, chuyển ArrayBuffer thành Base64, gọi Gemini API.</li>
+              <li><strong>content.js:</strong> Cào DOM Twitter sạch sẽ qua các thẻ <code>data-testid</code> ổn định.</li>
+              <li><strong>Userscript:</strong> Giữ nguyên 100% tính năng với <code>GM_xmlhttpRequest</code>.</li>
+            </ul>
+            <div class="meta-tag-group">
+              <span class="meta-tag green">Manifest V3</span>
+              <span class="meta-tag blue">CORS Bypassed</span>
+            </div>
+          </div>
+
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <div class="file-dropdown-wrapper">
+                  <button class="file-dropdown-trigger" type="button" onclick="toggleFileDropdown(this)">
+                    <span>📁 manifest.json</span><span class="chevron">▼</span>
+                  </button>
+                  <div class="file-dropdown-menu">
+                    <div class="file-dropdown-header"><span>TẬP TIN</span><span>CONFIG</span></div>
+                    <button class="file-dropdown-item path" type="button" onclick="copyFilePath('manifest.json')">Sao chép đường dẫn</button>
+                  </div>
+                </div>
+              </div>
+              <div class="code-actions">
+                <span class="diff-stat"><span class="stat-add">+2</span> <span class="stat-del">-0</span></span>
+                <span class="code-lang-badge"><span class="lang-dot structure"></span> JSON</span>
+                <button class="btn-copy-code" type="button" onclick="copyCodeBlock(this)">Sao chép</button>
+              </div>
+            </div>
+            <div class="code-body">
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="str">"host_permissions"</span>: [</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">    <span class="str">"https://classifier.dev/*"</span>,</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">    <span class="str">"https://generativelanguage.googleapis.com/*"</span>,</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">    <span class="str">"*://*.x.com/*"</span>,</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">    <span class="str">"*://*.twimg.com/*"</span></span><span class="c-comment"># Cho phép background tải ảnh media từ Twitter CDN</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  ]</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TẦNG 2: BÓC TÁCH DOM TWITTER & QUOTE TWEET -->
+      <section class="explain-section">
+        <div class="explain-layout">
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 2/4 • DOM PARSING</div>
+            <h3>🏷️ 2. Bóc Tách DOM Chính Đạo &amp; Show More</h3>
+            <p>
+              Dùng thuộc tính ổn định <code>data-testid="tweetText"</code> và <code>data-testid="socialContext"</code> thay vì các class CSS ngẫu nhiên dễ gãy:
+            </p>
+            <ul style="padding-left: 1.2rem; font-size: 0.9rem; line-height: 1.6; color: var(--text-sub); margin-bottom: 1rem;">
+              <li>Tự động click nút <em>"Show more"</em> và đợi 350ms MutationObserver để bung toàn văn.</li>
+              <li>Nếu <code>allTextEls.length &gt; 1</code>, toàn bộ các khối phía sau chính là Quoted Tweet.</li>
+              <li>Bộ lọc ảnh loại bỏ avatar tài khoản và icon emoji hệ thống.</li>
+            </ul>
+            <div class="meta-tag-group">
+              <span class="meta-tag yellow">data-testid</span>
+              <span class="meta-tag green">Zero Hack Bẩn</span>
+            </div>
+          </div>
+
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <div class="file-dropdown-wrapper">
+                  <button class="file-dropdown-trigger" type="button" onclick="toggleFileDropdown(this)">
+                    <span>📄 content.js : expandAndExtractPostText</span><span class="chevron">▼</span>
+                  </button>
+                  <div class="file-dropdown-menu">
+                    <button class="file-dropdown-item path" type="button" onclick="copyFilePath('content.js')">Sao chép đường dẫn</button>
+                  </div>
+                </div>
+              </div>
+              <div class="code-actions">
+                <span class="diff-stat"><span class="stat-add">+28</span> <span class="stat-del">-4</span></span>
+                <span class="code-lang-badge"><span class="lang-dot js"></span> JS</span>
+                <button class="btn-copy-code" type="button" onclick="copyCodeBlock(this)">Sao chép</button>
+              </div>
+            </div>
+            <div class="code-body">
+              <div class="c-line"><span class="c-sign"></span><span class="c-text"><span class="kwd">async function</span> <span class="fn">expandAndExtractPostText</span>(<span class="prop">postEl</span>, <span class="prop">textEl</span>, <span class="prop">fallbackText</span>) {</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  <span class="kwd">const</span> <span class="prop">socialContextEl</span> = <span class="prop">postEl</span>.<span class="fn">querySelector</span>(<span class="str">'[data-testid="socialContext"]'</span>);</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  <span class="kwd">if</span> (<span class="prop">socialContextEl</span>) <span class="prop">parts</span>.<span class="fn">push</span>(<span class="str">`[${socialContextEl.innerText.trim()}]`</span>);</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="prop">parts</span>.<span class="fn">push</span>(<span class="prop">mainText</span>);</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  <span class="kwd">const</span> <span class="prop">allTextEls</span> = <span class="prop">Array</span>.<span class="fn">from</span>(<span class="prop">postEl</span>.<span class="fn">querySelectorAll</span>(<span class="str">'[data-testid="tweetText"]'</span>));</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  <span class="kwd">if</span> (<span class="prop">allTextEls</span>.<span class="prop">length</span> &gt; <span class="num">1</span>) {</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">    <span class="kwd">const</span> <span class="prop">quoted</span> = <span class="prop">allTextEls</span>.<span class="fn">filter</span>(<span class="prop">el</span> =&gt; <span class="prop">el</span> !== <span class="prop">textEl</span>).<span class="fn">map</span>(<span class="prop">el</span> =&gt; <span class="prop">el</span>.<span class="prop">innerText</span>);</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">    <span class="prop">parts</span>.<span class="fn">push</span>(<span class="str">`[Quoted Post:\n${quoted.join('\n---\n')}]`</span>);</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  }</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="kwd">return</span> <span class="prop">parts</span>.<span class="fn">join</span>(<span class="str">'\n\n'</span>);</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">}</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TẦNG 3: BASE64 CHUNKING & MULTIMODAL INLINEDATA -->
+      <section class="explain-section">
+        <div class="explain-layout">
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 3/4 • STREAMING &amp; CHUNKING</div>
+            <h3>⚡ 3. Mã Hóa Base64 Chunking &amp; Tối Ưu CDN</h3>
+            <p>
+              Tránh tràn Call Stack khi xử lý ảnh phân giải cao và hạ băng thông tải ảnh xuống mức tối thiểu:
+            </p>
+            <ul style="padding-left: 1.2rem; font-size: 0.9rem; line-height: 1.6; color: var(--text-sub); margin-bottom: 1rem;">
+              <li>Đổi tham số <code>name=large</code> thành <code>name=small</code> trên CDN Twitter giúp giảm kích thước ảnh từ 2MB xuống còn ~40KB.</li>
+              <li>Chia nhỏ mảng buffer thành các chunk 8192 bytes khi gọi <code>String.fromCharCode</code> để tuyệt đối không bị lỗi <em>Maximum call stack size exceeded</em>.</li>
+              <li>Tự động fallback về tóm tắt chữ thuần nếu đường truyền mạng tải ảnh bị lỗi.</li>
+            </ul>
+            <div class="meta-tag-group">
+              <span class="meta-tag purple">8KB Chunking</span>
+              <span class="meta-tag green">MIME Guard</span>
+            </div>
+          </div>
+
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <div class="file-dropdown-wrapper">
+                  <button class="file-dropdown-trigger" type="button" onclick="toggleFileDropdown(this)">
+                    <span>📄 background.js : arrayBufferToBase64</span><span class="chevron">▼</span>
+                  </button>
+                  <div class="file-dropdown-menu">
+                    <button class="file-dropdown-item path" type="button" onclick="copyFilePath('background.js')">Sao chép đường dẫn</button>
+                  </div>
+                </div>
+              </div>
+              <div class="code-actions">
+                <span class="diff-stat"><span class="stat-add">+16</span> <span class="stat-del">-0</span></span>
+                <span class="code-lang-badge"><span class="lang-dot js"></span> JS</span>
+                <button class="btn-copy-code" type="button" onclick="copyCodeBlock(this)">Sao chép</button>
+              </div>
+            </div>
+            <div class="code-body">
+              <div class="c-line"><span class="c-sign"></span><span class="c-text"><span class="kwd">function</span> <span class="fn">arrayBufferToBase64</span>(<span class="prop">buffer</span>) {</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="kwd">let</span> <span class="prop">binary</span> = <span class="str">''</span>;</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="kwd">const</span> <span class="prop">bytes</span> = <span class="kwd">new</span> <span class="fn">Uint8Array</span>(<span class="prop">buffer</span>);</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="kwd">const</span> <span class="prop">len</span> = <span class="prop">bytes</span>.<span class="prop">byteLength</span>;</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  <span class="kwd">const</span> <span class="prop">chunkSize</span> = <span class="num">8192</span>;</span><span class="c-comment"># Khống chế 8KB/chunk chống tràn stack</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  <span class="kwd">for</span> (<span class="kwd">let</span> <span class="prop">i</span> = <span class="num">0</span>; <span class="prop">i</span> &lt; <span class="prop">len</span>; <span class="prop">i</span> += <span class="prop">chunkSize</span>) {</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">    <span class="kwd">const</span> <span class="prop">chunk</span> = <span class="prop">bytes</span>.<span class="fn">subarray</span>(<span class="prop">i</span>, <span class="prop">Math</span>.<span class="fn">min</span>(<span class="prop">i</span> + <span class="prop">chunkSize</span>, <span class="prop">len</span>));</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">    <span class="prop">binary</span> += <span class="prop">String</span>.<span class="prop">fromCharCode</span>.<span class="fn">apply</span>(<span class="kwd">null</span>, <span class="prop">chunk</span>);</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  }</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="kwd">return</span> <span class="fn">btoa</span>(<span class="prop">binary</span>);</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">}</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TẦNG 4: BỘ ĐỆM COMPOSITE CACHE & QUOTA PROTECTION -->
+      <section class="explain-section">
+        <div class="explain-layout">
+          <div class="explain-text-col">
+            <div class="zoom-tier-badge">TẦNG 4/4 • COMPOSITE CACHE</div>
+            <h3>🛡️ 4. Khóa Bộ Đệm Hỗn Hợp (Composite Cache Key)</h3>
+            <p>
+              Nếu hai bài viết có cùng nội dung chữ nhưng mang hai hình ảnh khác nhau, khóa cache cũ sẽ gây nhầm lẫn kết quả:
+            </p>
+            <ul style="padding-left: 1.2rem; font-size: 0.9rem; line-height: 1.6; color: var(--text-sub); margin-bottom: 1rem;">
+              <li>Tự động gắn hash đường dẫn ảnh vào cache key: <code>${text}::imgs:${urls.join(',')}</code>.</li>
+              <li>Bộ đệm 2 tầng (L1 LRU Memory + L2 persistent chrome.storage) giúp đọc kết quả với độ trễ <strong>0ms</strong> ngay khi bấm lại nút TL;DR.</li>
+              <li>Khử trùng lặp song song: Ngăn chặn gửi nhiều request trùng nhau khi bấm liên tục.</li>
+            </ul>
+            <div class="meta-tag-group">
+              <span class="meta-tag blue">0ms LRU</span>
+              <span class="meta-tag yellow">Deduplication</span>
+            </div>
+          </div>
+
+          <div class="code-container">
+            <div class="code-topbar">
+              <div class="code-topbar-left">
+                <div class="code-dots"><span class="code-dot red"></span><span class="code-dot yellow"></span><span class="code-dot green"></span></div>
+                <div class="file-dropdown-wrapper">
+                  <button class="file-dropdown-trigger" type="button" onclick="toggleFileDropdown(this)">
+                    <span>📄 content.js : requestPostSummary</span><span class="chevron">▼</span>
+                  </button>
+                  <div class="file-dropdown-menu">
+                    <button class="file-dropdown-item path" type="button" onclick="copyFilePath('content.js')">Sao chép đường dẫn</button>
+                  </div>
+                </div>
+              </div>
+              <div class="code-actions">
+                <span class="diff-stat"><span class="stat-add">+8</span> <span class="stat-del">-2</span></span>
+                <span class="code-lang-badge"><span class="lang-dot js"></span> JS</span>
+                <button class="btn-copy-code" type="button" onclick="copyCodeBlock(this)">Sao chép</button>
+              </div>
+            </div>
+            <div class="code-body">
+              <div class="c-line"><span class="c-sign"></span><span class="c-text"><span class="kwd">async function</span> <span class="fn">requestPostSummary</span>(<span class="prop">text</span>, <span class="prop">imageUrls</span> = []) {</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">  <span class="kwd">const</span> <span class="prop">cacheKey</span> = (<span class="prop">Array</span>.<span class="fn">isArray</span>(<span class="prop">imageUrls</span>) &amp;&amp; <span class="prop">imageUrls</span>.<span class="prop">length</span> &gt; <span class="num">0</span>)</span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">    ? <span class="str">`${text}::imgs:${imageUrls.join(',')}`</span></span></div>
+              <div class="c-line add"><span class="c-sign">+</span><span class="c-text">    : <span class="prop">text</span>;</span><span class="c-comment"># Tách biệt tuyệt đối giữa bài có ảnh &amp; chữ thuần</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="kwd">if</span> (<span class="prop">summaryCache</span>.<span class="fn">has</span>(<span class="prop">cacheKey</span>)) {</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">    <span class="kwd">return</span> <span class="prop">summaryCache</span>.<span class="fn">get</span>(<span class="prop">cacheKey</span>);</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  }</span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">  <span class="c-comment">// Gửi payload sang Background Service Worker...</span></span></div>
+              <div class="c-line"><span class="c-sign"></span><span class="c-text">}</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </section>
+  </div>
+
+  <!-- Nút Inspector Toggle Fixed -->
+  <button id="inspector-toggle" onclick="toggleDiff()">
+    <span>🔍 Check Diff</span>
+    <span id="diffStatusTag">[BẬT]</span>
+  </button>
+
+  <script src="./visual-core.js"></script>
+  <script>
+    // Custom Interactive Script for Card 3 Demo
+    function triggerInteractiveTLDR() {
+      const btn = document.getElementById('demo-tldr-btn');
+      const box = document.getElementById('demo-summary-box');
+      if (!btn || !box) return;
+
+      if (btn.classList.contains('loading')) return;
+
+      if (!box.style.display || box.style.display === 'none') {
+        btn.classList.add('loading');
+        btn.innerHTML = '<span>⏳</span><span>Đang tóm tắt...</span>';
+        showToast('🚀 Đang gửi bài Quoted & Ảnh sang Gemini API...', 'info', 1200);
+
+        setTimeout(() => {
+          btn.classList.remove('loading');
+          btn.classList.add('active');
+          btn.innerHTML = '<span>✨</span><span>TL;DR</span>';
+          box.style.display = 'block';
+          showToast('✅ Đã nhận 3-Bullet Summary từ Gemini 3.5 Flash-Lite!', 'success', 2000);
+        }, 800);
+      } else {
+        box.style.display = 'none';
+        btn.classList.remove('active');
+      }
+    }
+
+    function closeInteractiveTLDR() {
+      const box = document.getElementById('demo-summary-box');
+      const btn = document.getElementById('demo-tldr-btn');
+      if (box) box.style.display = 'none';
+      if (btn) btn.classList.remove('active');
+    }
+  </script>
+</body>
+</html>

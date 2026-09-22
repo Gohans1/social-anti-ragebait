@@ -3,18 +3,32 @@
 // completely bypassing page Content Security Policy (CSP) on Threads, Facebook, and X.
 
 const API_ENDPOINT = 'https://classifier.dev/';
-const DEFAULT_GEMINI_API_KEY = 'AIzaSyCEUfHf2SiBsA5ZLDLHJMg_1bkjebeuVoo';
+const DEFAULT_GEMINI_API_KEY = '';
 const DEFAULT_GEMINI_PROMPT = 'Summarize the following social media post into exactly 3 concise, high-signal bullet points in the same language as the post (Vietnamese or English). No intro, no filler, strictly 3 bullet points starting with -:';
+
+let jevCooldownUntil = 0;
+
+function setupSidePanel() {
+  if (typeof chrome !== 'undefined' && chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
+    chrome.sidePanel
+      .setPanelBehavior({ openPanelOnActionClick: true })
+      .catch((error) => console.error('[Social Shield] Error setting side panel behavior:', error));
+  }
+}
+
+// Ensure side panel behavior persists across installations and runtime reloads
+setupSidePanel();
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log('[Social Anti-Ragebait] Extension installed / updated.');
+  setupSidePanel();
   // Set default confidence threshold, Gemini API Key and prompt in storage if not already set
   chrome.storage.local.get(['confidenceThreshold', 'geminiApiKey', 'geminiPrompt'], (res) => {
     if (typeof res.confidenceThreshold !== 'number') {
       chrome.storage.local.set({ confidenceThreshold: 0.30 });
     }
-    if (!res.geminiApiKey || typeof res.geminiApiKey !== 'string' || !res.geminiApiKey.trim()) {
-      chrome.storage.local.set({ geminiApiKey: DEFAULT_GEMINI_API_KEY });
+    if (typeof res.geminiApiKey !== 'string') {
+      chrome.storage.local.set({ geminiApiKey: '' });
     }
     if (!res.geminiPrompt || typeof res.geminiPrompt !== 'string' || !res.geminiPrompt.trim()) {
       chrome.storage.local.set({ geminiPrompt: DEFAULT_GEMINI_PROMPT });
@@ -31,6 +45,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return false;
     }
 
+    if (Date.now() < jevCooldownUntil) {
+      sendResponse({ success: false, status: 429, error: 'Jev rate limit cooldown active', results: [] });
+      return false;
+    }
+
     console.log(`[Anti-Ragebait Background] 📡 Sending ${inputs.length} text samples to Jev (classifier.dev)...`);
 
     fetch(API_ENDPOINT, {
@@ -38,19 +57,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       headers: {
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(25000),
       body: JSON.stringify({
         labels: labels,
         inputs: inputs,
         instructions: instructions,
-        multi: true,
-        max_labels: 5,
       }),
     })
       .then(async (response) => {
         if (!response.ok) {
           const errText = await response.text();
           console.error(`[Anti-Ragebait Background] Jev API HTTP Error ${response.status}:`, errText);
-          throw new Error(`HTTP ${response.status}: ${errText}`);
+          const err = new Error(`HTTP ${response.status}: ${errText}`);
+          err.status = response.status;
+          if (response.status === 429) {
+            jevCooldownUntil = Date.now() + 10000;
+          }
+          throw err;
         }
         return response.json();
       })
@@ -60,7 +83,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       })
       .catch((error) => {
         console.error('[Anti-Ragebait Background] Fetch error:', error);
-        sendResponse({ success: false, error: error.message, results: [] });
+        if (error.status === 429) {
+          jevCooldownUntil = Date.now() + 10000;
+        }
+        sendResponse({ success: false, error: error.message, status: error.status || 500, results: [] });
       });
 
     // Return true to keep the message channel open for asynchronous sendResponse
@@ -68,9 +94,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.type === 'SUMMARIZE_POST') {
-    const { text, apiKey, prompt: requestPrompt } = request.payload || {};
+    const { text, imageUrls, apiKey, prompt: requestPrompt } = request.payload || {};
 
-    const doSummarize = (key, systemPrompt) => {
+    function arrayBufferToBase64(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      const len = bytes.byteLength;
+      const chunkSize = 8192;
+      for (let i = 0; i < len; i += chunkSize) {
+        const chunk = bytes.subarray(i, Math.min(i + chunkSize, len));
+        binary += String.fromCharCode.apply(null, chunk);
+      }
+      return btoa(binary);
+    }
+
+    const doSummarize = async (key, systemPrompt) => {
       if (!key) {
         sendResponse({
           success: false,
@@ -93,19 +131,57 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         : baseInstruction + ':';
       const prompt = formattedInstruction + '\n\n' + text.trim();
 
+      const parts = [{ text: prompt }];
+
+      if (Array.isArray(imageUrls) && imageUrls.length > 0) {
+        const imagePartPromises = imageUrls.slice(0, 3).map(async (url) => {
+          try {
+            let fetchUrl = url;
+            if (typeof fetchUrl === 'string' && fetchUrl.includes('twimg.com')) {
+              fetchUrl = fetchUrl.replace(/name=[a-zA-Z0-9]+/, 'name=small');
+            }
+            const res = await fetch(fetchUrl, { signal: AbortSignal.timeout(6000) });
+            if (!res.ok) return null;
+            const contentType = (res.headers.get('content-type') || 'image/jpeg').split(';')[0].trim();
+            const mimeType = contentType.startsWith('image/') ? contentType : 'image/jpeg';
+            const buffer = await res.arrayBuffer();
+            const base64Data = arrayBufferToBase64(buffer);
+            if (!base64Data) return null;
+            return {
+              inlineData: {
+                mimeType: mimeType,
+                data: base64Data,
+              },
+            };
+          } catch (e) {
+            console.warn('[Gemini Background] Failed to fetch post image:', url, e);
+            return null;
+          }
+        });
+
+        try {
+          const resolvedImages = await Promise.all(imagePartPromises);
+          for (const imgPart of resolvedImages) {
+            if (imgPart) parts.push(imgPart);
+          }
+        } catch (e) {
+          console.warn('[Gemini Background] Error processing image parts:', e);
+        }
+      }
+
       fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-goog-api-key': key,
         },
+        signal: AbortSignal.timeout(20000),
         body: JSON.stringify({
           contents: [{
-            parts: [{ text: prompt }],
+            parts: parts,
           }],
           generationConfig: {
             maxOutputTokens: 250,
-            temperature: 0.2,
           },
         }),
       })
@@ -113,7 +189,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           if (!response.ok) {
             const errText = await response.text();
             console.error(`[Gemini Background] HTTP Error ${response.status}:`, errText);
-            throw new Error(`HTTP ${response.status}: ${errText}`);
+            let errMsg = `HTTP ${response.status}: ${errText}`;
+            try {
+              const errData = JSON.parse(errText);
+              if (errData?.error?.message) errMsg = errData.error.message;
+            } catch (e) {}
+            throw new Error(errMsg);
           }
           return response.json();
         })

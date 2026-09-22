@@ -20,18 +20,44 @@ function showToast(message, type = 'success', duration = 2000) {
   }, duration);
 }
 
-// 2. Tab Switching (Clean Style Clearing, In-Loop ActivePane & Multi-Group Sync)
+// 2. Tab Switching (Scoped Hierarchy, Nested Tabs & Multi-Group Sync)
 function switchTab(tabId, activeBtn) {
   const targetId = tabId.startsWith('tab-') ? tabId : `tab-${tabId}`;
   const shortId = tabId.replace(/^tab-/, '');
 
+  // 1. Locate target pane by ID or data-tab-pane
+  const targetPane =
+    document.getElementById(targetId) ||
+    document.getElementById(shortId) ||
+    document.querySelector(`[data-tab-pane="${shortId}"], [data-tab-pane="${targetId}"]`);
+
+  if (!targetPane) return;
+
+  // 2. Determine pane scope (support nested tabs without colliding with top-level container)
+  const parentScope = targetPane.parentElement;
+  let scopedPanes = [];
+  if (parentScope) {
+    scopedPanes = Array.from(parentScope.children).filter(child =>
+      child.classList.contains('tab-pane') ||
+      child.hasAttribute('data-tab-pane') ||
+      child.id.startsWith('tab-')
+    );
+  }
+
+  // Fallback if no parent scope or no scoped panes: check direct children of .container
+  if (!parentScope || scopedPanes.length === 0) {
+    scopedPanes = Array.from(
+      document.querySelectorAll(
+        '.container > [id^="tab-"], .container > [data-tab-pane], .container > .tab-pane'
+      )
+    );
+  }
+
   let activePane = null;
-  const tabPanes = document.querySelectorAll(
-    '.container > [id^="tab-"], .container > [data-tab-pane], .container > .tab-pane'
-  );
-  tabPanes.forEach(pane => {
+  scopedPanes.forEach(pane => {
     const paneDataTab = pane.dataset.tabPane || pane.getAttribute('data-tab-pane') || '';
     const isMatch =
+      (pane === targetPane) ||
       pane.id === targetId ||
       pane.id === shortId ||
       paneDataTab === shortId ||
@@ -41,37 +67,77 @@ function switchTab(tabId, activeBtn) {
     if (isMatch) activePane = pane;
   });
 
-  const buttons = document.querySelectorAll('.tab-group .tab-btn, .tab-btn');
-  buttons.forEach(btn => {
-    const onclickAttr = btn.getAttribute('onclick') || '';
-    const tabData = btn.dataset.tab || '';
-    const isBtnMatch =
-      btn === activeBtn ||
-      tabData === shortId ||
-      tabData === targetId ||
-      onclickAttr.includes(`'${tabId}'`) ||
-      onclickAttr.includes(`"${tabId}"`) ||
-      onclickAttr.includes(`'${targetId}'`) ||
-      onclickAttr.includes(`'${shortId}'`);
-    btn.classList.toggle('active', !!isBtnMatch);
-    if (btn.getAttribute('role') === 'tab') {
-      btn.setAttribute('aria-selected', isBtnMatch ? 'true' : 'false');
-    }
-  });
+  // 3. Toggle buttons within the same tab-group scope (prevent deselecting parent tabs)
+  let btnGroup = activeBtn
+    ? (activeBtn.closest('.tab-group, [role="tablist"]') || activeBtn.parentElement)
+    : null;
 
+  if (!btnGroup && targetPane) {
+    // If activeBtn not passed, find button pointing to this tabId (supports single & double quotes)
+    const candidateBtn = document.querySelector(
+      `button[onclick*="'${tabId}'"], button[onclick*='"${tabId}"'], button[onclick*="'${targetId}'"], button[onclick*='"${targetId}"'], button[onclick*="'${shortId}'"], button[onclick*='"${shortId}"'], [data-tab="${shortId}"], [data-tab="${targetId}"]`
+    );
+    if (candidateBtn) {
+      btnGroup = candidateBtn.closest('.tab-group, [role="tablist"]') || candidateBtn.parentElement;
+      activeBtn = candidateBtn;
+    }
+  }
+
+  if (btnGroup) {
+    btnGroup.querySelectorAll('.tab-btn, button[role="tab"]').forEach(btn => {
+      const onclickAttr = btn.getAttribute('onclick') || '';
+      const tabData = btn.dataset.tab || '';
+      const isBtnMatch =
+        btn === activeBtn ||
+        tabData === shortId ||
+        tabData === targetId ||
+        onclickAttr.includes(`'${tabId}'`) ||
+        onclickAttr.includes(`"${tabId}"`) ||
+        onclickAttr.includes(`'${targetId}'`) ||
+        onclickAttr.includes(`"${targetId}"`) ||
+        onclickAttr.includes(`'${shortId}'`) ||
+        onclickAttr.includes(`"${shortId}"`);
+      btn.classList.toggle('active', !!isBtnMatch);
+      if (btn.getAttribute('role') === 'tab') {
+        btn.setAttribute('aria-selected', isBtnMatch ? 'true' : 'false');
+      }
+    });
+  } else {
+    // Global fallback if no group exists
+    const buttons = document.querySelectorAll('.tab-group .tab-btn, .tab-btn');
+    buttons.forEach(btn => {
+      const onclickAttr = btn.getAttribute('onclick') || '';
+      const tabData = btn.dataset.tab || '';
+      const isBtnMatch =
+        btn === activeBtn ||
+        tabData === shortId ||
+        tabData === targetId ||
+        onclickAttr.includes(`'${tabId}'`) ||
+        onclickAttr.includes(`"${tabId}"`) ||
+        onclickAttr.includes(`'${targetId}'`) ||
+        onclickAttr.includes(`"${targetId}"`) ||
+        onclickAttr.includes(`'${shortId}'`) ||
+        onclickAttr.includes(`"${shortId}"`);
+      btn.classList.toggle('active', !!isBtnMatch);
+      if (btn.getAttribute('role') === 'tab') {
+        btn.setAttribute('aria-selected', isBtnMatch ? 'true' : 'false');
+      }
+    });
+  }
+
+  // 4. Update Inspector Toggle visibility based on visible active pane content
   const inspectorBtn = document.getElementById('inspector-toggle');
   if (inspectorBtn) {
-    const isExplainTab =
-      activePane &&
-      (activePane.id === 'tab-explain' ||
-        (activePane.dataset && activePane.dataset.tabPane === 'explain'));
+    const topActivePane =
+      document.querySelector(
+        '.container > .tab-pane.active, .container > [id^="tab-"]:not([style*="display: none"])'
+      ) || activePane;
     const diffSelector =
       '.slider-viewport, .diff-tag, .diff-highlight, .mock-annotation, [data-diff="annotation"]';
     const hasDiff =
-      !isExplainTab &&
-      activePane &&
-      ((activePane.matches && activePane.matches(diffSelector)) ||
-        Boolean(activePane.querySelector(diffSelector)));
+      topActivePane &&
+      ((topActivePane.matches && topActivePane.matches(diffSelector)) ||
+        Boolean(topActivePane.querySelector(diffSelector)));
     inspectorBtn.style.display = hasDiff ? 'flex' : 'none';
   }
 }
@@ -271,14 +337,9 @@ function initInspectorToggle() {
   }
   if (!activePane) activePane = document.body;
 
-  const isExplainTab =
-    activePane &&
-    (activePane.id === 'tab-explain' ||
-      (activePane.dataset && activePane.dataset.tabPane === 'explain'));
   const diffSelector =
     '.slider-viewport, .diff-tag, .diff-highlight, .mock-annotation, [data-diff="annotation"]';
   const hasDiff =
-    !isExplainTab &&
     activePane &&
     activePane !== document.body &&
     ((activePane.matches && activePane.matches(diffSelector)) ||
@@ -341,7 +402,7 @@ function copyCodeBlock(btn) {
       const textSpan = line.querySelector('.c-text');
       if (textSpan) return textSpan.textContent.replace(/\r?\n$/, '');
       const clone = line.cloneNode(true);
-      clone.querySelectorAll('.c-gutter, .c-sign, .c-comment').forEach(el => el.remove());
+      clone.querySelectorAll('.c-sign, .c-comment').forEach(el => el.remove());
       return clone.textContent.replace(/\r?\n$/, '');
     };
 

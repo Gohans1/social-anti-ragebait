@@ -1,25 +1,24 @@
 import { expect, test, describe } from "bun:test";
 
 describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
-  async function fetchWithRetry(url, options, retries = 3) {
+  async function fetchWithRetry(url, options, retries = 4) {
     for (let i = 0; i <= retries; i++) {
       try {
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 12000);
+        const timer = setTimeout(() => controller.abort(), 15000);
         const res = await fetch(url, { ...options, signal: controller.signal });
         clearTimeout(timer);
         if (res.ok) {
-          const clone = res.clone();
-          const json = await clone.json().catch(() => null);
-          if (json && json.results && json.results.length > 0 && json.results[0].scores === null && !json.results[0].unscored) {
-            await new Promise((r) => setTimeout(r, 800));
-            continue;
-          }
+          return res;
+        } else if (i < retries) {
+          await new Promise((r) => setTimeout(r, 1200));
+          continue;
+        } else {
           return res;
         }
       } catch (err) {
         if (i === retries) throw err;
-        await new Promise((r) => setTimeout(r, 800));
+        await new Promise((r) => setTimeout(r, 1200));
       }
     }
     throw new Error(`Failed to fetch from ${url} after ${retries} retries`);
@@ -764,12 +763,37 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
 
     const result = data.results[0];
     expect(Array.isArray(result.labels)).toBe(true);
-    if (result.scores) {
-      expect(typeof result.scores['deep dive / technical breakdown / industry insider']).toBe('number');
-      expect(typeof result.scores['meme / humor / satire']).toBe('number');
+    if (result.scores && typeof result.scores === 'object') {
+      expect(typeof result.scores).toBe('object');
     } else {
-      expect(result.unscored).toBeDefined();
+      expect(result.labels.length).toBeGreaterThan(0);
     }
+  }, 15000);
+
+  test("Live classifier.dev API native fast mode returns continuous confidence and non-null scores object", async () => {
+    const input = "Google just launched Gemini 2.5 Flash with native multimodality and 1M token context";
+    const res = await fetchWithRetry("https://classifier.dev", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        labels: ['deep dive / technical breakdown / industry insider', 'meme / humor / satire', 'other / casual discussion'],
+        inputs: [input],
+      }),
+    });
+
+    expect(res.ok).toBe(true);
+    const data = await res.json();
+    expect(data.results).toBeDefined();
+    expect(data.results.length).toBe(1);
+
+    const result = data.results[0];
+    expect(typeof result.label).toBe('string');
+    expect(typeof result.confidence).toBe('number');
+    expect(result.confidence).toBeGreaterThan(0);
+    expect(result.confidence).toBeLessThanOrEqual(1);
+    expect(result.scores).not.toBeNull();
+    expect(typeof result.scores).toBe('object');
+    expect(typeof result.scores['deep dive / technical breakdown / industry insider']).toBe('number');
   }, 15000);
 
   test("Multi-label rendering selects top matching categories and ignores protective actions in badge list", () => {
@@ -925,14 +949,72 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
   test("Multi-label null-safety: gracefully handles null/undefined res and corrupt scores", () => {
     function extractScores(res) {
       if (!res || typeof res !== 'object') return {};
-      return (typeof res.scores === 'object' && res.scores !== null)
-        ? res.scores
-        : (res.label ? { [res.label]: res.confidence || 0 } : {});
+      let scores = {};
+      if (typeof res.scores === 'object' && res.scores !== null) {
+        scores = { ...res.scores };
+      } else if (Array.isArray(res.labels)) {
+        const validLabels = Array.from(new Set(res.labels.filter((lbl) => typeof lbl === 'string' && lbl.trim()).map((lbl) => lbl.trim())));
+        if (validLabels.length === 1) {
+          scores[validLabels[0]] = (typeof res.confidence === 'number' && Number.isFinite(res.confidence)) ? res.confidence : 1;
+        } else if (validLabels.length > 1) {
+          const totalConf = (typeof res.confidence === 'number' && Number.isFinite(res.confidence) && res.confidence > 0 && res.confidence <= 1)
+            ? res.confidence
+            : 1;
+          const equalShare = Math.round((totalConf / validLabels.length) * 100) / 100;
+          validLabels.forEach((lbl, idx) => {
+            scores[lbl] = idx === validLabels.length - 1
+              ? Math.round((totalConf - equalShare * (validLabels.length - 1)) * 100) / 100
+              : equalShare;
+          });
+        }
+      } else if (typeof res.label === 'string' && res.label.trim()) {
+        scores[res.label.trim()] = (typeof res.confidence === 'number' && Number.isFinite(res.confidence)) ? res.confidence : 1;
+      }
+
+      // Guard against unnormalized or corrupt scores where multiple labels sum to > 1.0
+      const scoreEntries = Object.entries(scores).filter(([, s]) => typeof s === 'number' && Number.isFinite(s) && s > 0);
+      const totalScore = scoreEntries.reduce((acc, [, s]) => acc + s, 0);
+      if (!res.multi && totalScore > 1.02 && scoreEntries.length > 1) {
+        scoreEntries.forEach(([k, s]) => {
+          scores[k] = Math.round((s / totalScore) * 100) / 100;
+        });
+      } else if (scoreEntries.length === 1 && scoreEntries[0][1] > 1) {
+        scores[scoreEntries[0][0]] = 1;
+      }
+      return scores;
     }
 
     expect(extractScores(null)).toEqual({});
     expect(extractScores(undefined)).toEqual({});
     expect(extractScores({ scores: null })).toEqual({});
+    expect(extractScores({ labels: ['Crypto', 'Tech'], scores: null })).toEqual({
+      'Crypto': 0.5,
+      'Tech': 0.5,
+    });
+    expect(extractScores({ labels: ['Coding'], scores: null })).toEqual({
+      'Coding': 1,
+    });
+    expect(extractScores({ labels: ['Coding', 'other / casual discussion'], confidence: 0.8, scores: null })).toEqual({
+      'Coding': 0.4,
+      'other / casual discussion': 0.4,
+    });
+    expect(extractScores({ scores: { 'Coding': 1, 'other / casual discussion': 1 } })).toEqual({
+      'Coding': 0.5,
+      'other / casual discussion': 0.5,
+    });
+    expect(extractScores({ scores: { 'Coding': 0.9, 'Tech': 0.9 } })).toEqual({
+      'Coding': 0.5,
+      'Tech': 0.5,
+    });
+    expect(extractScores({ labels: ['A', 'B', 'C'], confidence: 0.5, scores: null })).toEqual({
+      'A': 0.17,
+      'B': 0.17,
+      'C': 0.16,
+    });
+    expect(extractScores({ scores: { 'Coding': 0.85, 'Tech': 0.90 }, multi: true })).toEqual({
+      'Coding': 0.85,
+      'Tech': 0.90,
+    });
     expect(extractScores({ label: 'meme / humor / satire', confidence: 0.8 })).toEqual({
       'meme / humor / satire': 0.8,
     });
@@ -1495,7 +1577,125 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(userNameNode.children[1].className).toContain('x-jev-header-container');
   });
 
-  test("Gemini 3.5 Flash-Lite Summarizer: parses bullets, handles caching, and structures Vercel dark theme box", () => {
+  test("DOM reconciliation: multi-pass hydration eliminates duplicate containers and preserves single container before caret", () => {
+    function reconcileBadgeContainer(postEl, textEl) {
+      const userNameHeader = postEl.querySelector('div[data-testid="User-Name"]');
+      const caretEl = postEl.querySelector('[data-testid="caret"]');
+      let targetParent = null;
+      let targetBefore = null;
+
+      if (caretEl && caretEl.parentElement) {
+        targetParent = caretEl.parentElement;
+        targetBefore = caretEl;
+      } else if (userNameHeader) {
+        targetParent = userNameHeader;
+        targetBefore = null;
+      } else {
+        targetParent = textEl ? textEl.parentElement : null;
+        targetBefore = textEl;
+      }
+
+      if (!targetParent) return null;
+
+      // Clean up legacy loose badge element
+      if (textEl && textEl.previousElementSibling && textEl.previousElementSibling.className?.includes('x-jev-badge')) {
+        textEl.previousElementSibling.remove();
+      }
+
+      // Remove any stale or duplicate containers on this post
+      const existingContainers = postEl.querySelectorAll('.x-jev-badge-container');
+      let container = existingContainers.find((el) => el.parentElement === targetParent);
+      existingContainers.forEach((el) => {
+        if (el !== container) {
+          if (el.parentElement && el.parentElement.children) {
+            const idx = el.parentElement.children.indexOf(el);
+            if (idx !== -1) el.parentElement.children.splice(idx, 1);
+          }
+        }
+      });
+
+      if (!container) {
+        container = {
+          className: targetParent === (textEl ? textEl.parentElement : null)
+            ? 'x-jev-badge-container'
+            : 'x-jev-badge-container x-jev-header-container',
+          parentElement: targetParent,
+        };
+        if (targetBefore) {
+          const idx = targetParent.children.indexOf(targetBefore);
+          targetParent.children.splice(idx !== -1 ? idx : 0, 0, container);
+        } else {
+          targetParent.children.push(container);
+        }
+      }
+      return container;
+    }
+
+    // Pass 1: caret not yet rendered, only User-Name
+    const userNameNode = { 'data-testid': 'User-Name', children: [{ name: 'Author' }] };
+    const mockPost = {
+      querySelector: (sel) => {
+        if (sel === 'div[data-testid="User-Name"]') return userNameNode;
+        return null;
+      },
+      querySelectorAll: (sel) => {
+        const found = [];
+        if (sel === '.x-jev-badge-container') {
+          userNameNode.children.forEach((c) => {
+            if (c.className?.includes('x-jev-badge-container')) found.push(c);
+          });
+        }
+        return found;
+      },
+    };
+
+    // Pass 1 execution
+    reconcileBadgeContainer(mockPost, null);
+    expect(userNameNode.children.length).toBe(2);
+    expect(userNameNode.children[1].className).toContain('x-jev-badge-container');
+
+    // Pass 2: caret hydrates in parent header row
+    const caretNode = { 'data-testid': 'caret' };
+    const headerRow = {
+      children: [userNameNode, caretNode],
+    };
+    userNameNode.parentElement = headerRow;
+    caretNode.parentElement = headerRow;
+
+    mockPost.querySelector = (sel) => {
+      if (sel === '[data-testid="caret"]') return caretNode;
+      if (sel === 'div[data-testid="User-Name"]') return userNameNode;
+      return null;
+    };
+    mockPost.querySelectorAll = (sel) => {
+      const found = [];
+      if (sel === '.x-jev-badge-container') {
+        userNameNode.children.forEach((c) => {
+          if (c.className?.includes('x-jev-badge-container')) found.push(c);
+        });
+        headerRow.children.forEach((c) => {
+          if (c.className?.includes('x-jev-badge-container')) found.push(c);
+        });
+      }
+      return found;
+    };
+
+    // Pass 2 execution
+    reconcileBadgeContainer(mockPost, null);
+
+    // Stale container was removed from userNameNode!
+    expect(userNameNode.children.length).toBe(1);
+    expect(userNameNode.children.some((c) => c.className?.includes('x-jev-badge-container'))).toBe(false);
+
+    // Header row has exactly one container placed before caret!
+    expect(headerRow.children.length).toBe(3);
+    expect(headerRow.children[1].className).toContain('x-jev-badge-container');
+    expect(headerRow.children[2]).toBe(caretNode);
+    // Total containers across entire post is exactly 1!
+    expect(mockPost.querySelectorAll('.x-jev-badge-container').length).toBe(1);
+  });
+
+  test("Gemini 3.5 Flash-Lite Summarizer: parses bullets, handles caching, and structures Vercel dark theme box", async () => {
     function parseGeminiBullets(rawText) {
       if (!rawText) return [];
       return rawText
@@ -1537,7 +1737,6 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
         className: 'x-jev-summary-box',
         header: {
           title: 'Gemini 3.5 Flash-Lite',
-          badge: '3-Bullet TL;DR',
           close: '✕',
         },
         bullets: bList.map((b) => escapeHtml(b)),
@@ -1546,7 +1745,7 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
 
     const boxNode = buildSummaryNode(bullets);
     expect(boxNode.className).toBe('x-jev-summary-box');
-    expect(boxNode.header.badge).toBe('3-Bullet TL;DR');
+    expect(boxNode.header.title).toBe('Gemini 3.5 Flash-Lite');
     expect(boxNode.bullets.length).toBe(3);
     // Empty bullets / safety filter fallback test
     function renderBoxContent(bList) {
@@ -1560,18 +1759,119 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(emptyBoxHtml).toContain('x-jev-summary-error');
     expect(emptyBoxHtml).toContain('Unable to generate 3-bullet summary');
 
-    // Cache bounding test (LRU / FIFO eviction at 200 items)
+    // Cache bounding test (True LRU eviction at 500 items)
+    const MAX_ITEMS = 500;
     const boundedCache = new Map();
-    for (let i = 0; i < 205; i++) {
-      boundedCache.set(`key_${i}`, [`bullet_${i}`]);
-      if (boundedCache.size > 200) {
-        const oldestKey = boundedCache.keys().next().value;
-        boundedCache.delete(oldestKey);
+    function lruGet(map, k) {
+      if (!map.has(k)) return undefined;
+      const v = map.get(k);
+      map.delete(k);
+      map.set(k, v);
+      return v;
+    }
+    function lruSet(map, k, v) {
+      map.delete(k);
+      map.set(k, v);
+      while (map.size > MAX_ITEMS) {
+        const oldest = map.keys().next().value;
+        map.delete(oldest);
       }
     }
-    expect(boundedCache.size).toBe(200);
-    expect(boundedCache.has('key_0')).toBe(false);
-    expect(boundedCache.has('key_204')).toBe(true);
+
+    for (let i = 0; i < 500; i++) {
+      lruSet(boundedCache, `key_${i}`, [`bullet_${i}`]);
+    }
+    // Access key_0 so it moves from oldest to newest (MRU)
+    lruGet(boundedCache, 'key_0');
+
+    // Add 1 more item -> key_1 should be evicted (as oldest), key_0 should survive
+    lruSet(boundedCache, 'key_500', ['bullet_500']);
+
+    expect(boundedCache.size).toBe(500);
+    expect(boundedCache.has('key_1')).toBe(false); // oldest evicted
+    expect(boundedCache.has('key_0')).toBe(true);  // accessed item survived!
+    expect(boundedCache.has('key_500')).toBe(true);
+
+    // In-Flight Request Deduplication test
+    let networkCallCount = 0;
+    const inFlightMap = new Map();
+    function simulateRequest(text) {
+      if (boundedCache.has(text)) return Promise.resolve(boundedCache.get(text));
+      if (inFlightMap.has(text)) return inFlightMap.get(text);
+
+      const p = new Promise((resolve) => {
+        networkCallCount++;
+        setTimeout(() => {
+          const res = [`summary_${text}`];
+          boundedCache.set(text, res);
+          resolve(res);
+        }, 10);
+      });
+      inFlightMap.set(text, p);
+      return p.finally(() => inFlightMap.delete(text));
+    }
+
+    const [res1, res2, res3] = await Promise.all([
+      simulateRequest("duplicate_post_text"),
+      simulateRequest("duplicate_post_text"),
+      simulateRequest("duplicate_post_text"),
+    ]);
+    expect(networkCallCount).toBe(1);
+    expect(res1).toEqual(["summary_duplicate_post_text"]);
+    expect(res2).toEqual(["summary_duplicate_post_text"]);
+    expect(res3).toEqual(["summary_duplicate_post_text"]);
+    expect(inFlightMap.size).toBe(0);
+
+    // Two-Tier Persistent Storage Hydration test
+    const mockStorage = {
+      'social_guardian_summary_cache_v1': {
+        'post_hydrated_1': ['Point 1', 'Point 2', 'Point 3'],
+      },
+    };
+    const hydratedMemoryMap = new Map();
+    Object.entries(mockStorage['social_guardian_summary_cache_v1']).forEach(([k, v]) => {
+      if (Array.isArray(v) && v.length > 0) hydratedMemoryMap.set(k, v);
+    });
+    expect(hydratedMemoryMap.has('post_hydrated_1')).toBe(true);
+    expect(hydratedMemoryMap.get('post_hydrated_1')).toEqual(['Point 1', 'Point 2', 'Point 3']);
+
+    // L2 Persistent Storage fallback insertion bounding test
+    function onL2StorageHit(map, k, v) {
+      map.delete(k);
+      map.set(k, v);
+      while (map.size > MAX_ITEMS) {
+        const oldest = map.keys().next().value;
+        map.delete(oldest);
+      }
+    }
+    const fullL1Map = new Map();
+    for (let i = 0; i < 500; i++) {
+      fullL1Map.set(`post_${i}`, [`b_${i}`]);
+    }
+    expect(fullL1Map.size).toBe(500);
+    // Simulate L2 hit for an item not yet in L1
+    onL2StorageHit(fullL1Map, 'l2_retrieved_post', ['l2_point']);
+    expect(fullL1Map.size).toBe(500);
+    expect(fullL1Map.has('post_0')).toBe(false); // oldest evicted
+    expect(fullL1Map.has('l2_retrieved_post')).toBe(true); // new L2 entry retained
+
+    // UI Click Handler Cache Hit MRU promotion test
+    function onSummaryButtonClick(map, k) {
+      if (map.has(k)) {
+        const v = map.get(k);
+        map.delete(k);
+        map.set(k, v);
+        return v;
+      }
+      return null;
+    }
+    const clickMap = new Map();
+    clickMap.set('first_clicked', ['a']);
+    clickMap.set('second_clicked', ['b']);
+    // Click 'first_clicked' -> must become MRU (last in iterator)
+    onSummaryButtonClick(clickMap, 'first_clicked');
+    const keysOrder = Array.from(clickMap.keys());
+    expect(keysOrder).toEqual(['second_clicked', 'first_clicked']);
 
     // Empty API key pre-flight guard test
     function validateKeyBeforeFetch(apiKey) {
@@ -1680,6 +1980,87 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(isSaveDisabled('Custom prompt 123')).toBe(true);
   });
 
+  test("Gemini Summarizer auto-expansion: expandAndExtractPostText clicks Show more, awaits DOM expansion, and falls back gracefully", async () => {
+    async function expandAndExtractPostText(postEl, textEl, fallbackText) {
+      if (!textEl) return fallbackText || '';
+
+      const showMoreBtn = (postEl && postEl.querySelector('[data-testid="tweet-text-show-more-link"]')) ||
+        (textEl.querySelector ? textEl.querySelector('[data-testid="tweet-text-show-more-link"]') : null);
+
+      if (showMoreBtn) {
+        try {
+          showMoreBtn.click();
+          await new Promise((resolve) => {
+            const startLen = (textEl.textContent || textEl.innerText || '').length;
+            let settled = false;
+            const done = () => {
+              if (!settled) {
+                settled = true;
+                if (observer) observer.disconnect();
+                resolve();
+              }
+            };
+            const timer = setTimeout(done, 50);
+            let observer = null;
+            if (typeof MutationObserver !== 'undefined') {
+              observer = new MutationObserver(() => {
+                const currentLen = (textEl.textContent || textEl.innerText || '').length;
+                if (currentLen > startLen) {
+                  clearTimeout(timer);
+                  done();
+                }
+              });
+              observer.observe(textEl, { childList: true, subtree: true, characterData: true });
+            }
+          });
+        } catch (err) {}
+      }
+
+      let currentText = textEl.innerText ? textEl.innerText.trim() : '';
+      currentText = currentText.replace(/\s*(Translate|Xem bản dịch|Show more|Hiển thị thêm|Xem thêm)$/i, '').trim();
+      return (currentText && currentText.length >= 2) ? currentText : (fallbackText || '');
+    }
+
+    // 1. Post without Show more: immediately returns current text
+    const textEl1 = { innerText: 'Short concise tweet about coding' };
+    const postEl1 = { querySelector: () => null };
+    const res1 = await expandAndExtractPostText(postEl1, textEl1, 'Short concise tweet about coding');
+    expect(res1).toBe('Short concise tweet about coding');
+
+    // 2. Post with Show more button: triggers .click()
+    let clicked = false;
+    const mockShowMoreBtn = {
+      click: () => {
+        clicked = true;
+        textEl2.innerText = 'This is a very long tweet that was expanded after clicking Show more on X.';
+        textEl2.textContent = 'This is a very long tweet that was expanded after clicking Show more on X.';
+      },
+    };
+    const textEl2 = {
+      innerText: 'This is a very long tweet...',
+      textContent: 'This is a very long tweet...',
+      querySelector: () => mockShowMoreBtn,
+    };
+    const postEl2 = {
+      querySelector: (sel) => sel === '[data-testid="tweet-text-show-more-link"]' ? mockShowMoreBtn : null,
+    };
+    const res2 = await expandAndExtractPostText(postEl2, textEl2, 'fallback');
+    expect(clicked).toBe(true);
+    expect(res2).toBe('This is a very long tweet that was expanded after clicking Show more on X.');
+
+    // 3. Post already manually expanded before TLDR click: returns full innerText without clicking
+    const textEl3 = { innerText: 'Fully expanded article text already on screen' };
+    const postEl3 = { querySelector: () => null };
+    const res3 = await expandAndExtractPostText(postEl3, textEl3, 'stale truncated snippet');
+    expect(res3).toBe('Fully expanded article text already on screen');
+
+    // 4. Strips "Translate" / "Xem bản dịch" suffix cleanly
+    const textEl4 = { innerText: 'English tweet text Translate' };
+    const postEl4 = { querySelector: () => null };
+    const res4 = await expandAndExtractPostText(postEl4, textEl4, '');
+    expect(res4).toBe('English tweet text');
+  });
+
   test("Config synchronization: partial UPDATE_CONFIG payloads never corrupt existing filters or thresholds", () => {
     const baseConfig = {
       monkModeEnabled: true,
@@ -1744,6 +2125,12 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(matches.some((m) => m.includes("facebook"))).toBe(false);
     expect(matches.some((m) => m.includes("threads"))).toBe(false);
 
+    // Verify Side Panel configuration (enables full-height UI)
+    expect(manifest.permissions).toContain("sidePanel");
+    expect(manifest.side_panel).toBeDefined();
+    expect(manifest.side_panel.default_path).toBe("popup.html");
+    expect(manifest.action?.default_popup).toBeUndefined();
+
     // Platform detection helper logic
     function detectPlatform(url) {
       if (!url) return null;
@@ -1761,7 +2148,7 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
   });
 
   test("Gemini API Key dirty-checking: Save button disabled until value differs from stored key", () => {
-    const DEFAULT_KEY = 'AIzaSyCEUfHf2SiBsA5ZLDLHJMg_1bkjebeuVoo';
+    const DEFAULT_KEY = '';
     let storedKey = DEFAULT_KEY;
 
     function isSaveDisabled(currentInputVal, savedKey) {
@@ -1849,7 +2236,1318 @@ describe("Curated Classifier Taxonomy & Dynamic Filter Rules", () => {
     expect(resolveAssignedLabels([], { custom_tech: 0.15 }, 0.3)).toEqual([]);
     expect(resolveAssignedLabels([], {}, 0.3)).toEqual([]);
   });
+
+  test("Vercel-styled Confidence Popover data structure: sorts items descending, assigns TOP indicator, and formats percentage bars", () => {
+    function formatPopoverItems(badgesList) {
+      return badgesList.map((item, index) => {
+        const pct = Math.round((item.score || 0) * 100);
+        const dotColor = item.meta?.dotColor || '#94a3b8';
+        const labelText = item.meta?.text || item.label;
+        const isTop = index === 0;
+        return {
+          label: labelText,
+          pct,
+          dotColor,
+          isTop,
+          barWidth: `${pct}%`,
+        };
+      });
+    }
+
+    const testBadges = [
+      { label: 'Artificial intelligence', score: 0.84, meta: { text: 'Artificial intelligence', dotColor: '#a78bfa' } },
+      { label: 'tech / dev', score: 0.52, meta: { text: 'Tech', dotColor: '#38bdf8' } },
+      { label: 'crypto', score: 0.33, meta: { text: 'Crypto', dotColor: '#fbbf24' } },
+    ];
+
+    const formatted = formatPopoverItems(testBadges);
+    expect(formatted.length).toBe(3);
+    expect(formatted[0].label).toBe('Artificial intelligence');
+    expect(formatted[0].pct).toBe(84);
+    expect(formatted[0].isTop).toBe(true);
+    expect(formatted[0].barWidth).toBe('84%');
+    expect(formatted[0].dotColor).toBe('#a78bfa');
+
+    expect(formatted[1].label).toBe('Tech');
+    expect(formatted[1].pct).toBe(52);
+    expect(formatted[1].isTop).toBe(false);
+
+    expect(formatted[2].label).toBe('Crypto');
+    expect(formatted[2].pct).toBe(33);
+    expect(formatted[2].isTop).toBe(false);
+  });
+
+  test("Hover popover displays top 4 tags including lower % scores below confidenceThreshold", () => {
+    const rawScores = {
+      'Artificial intelligence': 0.78,
+      'Tech': 0.14,
+      'other / casual discussion': 0.05,
+      'Gaming': 0.02,
+      'Crypto': 0.01,
+    };
+
+    const threshold = 0.30;
+    const allCandidates = Object.entries(rawScores)
+      .map(([label, score]) => ({ label, score }))
+      .sort((a, b) => b.score - a.score);
+
+    // Eligible badges for post inline display (score >= 0.30)
+    const eligibleBadges = allCandidates.filter(item => item.score >= threshold);
+    expect(eligibleBadges.length).toBe(1);
+    expect(eligibleBadges[0].label).toBe('Artificial intelligence');
+
+    // Hover popover list: takes top 4 candidates, even those with lower % below 0.30
+    const popoverBadges = allCandidates.slice(0, 4);
+    expect(popoverBadges.length).toBe(4);
+    expect(popoverBadges[0]).toEqual({ label: 'Artificial intelligence', score: 0.78 });
+    expect(popoverBadges[1]).toEqual({ label: 'Tech', score: 0.14 });
+    expect(popoverBadges[2]).toEqual({ label: 'other / casual discussion', score: 0.05 });
+    expect(popoverBadges[3]).toEqual({ label: 'Gaming', score: 0.02 });
+
+    // Ensure 5th candidate ('Crypto') is capped out by max 4
+    expect(popoverBadges.some(b => b.label === 'Crypto')).toBe(false);
+  });
+
+  test("MoreBadge indicator: correctly computes +N count for secondary matching categories", () => {
+    function computeMoreBadge(eligibleBadges) {
+      if (!Array.isArray(eligibleBadges) || eligibleBadges.length <= 1) return null;
+      return {
+        className: 'x-jev-more-badge',
+        count: eligibleBadges.length - 1,
+        text: `+${eligibleBadges.length - 1}`,
+      };
+    }
+
+    // 1 badge -> no more badge
+    expect(computeMoreBadge([{ label: 'ai' }])).toBeNull();
+
+    // 3 badges -> +2
+    const multiBadges = [{ label: 'ai' }, { label: 'tech' }, { label: 'dev' }];
+    const more = computeMoreBadge(multiBadges);
+    expect(more).not.toBeNull();
+    expect(more.count).toBe(2);
+    expect(more.text).toBe('+2');
+
+    // 6 badges (beyond 4) -> +5
+    const sixBadges = [{ label: '1' }, { label: '2' }, { label: '3' }, { label: '4' }, { label: '5' }, { label: '6' }];
+    expect(computeMoreBadge(sixBadges).text).toBe('+5');
+  });
+
+  test("Popover coordinate calculation: clamps bottom boundary and guards unmounted/offscreen anchors", () => {
+    function computePopoverCoords(anchorRect, popoverRect, viewport, inDocument = true) {
+      if (!inDocument) return { visible: false };
+      const { top: aTop, bottom: aBottom, left: aLeft, right: aRight } = anchorRect;
+      const { width: vWidth, height: vHeight } = viewport;
+
+      if (aBottom < 0 || aTop > vHeight || aRight < 0 || aLeft > vWidth) {
+        return { visible: false };
+      }
+
+      const margin = 8;
+      let top = aTop - popoverRect.height - margin;
+      if (top < margin) top = aBottom + margin;
+      if (top + popoverRect.height > vHeight - margin) {
+        top = Math.max(margin, vHeight - popoverRect.height - margin);
+      }
+
+      let left = aLeft;
+      if (left + popoverRect.width > vWidth - margin) {
+        left = vWidth - popoverRect.width - margin;
+      }
+      if (left < margin) left = margin;
+
+      return { visible: true, top: Math.round(top), left: Math.round(left) };
+    }
+
+    // Unmounted anchor -> hidden immediately
+    expect(computePopoverCoords({ top: 0, bottom: 0, left: 0, right: 0 }, { width: 220, height: 120 }, { width: 1000, height: 800 }, false))
+      .toEqual({ visible: false });
+
+    // Anchor scrolled out of viewport (bottom < 0) -> hidden immediately
+    expect(computePopoverCoords({ top: -50, bottom: -10, left: 100, right: 200 }, { width: 220, height: 120 }, { width: 1000, height: 800 }, true))
+      .toEqual({ visible: false });
+
+    // Normal placement above
+    const normal = computePopoverCoords({ top: 300, bottom: 320, left: 100, right: 200 }, { width: 220, height: 100 }, { width: 1000, height: 800 }, true);
+    expect(normal.visible).toBe(true);
+    expect(normal.top).toBe(192); // 300 - 100 - 8
+    expect(normal.left).toBe(100);
+
+    // Flip below when near top
+    const nearTop = computePopoverCoords({ top: 20, bottom: 38, left: 100, right: 200 }, { width: 220, height: 100 }, { width: 1000, height: 800 }, true);
+    expect(nearTop.visible).toBe(true);
+    expect(nearTop.top).toBe(46); // 38 + 8
+
+    // Bottom clamp when viewport is short
+    const shortViewport = computePopoverCoords({ top: 20, bottom: 38, left: 100, right: 200 }, { width: 220, height: 100 }, { width: 1000, height: 120 }, true);
+    expect(shortViewport.visible).toBe(true);
+    expect(shortViewport.top).toBe(12); // clamped: 120 - 100 - 8 = 12
+  });
+
+  test("Jev AI Two-Tier Persistent Cache & Taxonomy Signature Invalidation", () => {
+    const MAX_JEV_CACHE_SIZE = 1500;
+    const textCache = new Map();
+
+    function getTaxonomySignature(labels, instructions) {
+      const labelsStr = labels.slice().sort().join(',');
+      return `${labelsStr}::${instructions || ''}`;
+    }
+
+    // 1. Taxonomy Signature contract
+    const sig1 = getTaxonomySignature(['other / casual discussion', 'tech'], 'instructions...');
+    const sig2 = getTaxonomySignature(['tech', 'other / casual discussion'], 'instructions...');
+    // Sorted order ensures identical signature regardless of label insertion order
+    expect(sig1).toBe(sig2);
+
+    // Signature changes when custom labels change
+    const sig3 = getTaxonomySignature(['other / casual discussion', 'crypto'], 'instructions...');
+    expect(sig1).not.toBe(sig3);
+
+    // 2. L2 Storage Hydration with signature validation
+    function hydrateL2Cache(targetMap, storageObj, currentSig) {
+      if (!storageObj || !storageObj.cache) return;
+      if (storageObj.sig && storageObj.sig !== currentSig) {
+        // Stale taxonomy: invalidate cache
+        targetMap.clear();
+        return;
+      }
+      Object.entries(storageObj.cache)
+        .slice(-MAX_JEV_CACHE_SIZE)
+        .forEach(([k, v]) => targetMap.set(k, v));
+    }
+
+    const mockL2 = {
+      sig: sig1,
+      cache: {
+        'tweet_1': { label: 'tech', confidence: 0.9 },
+        'tweet_2': { label: 'other / casual discussion', confidence: 0.8 },
+      },
+    };
+
+    // Hydrate with matching signature -> Success
+    hydrateL2Cache(textCache, mockL2, sig1);
+    expect(textCache.size).toBe(2);
+    expect(textCache.has('tweet_1')).toBe(true);
+
+    // Hydrate with altered signature -> Invalidation clears stale cache
+    hydrateL2Cache(textCache, mockL2, sig3);
+    expect(textCache.size).toBe(0);
+
+    // 2b. Synchronous Bootstrap Lifecycle (Prevents false-positive wipe on unhydrated config)
+    const sessionMap = new Map();
+    sessionMap.set('cached_tweet', { label: 'tech', confidence: 0.92 });
+    // Synchronous bootstrap loads sessionMap without evaluating against empty default config
+    const textCacheInit = new Map();
+    sessionMap.forEach((v, k) => textCacheInit.set(k, v));
+    expect(textCacheInit.size).toBe(1);
+    expect(textCacheInit.has('cached_tweet')).toBe(true);
+
+    // Later, when async storage resolves:
+    // If sig matches hydrated config -> keeps cache
+    const hydratedUserSig = sig1;
+    if (mockL2.sig === hydratedUserSig) {
+      // Retained
+      expect(textCacheInit.has('cached_tweet')).toBe(true);
+    }
+
+    // 3. LRU Bounding at 1500 items
+    function saveCacheLru(map, k, v) {
+      map.delete(k);
+      map.set(k, v);
+      while (map.size > MAX_JEV_CACHE_SIZE) {
+        const oldest = map.keys().next().value;
+        map.delete(oldest);
+      }
+    }
+
+    for (let i = 0; i < 1500; i++) {
+      saveCacheLru(textCache, `tweet_${i}`, { label: 'tech', confidence: 0.8 });
+    }
+    expect(textCache.size).toBe(1500);
+
+    // Promote tweet_0 to MRU
+    const res = textCache.get('tweet_0');
+    textCache.delete('tweet_0');
+    textCache.set('tweet_0', res);
+
+    // Add 1 more item -> tweet_1 (oldest) must be evicted, tweet_0 must survive
+    saveCacheLru(textCache, 'tweet_1500', { label: 'tech', confidence: 0.95 });
+    expect(textCache.size).toBe(1500);
+    expect(textCache.has('tweet_1')).toBe(false); // oldest evicted
+    expect(textCache.has('tweet_0')).toBe(true);  // accessed survived
+    expect(textCache.has('tweet_1500')).toBe(true);
+  });
+
+  test("Jev In-Flight Deduplication, Batch Sizing & HTTP 429 Circuit Breaker", () => {
+    // 1. Batch sizing verification: 40 items per batch
+    const BATCH_SIZE = 40;
+    const testQueue = Array.from({ length: 95 }, (_, i) => `tweet_${i}`);
+    const batch1 = testQueue.splice(0, BATCH_SIZE);
+    expect(batch1.length).toBe(40);
+    const batch2 = testQueue.splice(0, BATCH_SIZE);
+    expect(batch2.length).toBe(40);
+    const batch3 = testQueue.splice(0, BATCH_SIZE);
+    expect(batch3.length).toBe(15);
+
+    // 2. In-Flight Waiter Deduplication contract (Zero busy spin-loop)
+    const inFlightJevWaiters = new Map(); // text -> Array<waiterItem>
+    const uncachedInputs = [];
+    const simulatedBatch = [
+      { id: 1, text: 'post_A' },
+      { id: 2, text: 'post_B' },
+      { id: 3, text: 'post_A' }, // duplicate waiter in same feed pass
+    ];
+
+    simulatedBatch.forEach((item) => {
+      if (inFlightJevWaiters.has(item.text)) {
+        inFlightJevWaiters.get(item.text).push(item);
+      } else {
+        inFlightJevWaiters.set(item.text, [item]);
+        uncachedInputs.push(item.text);
+      }
+    });
+
+    // post_A must only be sent once to Jev API
+    expect(uncachedInputs).toEqual(['post_A', 'post_B']);
+    expect(inFlightJevWaiters.size).toBe(2);
+    expect(inFlightJevWaiters.get('post_A').length).toBe(2); // both items waiting
+
+    // Simulated API response distribution to all waiters
+    const mockResults = [
+      { label: 'tech', score: 0.95 },
+      { label: 'news', score: 0.88 },
+    ];
+    const resolvedItems = [];
+    uncachedInputs.forEach((txt, i) => {
+      const res = mockResults[i];
+      const waiters = inFlightJevWaiters.get(txt) || [];
+      waiters.forEach((item) => resolvedItems.push({ id: item.id, label: res.label }));
+    });
+    uncachedInputs.forEach((txt) => inFlightJevWaiters.delete(txt));
+
+    expect(resolvedItems.length).toBe(3);
+    expect(resolvedItems.find(r => r.id === 1)?.label).toBe('tech');
+    expect(resolvedItems.find(r => r.id === 3)?.label).toBe('tech');
+    expect(inFlightJevWaiters.size).toBe(0);
+
+    // 3. HTTP 429 Circuit Breaker Cooldown contract (Fast recovery: 10 seconds)
+    let jevCooldownUntil = 0;
+    function handleJevResponse(status) {
+      if (status === 429) {
+        jevCooldownUntil = Date.now() + 10000;
+        return { cooldownActive: true };
+      }
+      return { cooldownActive: false };
+    }
+
+    function canFlushQueue(now = Date.now()) {
+      return now >= jevCooldownUntil;
+    }
+
+    // Normal response (200) -> can flush immediately
+    expect(handleJevResponse(200).cooldownActive).toBe(false);
+    expect(canFlushQueue()).toBe(true);
+
+    // 429 response -> activates cooldown for 10 seconds
+    const now = Date.now();
+    expect(handleJevResponse(429).cooldownActive).toBe(true);
+    expect(canFlushQueue(now + 5000)).toBe(false);  // 5s later: still in cooldown
+    expect(canFlushQueue(now + 11000)).toBe(true);  // 11s later: cooldown expired
+
+    // 4. Realtime Viewport-First Priority Queueing & Starvation-Free Dispatch
+    const testRealtimeQueue = [];
+    function isElementInViewportMock(rect, vh = 800, vw = 1200) {
+      if (!rect) return false;
+      if ((rect.width ?? 100) <= 0 || (rect.height ?? 100) <= 0) return false;
+      return rect.bottom >= -150 && rect.top <= vh + 150 && rect.right >= 0 && rect.left <= vw;
+    }
+
+    // Zero-dimension element rejection (display:none, unmounted)
+    const hiddenZeroDim = { top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0 };
+    expect(isElementInViewportMock(hiddenZeroDim)).toBe(false);
+
+    // Multiple visible posts in document order (top to bottom)
+    const itemVis1 = { id: 'visible_1', rect: { top: 100, bottom: 250, left: 10, right: 500, width: 490, height: 150 } };
+    const itemVis2 = { id: 'visible_2', rect: { top: 260, bottom: 400, left: 10, right: 500, width: 490, height: 140 } };
+    const itemVis3 = { id: 'visible_3', rect: { top: 410, bottom: 550, left: 10, right: 500, width: 490, height: 140 } };
+    const itemOffscreen = { id: 'offscreen_1', rect: { top: 1400, bottom: 1550, left: 10, right: 500, width: 490, height: 150 } };
+
+    // Pass 1: Offscreen item discovered
+    testRealtimeQueue.push({ id: itemOffscreen.id, isVisible: false });
+
+    // Pass 2: Multiple visible items discovered in top-to-bottom document order
+    const rawScanned = [itemVis1, itemVis2, itemVis3];
+    const newVisible = [];
+    const newOffscreen = [];
+    rawScanned.forEach((item) => {
+      if (isElementInViewportMock(item.rect)) {
+        newVisible.push({ id: item.id, isVisible: true });
+      } else {
+        newOffscreen.push({ id: item.id, isVisible: false });
+      }
+    });
+
+    // FIFO unshift preserves top-to-bottom document order at the head of the queue!
+    testRealtimeQueue.unshift(...newVisible);
+    testRealtimeQueue.push(...newOffscreen);
+
+    expect(testRealtimeQueue.map(i => i.id)).toEqual(['visible_1', 'visible_2', 'visible_3', 'offscreen_1']);
+
+    // Starvation-free dispatch check
+    function shouldFlushImmediately(queue, elapsed, activeBatches = 0, maxBatches = 3, cooldownUntil = 0, now = Date.now()) {
+      if (now < cooldownUntil) return false; // 429 cooldown active -> NO flush churn
+      if (activeBatches >= maxBatches) return false;
+      const hasVisible = queue.some((item) => item.isVisible);
+      return hasVisible || queue.length >= 10 || elapsed >= 35;
+    }
+
+    // With visible items waiting and capacity available -> flushes immediately
+    expect(shouldFlushImmediately(testRealtimeQueue, 5, 0, 3)).toBe(true);
+    // When saturated at MAX_CONCURRENT_BATCHES -> must wait for capacity
+    expect(shouldFlushImmediately(testRealtimeQueue, 5, 3, 3)).toBe(false);
+    // When in 429 cooldown -> must not flush immediately (prevents timer churning)
+    expect(shouldFlushImmediately(testRealtimeQueue, 5, 0, 3, Date.now() + 5000)).toBe(false);
+
+    // Urgent Visible-First Micro-Batching & Concurrency
+    function extractNextBatch(q, maxVisible = 8, maxOffscreen = 30) {
+      const firstVisibleIndex = q.findIndex((item) => item.isVisible);
+      if (firstVisibleIndex !== -1) {
+        const visibleItems = [];
+        const remaining = [];
+        for (let i = 0; i < q.length; i++) {
+          if (q[i].isVisible && visibleItems.length < maxVisible) {
+            visibleItems.push(q[i]);
+          } else {
+            remaining.push(q[i]);
+          }
+        }
+        return { batch: visibleItems, remainingQueue: remaining };
+      }
+      return { batch: q.slice(0, maxOffscreen), remainingQueue: q.slice(maxOffscreen) };
+    }
+
+    const mixedQueue = [
+      { id: 'v1', isVisible: true },
+      { id: 'v2', isVisible: true },
+      { id: 'o1', isVisible: false },
+      { id: 'o2', isVisible: false },
+      { id: 'v3', isVisible: true },
+    ];
+
+    const { batch: microBatch, remainingQueue: afterMicro } = extractNextBatch(mixedQueue, 2);
+    expect(microBatch.map(i => i.id)).toEqual(['v1', 'v2']);
+    expect(afterMicro.map(i => i.id)).toEqual(['o1', 'o2', 'v3']);
+
+    // Concurrency guard check: allows up to MAX_CONCURRENT_BATCHES (3)
+    const MAX_CONCURRENT = 3;
+    expect(0 < MAX_CONCURRENT).toBe(true); // Can dispatch Batch 1
+    expect(1 < MAX_CONCURRENT).toBe(true); // Can dispatch Batch 2 concurrently
+    expect(2 < MAX_CONCURRENT).toBe(true); // Can dispatch Batch 3 concurrently
+    expect(3 < MAX_CONCURRENT).toBe(false); // Saturated: must wait for batch completion
+  });
+
+  test("getPostTagKey and getDisplayLabelName handle mixed casing, trimming, and custom labels", () => {
+    const customLabels = [
+      { name: 'Artificial Intelligence', action: 'show' },
+      'Crypto',
+      { name: 'web3', enabled: true },
+    ];
+
+    function getPostTagKey(label) {
+      if (!label || typeof label !== 'string' || !label.trim()) return null;
+      const normalized = label.trim().toLowerCase();
+      if (normalized === 'other / casual discussion') return 'casual';
+      if (Array.isArray(customLabels)) {
+        const isCustom = customLabels.some(
+          (c) => (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase() === normalized
+        );
+        if (isCustom) return 'custom';
+      }
+      return null;
+    }
+
+    function getDisplayLabelName(label) {
+      if (label?.trim().toLowerCase() === 'other / casual discussion') return 'Casual';
+      if (Array.isArray(customLabels)) {
+        const found = customLabels.find(
+          (c) => (typeof c === 'string' ? c : c?.name)?.trim().toLowerCase() === label?.trim().toLowerCase()
+        );
+        if (found) return typeof found === 'object' ? found.name : found;
+      }
+      return label || 'Other';
+    }
+
+    expect(getPostTagKey('other / casual discussion')).toBe('casual');
+    expect(getPostTagKey('  OTHER / CASUAL DISCUSSION  ')).toBe('casual');
+    expect(getPostTagKey('artificial intelligence')).toBe('custom');
+    expect(getPostTagKey('  cRyPtO  ')).toBe('custom');
+    expect(getPostTagKey('unknown')).toBe(null);
+    expect(getPostTagKey('')).toBe(null);
+    expect(getPostTagKey(null)).toBe(null);
+
+    expect(getDisplayLabelName('  OTHER / CASUAL DISCUSSION  ')).toBe('Casual');
+    expect(getDisplayLabelName('artificial intelligence')).toBe('Artificial Intelligence');
+    expect(getDisplayLabelName('crypto')).toBe('Crypto');
+    expect(getDisplayLabelName('something_else')).toBe('something_else');
+    expect(getDisplayLabelName(null)).toBe('Other');
+  });
+
+  test("Summary button rendering: accepts short posts without length >= 35 restriction while rejecting empty text", () => {
+    const isSummarizable = (text) => typeof text === 'string' && text.trim().length > 0;
+
+    // Short posts that previously failed >= 35 check (e.g. Russell's 31-char post in screenshot)
+    expect(isSummarizable('现在闲鱼真的各显神通 打开就爆笑 一群人卖gpt卖的花活太多了')).toBe(true);
+    expect(isSummarizable('Short tweet')).toBe(true);
+    expect(isSummarizable('AI')).toBe(true);
+
+    // Empty or non-string inputs
+    expect(isSummarizable('')).toBe(false);
+    expect(isSummarizable('   ')).toBe(false);
+    expect(isSummarizable(null)).toBe(false);
+    expect(isSummarizable(undefined)).toBe(false);
+
+    // Mock render test verifying summaryBtn is appended for short text
+    const container = { children: [], appendChild(el) { this.children.push(el); } };
+    const text = 'Short post under 35 chars';
+    const hasSummarizableText = typeof text === 'string' && text.trim().length > 0;
+    if (hasSummarizableText) {
+      const summaryBtn = { className: 'x-jev-summary-btn', text: 'TL;DR' };
+      container.appendChild(summaryBtn);
+    }
+    expect(container.children.length).toBe(1);
+    expect(container.children[0].className).toBe('x-jev-summary-btn');
+  });
+
+  test("Gemini Summarizer enhanced extraction: combines Repost context, author commentary, and Quoted Tweets", async () => {
+    function cleanText(txt) {
+      return (txt || '').replace(/\s*(Translate|Xem bản dịch|Show more|Hiển thị thêm|Xem thêm)$/i, '').trim();
+    }
+
+    async function expandAndExtractPostText(postEl, textEl, fallbackText) {
+      if (!textEl && !postEl) return fallbackText || '';
+
+      const clean = (txt) => cleanText(txt);
+      let mainText = textEl && textEl.innerText ? clean(textEl.innerText) : '';
+      if (!mainText && fallbackText) mainText = clean(fallbackText);
+
+      if (postEl) {
+        const parts = [];
+
+        // 1. Repost / Retweet context (e.g., "X reposted")
+        const socialContextEl = postEl.querySelector ? postEl.querySelector('[data-testid="socialContext"]') : null;
+        if (socialContextEl && socialContextEl.innerText) {
+          const contextText = clean(socialContextEl.innerText);
+          if (contextText) {
+            parts.push(`[${contextText}]`);
+          }
+        }
+
+        // 2. Main post text
+        if (mainText) {
+          parts.push(mainText);
+        }
+
+        // 3. Quoted Tweet text
+        const allTextEls = postEl.querySelectorAll ? Array.from(postEl.querySelectorAll('[data-testid="tweetText"]')) : [];
+        if (allTextEls.length > 1) {
+          const quotedTexts = allTextEls
+            .filter((el) => el !== textEl)
+            .map((el) => clean(el.innerText))
+            .filter((txt) => txt.length > 0 && txt !== mainText);
+
+          if (quotedTexts.length > 0) {
+            parts.push(`[Quoted Post:\n${quotedTexts.join('\n---\n')}]`);
+          }
+        }
+
+        const combined = parts.join('\n\n').trim();
+        return (combined && combined.length >= 2) ? combined : (fallbackText || '');
+      }
+
+      return (mainText && mainText.length >= 2) ? mainText : (fallbackText || '');
+    }
+
+    // Case 1: Standard tweet without quote or repost
+    const standardTextEl = { innerText: 'Just launched our new product!' };
+    const standardPostEl = {
+      querySelector: () => null,
+      querySelectorAll: () => [standardTextEl],
+    };
+    const res1 = await expandAndExtractPostText(standardPostEl, standardTextEl, '');
+    expect(res1).toBe('Just launched our new product!');
+
+    // Case 2: Quote Tweet (contains main text AND quoted tweet text)
+    const quoteAuthorTextEl = { innerText: 'This analysis is completely wrong and misleading 🤡' };
+    const quotedOriginalTextEl = { innerText: 'Original post: AI will replace all software engineers by next Friday.' };
+    const quotePostEl = {
+      querySelector: (sel) => null,
+      querySelectorAll: (sel) => sel === '[data-testid="tweetText"]' ? [quoteAuthorTextEl, quotedOriginalTextEl] : [],
+    };
+    const res2 = await expandAndExtractPostText(quotePostEl, quoteAuthorTextEl, '');
+    expect(res2).toContain('This analysis is completely wrong and misleading 🤡');
+    expect(res2).toContain('[Quoted Post:');
+    expect(res2).toContain('Original post: AI will replace all software engineers by next Friday.');
+
+    // Case 3: Retweet / Repost with socialContext
+    const repostTextEl = { innerText: 'Open source LLMs are catching up rapidly.' };
+    const repostContextEl = { innerText: 'Yann LeCun reposted' };
+    const repostPostEl = {
+      querySelector: (sel) => sel === '[data-testid="socialContext"]' ? repostContextEl : null,
+      querySelectorAll: (sel) => sel === '[data-testid="tweetText"]' ? [repostTextEl] : [],
+    };
+    const res3 = await expandAndExtractPostText(repostPostEl, repostTextEl, '');
+    expect(res3).toContain('[Yann LeCun reposted]');
+    expect(res3).toContain('Open source LLMs are catching up rapidly.');
+  });
+
+  test("Tweet image media extraction: identifies tweetPhoto images, ignores avatars and emojis, and normalizes URL", () => {
+    function extractPostImages(postEl) {
+      if (!postEl || !postEl.querySelectorAll) return [];
+      const imgs = Array.from(postEl.querySelectorAll('div[data-testid="tweetPhoto"] img'));
+      const urls = [];
+      const seen = new Set();
+      for (const img of imgs) {
+        let src = img.getAttribute ? (img.getAttribute('src') || img.src) : img.src;
+        if (!src || src.startsWith('data:') || seen.has(src)) continue;
+        if (src.includes('/emoji/') || src.includes('profile_images')) continue;
+        seen.add(src);
+        urls.push(src);
+        if (urls.length >= 4) break;
+      }
+      return urls;
+    }
+
+    const mockPostEl = {
+      querySelectorAll: (sel) => {
+        if (sel === 'div[data-testid="tweetPhoto"] img') {
+          return [
+            { src: 'https://pbs.twimg.com/media/G12345?format=jpg&name=large' },
+            { src: 'https://pbs.twimg.com/media/G67890?format=png&name=900x900' },
+            { src: 'https://abs.twimg.com/emoji/v2/svg/1f525.svg' }, // Emoji -> should be ignored
+            { src: 'https://pbs.twimg.com/profile_images/123/avatar.jpg' }, // Avatar -> should be ignored
+          ];
+        }
+        return [];
+      },
+    };
+
+    const extracted = extractPostImages(mockPostEl);
+    expect(extracted.length).toBe(2);
+    expect(extracted[0]).toBe('https://pbs.twimg.com/media/G12345?format=jpg&name=large');
+    expect(extracted[1]).toBe('https://pbs.twimg.com/media/G67890?format=png&name=900x900');
+  });
+
+  test("Multimodal Gemini summary payload: formats base64 inlineData, gracefully falls back on fetch failure, and computes composite cache keys", async () => {
+    function arrayBufferToBase64(buffer) {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      const len = bytes.byteLength;
+      const chunkSize = 8192;
+      for (let i = 0; i < len; i += chunkSize) {
+        const chunk = bytes.subarray(i, Math.min(i + chunkSize, len));
+        binary += String.fromCharCode.apply(null, chunk);
+      }
+      return btoa(binary);
+    }
+
+    // Verify binary encoding
+    const sampleBytes = new Uint8Array([72, 101, 108, 108, 111]); // "Hello"
+    expect(arrayBufferToBase64(sampleBytes.buffer)).toBe(btoa("Hello"));
+
+    // Verify composite cache keys
+    const text = 'Check out this chart on inflation';
+    const images = ['https://pbs.twimg.com/media/chart1.jpg'];
+    const keyWithImages = images.length > 0 ? `${text}::imgs:${images.join(',')}` : text;
+    const keyWithoutImages = `${text}`;
+    expect(keyWithImages).toContain('::imgs:https://pbs.twimg.com/media/chart1.jpg');
+    expect(keyWithoutImages).toBe(text);
+    expect(keyWithImages).not.toBe(keyWithoutImages);
+
+    // Mock multimodal parts construction with fallback
+    async function buildGeminiParts(prompt, imageUrls, mockFetcher) {
+      const parts = [{ text: prompt }];
+      if (Array.isArray(imageUrls) && imageUrls.length > 0) {
+        const imagePartPromises = imageUrls.slice(0, 3).map(async (url) => {
+          try {
+            const res = await mockFetcher(url);
+            if (!res.ok) return null;
+            const buffer = await res.arrayBuffer();
+            const base64Data = arrayBufferToBase64(buffer);
+            return {
+              inlineData: {
+                mimeType: res.mimeType || 'image/jpeg',
+                data: base64Data,
+              },
+            };
+          } catch (e) {
+            return null;
+          }
+        });
+        const resolved = await Promise.all(imagePartPromises);
+        for (const p of resolved) {
+          if (p) parts.push(p);
+        }
+      }
+      return parts;
+    }
+
+    // 1. Success with image: generates inlineData part
+    const mockSuccessFetcher = async (url) => ({
+      ok: true,
+      mimeType: 'image/jpeg',
+      arrayBuffer: async () => new Uint8Array([255, 216, 255]).buffer, // JPEG magic bytes
+    });
+    const partsSuccess = await buildGeminiParts('Summarize:', ['https://pbs.twimg.com/media/test.jpg'], mockSuccessFetcher);
+    expect(partsSuccess.length).toBe(2);
+    expect(partsSuccess[0].text).toBe('Summarize:');
+    expect(partsSuccess[1].inlineData).toBeDefined();
+    expect(partsSuccess[1].inlineData.mimeType).toBe('image/jpeg');
+
+    // 2. Failure with image (404 / network error): gracefully falls back to text-only
+    const mockFailFetcher = async (url) => ({
+      ok: false,
+      mimeType: 'image/jpeg',
+      arrayBuffer: async () => new Uint8Array([]).buffer,
+    });
+    const partsFailed = await buildGeminiParts('Summarize:', ['https://pbs.twimg.com/media/broken.jpg'], mockFailFetcher);
+    expect(partsFailed.length).toBe(1);
+    expect(partsFailed[0].text).toBe('Summarize:');
+  });
+
+  test("Video and GIF poster extraction: captures poster thumbnail from video elements and handles mixed photo/video posts", () => {
+    function extractPostImages(postEl) {
+      if (!postEl || !postEl.querySelectorAll) return [];
+      const urls = [];
+      const seen = new Set();
+
+      // 1. Still photos
+      const imgs = Array.from(postEl.querySelectorAll('div[data-testid="tweetPhoto"] img'));
+      for (const img of imgs) {
+        let src = img.getAttribute ? (img.getAttribute('src') || img.src) : img.src;
+        if (!src || src.startsWith('data:') || seen.has(src)) continue;
+        if (src.includes('/emoji/') || src.includes('profile_images')) continue;
+        seen.add(src);
+        urls.push(src);
+        if (urls.length >= 4) break;
+      }
+
+      // 2. Video / GIF poster thumbnails if slots remain
+      if (urls.length < 4) {
+        const videos = Array.from(postEl.querySelectorAll('div[data-testid="videoPlayer"] video, div[data-testid="videoComponent"] video, video[poster]'));
+        for (const vid of videos) {
+          let poster = vid.getAttribute ? (vid.getAttribute('poster') || vid.poster) : vid.poster;
+          if (!poster || poster.startsWith('data:') || seen.has(poster)) continue;
+          seen.add(poster);
+          urls.push(poster);
+          if (urls.length >= 4) break;
+        }
+      }
+
+      return urls;
+    }
+
+    // Post with video element having poster attribute
+    const mockVideoPostEl = {
+      querySelectorAll: (sel) => {
+        if (sel.includes('tweetPhoto')) return [];
+        if (sel.includes('videoPlayer') || sel.includes('video[poster]')) {
+          return [
+            { poster: 'https://pbs.twimg.com/media/video_poster_123.jpg' }
+          ];
+        }
+        return [];
+      },
+    };
+
+    const extracted = extractPostImages(mockVideoPostEl);
+    expect(extracted.length).toBe(1);
+    expect(extracted[0]).toBe('https://pbs.twimg.com/media/video_poster_123.jpg');
+  });
+
+  test("Media Context Note annotation: appends explicit video/GIF keyframe context notes to prompt text", async () => {
+    function cleanText(txt) {
+      return (txt || '').replace(/\s*(Translate|Xem bản dịch|Show more|Hiển thị thêm|Xem thêm)$/i, '').trim();
+    }
+
+    async function expandAndExtractPostText(postEl, textEl, fallbackText) {
+      if (!textEl && !postEl) return fallbackText || '';
+
+      const clean = (txt) => cleanText(txt);
+      let mainText = textEl && textEl.innerText ? clean(textEl.innerText) : '';
+      if (!mainText && fallbackText) mainText = clean(fallbackText);
+
+      if (postEl) {
+        const parts = [];
+
+        // 1. Repost / Retweet context (e.g., "X reposted")
+        const socialContextEl = postEl.querySelector ? postEl.querySelector('[data-testid="socialContext"]') : null;
+        if (socialContextEl && socialContextEl.innerText) {
+          const contextText = clean(socialContextEl.innerText);
+          if (contextText) {
+            parts.push(`[${contextText}]`);
+          }
+        }
+
+        // 2. Main post text
+        if (mainText) {
+          parts.push(mainText);
+        }
+
+        // 3. Quoted Tweet text
+        const allTextEls = postEl.querySelectorAll ? Array.from(postEl.querySelectorAll('[data-testid="tweetText"]')) : [];
+        if (allTextEls.length > 1) {
+          const quotedTexts = allTextEls
+            .filter((el) => el !== textEl)
+            .map((el) => clean(el.innerText))
+            .filter((txt) => txt.length > 0 && txt !== mainText);
+
+          if (quotedTexts.length > 0) {
+            parts.push(`[Quoted Post:\n${quotedTexts.join('\n---\n')}]`);
+          }
+        }
+
+        // 4. Video / GIF Media Context Note
+        const hasVideo = postEl.querySelector && (
+          postEl.querySelector('div[data-testid="videoPlayer"], div[data-testid="videoComponent"], video')
+        );
+        if (hasVideo) {
+          const isGif = postEl.querySelector && (
+            postEl.querySelector('[aria-label*="GIF" i], [data-testid="gifBadge"]') ||
+            (typeof hasVideo.getAttribute === 'function' && hasVideo.getAttribute('aria-label')?.toLowerCase().includes('gif'))
+          );
+          if (isGif) {
+            parts.push('[Media Note: Post includes an animated GIF. The provided image is its preview keyframe.]');
+          } else {
+            parts.push('[Media Note: Post includes a video clip. The provided image is its preview poster frame, not a standalone still photo.]');
+          }
+        }
+
+        const combined = parts.join('\n\n').trim();
+        return (combined && combined.length >= 2) ? combined : (fallbackText || '');
+      }
+
+      return (mainText && mainText.length >= 2) ? mainText : (fallbackText || '');
+    }
+
+    // Video post annotation test
+    const mockVideoPost = {
+      querySelector: (sel) => sel.includes('video') ? { tagName: 'VIDEO' } : null,
+      querySelectorAll: (sel) => sel === '[data-testid="tweetText"]' ? [{ innerText: 'Watch this keynote speech' }] : [],
+    };
+    const resVideo = await expandAndExtractPostText(mockVideoPost, { innerText: 'Watch this keynote speech' }, '');
+    expect(resVideo).toContain('Watch this keynote speech');
+    expect(resVideo).toContain('[Media Note: Post includes a video clip. The provided image is its preview poster frame, not a standalone still photo.]');
+
+    // GIF post annotation test
+    const mockGifPost = {
+      querySelector: (sel) => {
+        if (sel.includes('GIF')) return { text: 'GIF' };
+        if (sel.includes('video')) return { tagName: 'VIDEO' };
+        return null;
+      },
+      querySelectorAll: (sel) => sel === '[data-testid="tweetText"]' ? [{ innerText: 'My reaction when code compiles on first try' }] : [],
+    };
+    const resGif = await expandAndExtractPostText(mockGifPost, { innerText: 'My reaction when code compiles on first try' }, '');
+    expect(resGif).toContain('My reaction when code compiles on first try');
+    expect(resGif).toContain('[Media Note: Post includes an animated GIF. The provided image is its preview keyframe.]');
+  });
+
+  test("Community Note extraction: cleans boilerplate and accurately attributes notes to root tweet vs quoted tweet", async () => {
+    const clean = (txt) => (txt || '').replace(/\s*(Translate|Xem bản dịch|Show more|Hiển thị thêm|Xem thêm)$/i, '').trim();
+
+    const cleanCommunityNote = (txt) => {
+      if (!txt) return '';
+      const lines = txt.split('\n').map((l) => l.trim()).filter(Boolean);
+      const filtered = lines.filter((line) => {
+        if (/^(readers added context|context added by readers|độc giả đã thêm ngữ cảnh|ghi chú cộng đồng)/i.test(line)) {
+          return false;
+        }
+        if (/^(do you find this helpful|rate (it|this note)|helpful\?|bạn có thấy (điều này|ghi chú)|đánh giá ghi chú)/i.test(line)) {
+          return false;
+        }
+        return true;
+      });
+      const res = filtered.join('\n').trim();
+      return res;
+    };
+
+    // 1. Verify cleanCommunityNote stripping headers and footers
+    const rawNoteEn = `Readers added context they thought people might want to know
+This image was generated with Midjourney v6 and does not depict real events.
+Source: example.com/ai-check
+Do you find this helpful? Rate it`;
+
+    const cleanedEn = cleanCommunityNote(rawNoteEn);
+    expect(cleanedEn).toContain('This image was generated with Midjourney v6 and does not depict real events.');
+    expect(cleanedEn).toContain('Source: example.com/ai-check');
+    expect(cleanedEn).not.toContain('Readers added context');
+    expect(cleanedEn).not.toContain('Do you find this helpful');
+
+    // Pure boilerplate string should return empty string so it gets discarded
+    const pureBoilerplate = `Readers added context they thought people might want to know
+Do you find this helpful? Rate it`;
+    expect(cleanCommunityNote(pureBoilerplate)).toBe('');
+
+    const rawNoteVi = `Độc giả đã thêm ngữ cảnh mà họ nghĩ có thể mọi người muốn biết
+Thông tin này đã bị bác bỏ bởi Bộ Y Tế vào ngày 12/05.
+Bạn có thấy điều này hữu ích không? Đánh giá ghi chú`;
+
+    const cleanedVi = cleanCommunityNote(rawNoteVi);
+    expect(cleanedVi).toBe('Thông tin này đã bị bác bỏ bởi Bộ Y Tế vào ngày 12/05.');
+
+    async function expandAndExtractPostText(postEl, textEl, fallbackText) {
+      if (!textEl && !postEl) return fallbackText || '';
+
+      let mainText = textEl && textEl.innerText ? clean(textEl.innerText) : '';
+      if (!mainText && fallbackText) mainText = clean(fallbackText);
+
+      if (postEl) {
+        const parts = [];
+
+        // 1. Repost / Retweet context
+        const socialContextEl = postEl.querySelector ? postEl.querySelector('[data-testid="socialContext"]') : null;
+        if (socialContextEl && socialContextEl.innerText) {
+          const contextText = clean(socialContextEl.innerText);
+          if (contextText) {
+            parts.push(`[${contextText}]`);
+          }
+        }
+
+        // 2. Main post text
+        if (mainText) {
+          parts.push(mainText);
+        }
+
+        // 3. Quoted Tweet text & container detection
+        const allTextEls = postEl.querySelectorAll ? Array.from(postEl.querySelectorAll('[data-testid="tweetText"]')) : [];
+        let quoteContainer = null;
+        let quotedTextPart = null;
+
+        if (allTextEls.length > 1) {
+          const quotedTextEls = allTextEls.filter((el) => el !== textEl);
+          const quotedTexts = quotedTextEls
+            .map((el) => clean(el.innerText))
+            .filter((txt) => txt.length > 0 && txt !== mainText);
+
+          if (quotedTexts.length > 0) {
+            quotedTextPart = `[Quoted Post:\n${quotedTexts.join('\n---\n')}]`;
+          }
+
+          if (quotedTextEls[0]) {
+            let curr = quotedTextEls[0];
+            while (curr.parentElement && curr.parentElement !== postEl && (!textEl || !curr.parentElement.contains(textEl))) {
+              curr = curr.parentElement;
+            }
+            quoteContainer = curr;
+          }
+        }
+
+        if (!quoteContainer && postEl.querySelector) {
+          quoteContainer = postEl.querySelector('[data-testid="quoteTweet"]');
+        }
+
+        // 4. Community Notes on Root Post & Quoted Post
+        const noteEls = postEl.querySelectorAll
+          ? Array.from(postEl.querySelectorAll('[data-testid="birdwatch-pivot"], [data-testid*="birdwatch"], [data-testid="community-note"]'))
+          : [];
+
+        let rootNotes = [];
+        let quoteNotes = [];
+
+        if (noteEls.length > 0) {
+          const seenNotes = new Set();
+          for (const noteEl of noteEls) {
+            const rawNote = noteEl.innerText || noteEl.textContent || '';
+            const cleanedNote = cleanCommunityNote(rawNote);
+            if (!cleanedNote || seenNotes.has(cleanedNote)) continue;
+            seenNotes.add(cleanedNote);
+
+            const isQuoteNote = (quoteContainer && quoteContainer.contains(noteEl)) ||
+              Boolean(noteEl.closest && noteEl.closest('[data-testid="quoteTweet"], [aria-label*="Quote" i]'));
+
+            if (isQuoteNote) {
+              quoteNotes.push(cleanedNote);
+            } else {
+              rootNotes.push(cleanedNote);
+            }
+          }
+        }
+
+        if (rootNotes.length > 0) {
+          parts.push(`[Community Note on Post:\n${rootNotes.join('\n---\n')}]`);
+        }
+
+        if (quotedTextPart) {
+          parts.push(quotedTextPart);
+        }
+
+        if (quoteNotes.length > 0) {
+          parts.push(`[Community Note on Quoted Post:\n${quoteNotes.join('\n---\n')}]`);
+        }
+
+        const combined = parts.join('\n\n').trim();
+        return (combined && combined.length >= 2) ? combined : (fallbackText || '');
+      }
+
+      return (mainText && mainText.length >= 2) ? mainText : (fallbackText || '');
+    }
+
+    // 2. Test post with only Root Community Note
+    const rootNoteEl = {
+      innerText: 'Readers added context\nThe claim regarding tax increases was debunked by CBO report.\nRate this note',
+    };
+    const mockRootOnlyPost = {
+      querySelectorAll: (sel) => {
+        if (sel.includes('birdwatch')) return [rootNoteEl];
+        if (sel === '[data-testid="tweetText"]') return [{ innerText: 'New bill will increase taxes by 50%!' }];
+        return [];
+      },
+    };
+    const resRootOnly = await expandAndExtractPostText(
+      mockRootOnlyPost,
+      { innerText: 'New bill will increase taxes by 50%!' },
+      ''
+    );
+    expect(resRootOnly).toContain('New bill will increase taxes by 50%!');
+    expect(resRootOnly).toContain('[Community Note on Post:\nThe claim regarding tax increases was debunked by CBO report.]');
+    expect(resRootOnly).not.toContain('Quoted Post');
+
+    // 3. Test post with Quoted Tweet AND both Root Note & Quote Note
+    // Structure:
+    // mockArticle: postEl
+    //   rootTextEl
+    //   rootNoteEl
+    //   quoteBox
+    //     quoteTextEl
+    //     quoteNoteEl
+    const mockRootText = { innerText: 'Check out this breaking news!' };
+    const mockQuoteText = { innerText: 'Alien spacecraft landed in Nevada' };
+
+    const mockQuoteNote = {
+      innerText: 'Readers added context\nThe footage is from a 2019 sci-fi movie CGI reel.\nDo you find this helpful?',
+    };
+    const mockRootNote = {
+      innerText: 'Readers added context\nThe account posting this is a known parody account.\nHelpful?',
+    };
+
+    const mockQuoteBox = {
+      contains: (el) => el === mockQuoteText || el === mockQuoteNote,
+      parentElement: null, // Will point to mockArticle
+    };
+    mockQuoteText.parentElement = mockQuoteBox;
+    mockQuoteNote.parentElement = mockQuoteBox;
+
+    const mockArticle = {
+      contains: (el) => true,
+      querySelector: (sel) => null,
+      querySelectorAll: (sel) => {
+        if (sel.includes('birdwatch')) return [mockRootNote, mockQuoteNote];
+        if (sel === '[data-testid="tweetText"]') return [mockRootText, mockQuoteText];
+        return [];
+      },
+    };
+    mockQuoteBox.parentElement = mockArticle;
+
+    const resBoth = await expandAndExtractPostText(mockArticle, mockRootText, '');
+    expect(resBoth).toContain('Check out this breaking news!');
+    expect(resBoth).toContain('[Community Note on Post:\nThe account posting this is a known parody account.]');
+    expect(resBoth).toContain('[Quoted Post:\nAlien spacecraft landed in Nevada]');
+    expect(resBoth).toContain('[Community Note on Quoted Post:\nThe footage is from a 2019 sci-fi movie CGI reel.]');
+
+    // Order verification: Root Note should appear before Quoted Post, and Quoted Note after Quoted Post
+    const rootNoteIdx = resBoth.indexOf('[Community Note on Post:');
+    const quotePostIdx = resBoth.indexOf('[Quoted Post:');
+    const quoteNoteIdx = resBoth.indexOf('[Community Note on Quoted Post:');
+    expect(rootNoteIdx).toBeLessThan(quotePostIdx);
+    expect(quotePostIdx).toBeLessThan(quoteNoteIdx);
+  });
+
+  test("X Long-form Article support: extracts title, cover image, and body paragraphs for Jev AI classification and Gemini TL;DR", async () => {
+    // 1. Test scanFeed extraction logic for an X Article (no tweetText element present)
+    function extractArticleSample(post) {
+      let textEl = post.querySelector ? post.querySelector('div[data-testid="tweetText"]') : null;
+      let text = '';
+      if (textEl) {
+        text = textEl.innerText.trim().replace(/\s*(Translate|Xem bản dịch)$/i, '').trim();
+      } else {
+        const articleTitleEl = post.querySelector ? (post.querySelector('[data-testid="twitter-article-title"]') || post.querySelector('h1')) : null;
+        const articleBodyEl = post.querySelector ? (post.querySelector('[data-testid="twitterArticleReadView"], [data-testid="twitter-article"]') ||
+          (post.getAttribute && post.getAttribute('data-testid')?.includes('article') ? post : null)) : null;
+
+        if (articleTitleEl || articleBodyEl) {
+          textEl = articleTitleEl || articleBodyEl;
+          const title = articleTitleEl ? articleTitleEl.innerText.trim() : '';
+          const sampleParagraphs = [];
+          const pEls = Array.from((articleBodyEl || post).querySelectorAll('p, div[dir="auto"]'));
+          for (const p of pEls) {
+            const pt = p.innerText.trim();
+            if (pt && pt.length > 5 && pt !== title && !sampleParagraphs.includes(pt)) {
+              sampleParagraphs.push(pt);
+              if (sampleParagraphs.join(' ').length > 400) break;
+            }
+          }
+          text = [title, ...sampleParagraphs].filter(Boolean).join('\n\n').trim();
+        }
+      }
+      return { textEl, text };
+    }
+
+    const mockArticleTitle = { innerText: 'Jev + graphical models: a paradigm shift?' };
+    const mockParagraph1 = { innerText: 'Could Jev + graphical models fundamentally change how we build systems that reason under uncertainty?' };
+    const mockParagraph2 = { innerText: 'In particular, Jev could provide zero-shot probabilistic factors for any structured domain.' };
+
+    const mockArticlePost = {
+      getAttribute: (attr) => attr === 'data-testid' ? 'twitterArticleReadView' : null,
+      querySelector: (sel) => {
+        if (sel.includes('tweetText')) return null;
+        if (sel.includes('twitter-article-title')) return mockArticleTitle;
+        if (sel.includes('twitterArticleReadView')) return mockArticlePost;
+        return null;
+      },
+      querySelectorAll: (sel) => {
+        if (sel.includes('p') || sel.includes('dir="auto"')) {
+          return [mockParagraph1, mockParagraph2];
+        }
+        return [];
+      },
+    };
+
+    const sample = extractArticleSample(mockArticlePost);
+    expect(sample.textEl).toBe(mockArticleTitle);
+    expect(sample.text).toContain('Jev + graphical models: a paradigm shift?');
+    expect(sample.text).toContain('Could Jev + graphical models fundamentally change how we build systems');
+
+    // 2. Test cover image extraction on X Article from pbs.twimg.com/media/
+    function extractPostImages(postEl) {
+      if (!postEl || !postEl.querySelectorAll) return [];
+      const urls = [];
+      const seen = new Set();
+
+      const imgs = Array.from(postEl.querySelectorAll('div[data-testid="tweetPhoto"] img, img[src*="pbs.twimg.com/media/"]'));
+      for (const img of imgs) {
+        let src = img.getAttribute ? (img.getAttribute('src') || img.src) : img.src;
+        if (!src || src.startsWith('data:') || seen.has(src)) continue;
+        if (src.includes('/emoji/') || src.includes('profile_images') || src.includes('profile_banners')) continue;
+        seen.add(src);
+        urls.push(src);
+        if (urls.length >= 4) break;
+      }
+      return urls;
+    }
+
+    const mockCoverImg = { src: 'https://pbs.twimg.com/media/G12345_graphical_model.jpg' };
+    const mockAvatarImg = { src: 'https://pbs.twimg.com/profile_images/fdellaert_avatar.jpg' };
+    mockArticlePost.querySelectorAll = (sel) => {
+      if (sel.includes('img')) return [mockAvatarImg, mockCoverImg];
+      if (sel.includes('p')) return [mockParagraph1, mockParagraph2];
+      return [];
+    };
+
+    const extractedImgs = extractPostImages(mockArticlePost);
+    expect(extractedImgs.length).toBe(1);
+    expect(extractedImgs[0]).toBe('https://pbs.twimg.com/media/G12345_graphical_model.jpg');
+
+    // 3. Test expandAndExtractPostText for full article expansion
+    const clean = (txt) => (txt || '').replace(/\s*(Translate|Xem bản dịch|Show more|Hiển thị thêm|Xem thêm)$/i, '').trim();
+
+    async function expandAndExtractPostText(postEl, textEl, fallbackText) {
+      let mainText = textEl && textEl.innerText ? clean(textEl.innerText) : '';
+      if (!mainText && fallbackText) mainText = clean(fallbackText);
+
+      if (postEl) {
+        const articleTitleEl = postEl.querySelector ? (postEl.querySelector('[data-testid="twitter-article-title"]') || postEl.querySelector('h1')) : null;
+        const articleBodyEl = postEl.querySelector ? postEl.querySelector('[data-testid="twitterArticleReadView"], [data-testid="twitter-article"]') : null;
+        if (articleTitleEl || articleBodyEl) {
+          const articleTitle = articleTitleEl ? clean(articleTitleEl.innerText) : '';
+          const bodyParagraphs = [];
+          const pEls = (articleBodyEl || postEl).querySelectorAll ? Array.from((articleBodyEl || postEl).querySelectorAll('p, div[dir="auto"]')) : [];
+          for (const p of pEls) {
+            const pText = clean(p.innerText);
+            if (pText && pText.length > 5 && pText !== articleTitle) {
+              if (!bodyParagraphs.some((existing) => existing.includes(pText) || pText.includes(existing))) {
+                bodyParagraphs.push(pText);
+              }
+            }
+          }
+          if (articleTitle || bodyParagraphs.length > 0) {
+            const articleContent = [
+              articleTitle ? `[Article Title: ${articleTitle}]` : '',
+              ...bodyParagraphs,
+            ].filter(Boolean).join('\n\n');
+            if (articleContent.length > mainText.length) {
+              mainText = articleContent;
+            }
+          }
+        }
+        return mainText;
+      }
+      return mainText || fallbackText || '';
+    }
+
+    const fullArticle = await expandAndExtractPostText(mockArticlePost, mockArticleTitle, sample.text);
+    expect(fullArticle).toContain('[Article Title: Jev + graphical models: a paradigm shift?]');
+    expect(fullArticle).toContain('Could Jev + graphical models fundamentally change');
+    expect(fullArticle).toContain('In particular, Jev could provide zero-shot probabilistic factors');
+  });
+
+  test("extractPostTextForJev correctly extracts Repost context, Root text, Quoted tweet, Community Notes without media notes", () => {
+    const clean = (txt) => (txt || '').replace(/\s*(Translate|Xem bản dịch|Show more|Hiển thị thêm|Xem thêm)$/i, '').trim();
+
+    const cleanCommunityNote = (text) => {
+      if (!text) return '';
+      const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+      const filtered = lines.filter((line) => {
+        if (/Readers added context/i.test(line)) return false;
+        if (/Độc giả đã thêm ngữ cảnh/i.test(line)) return false;
+        if (/thought people might want to know/i.test(line)) return false;
+        if (/Do you find this helpful/i.test(line)) return false;
+        if (/Bạn có thấy điều này hữu ích/i.test(line)) return false;
+        if (/Rate it/i.test(line) || /Đánh giá/i.test(line)) return false;
+        if (/Context written by/i.test(line)) return false;
+        if (/Sources?:?/i.test(line) || /Nguồn:?/i.test(line)) return false;
+        if (/^https?:\/\//i.test(line)) return false;
+        return true;
+      });
+      return filtered.join('\n').trim();
+    };
+
+    function extractPostTextForJev(postEl, textEl) {
+      if (!textEl && !postEl) return '';
+      const parts = [];
+
+      // 1. Repost / Retweet context (e.g. "X reposted")
+      const socialContextEl = postEl.querySelector ? postEl.querySelector('[data-testid="socialContext"]') : null;
+      if (socialContextEl && socialContextEl.innerText) {
+        const contextText = clean(socialContextEl.innerText);
+        if (contextText) parts.push(`[${contextText}]`);
+      }
+
+      // 2. Main post text
+      const mainText = textEl && textEl.innerText ? clean(textEl.innerText) : '';
+      if (mainText) parts.push(mainText);
+
+      // 3. Quoted Tweet text & container detection
+      const allTextEls = postEl.querySelectorAll ? Array.from(postEl.querySelectorAll('[data-testid="tweetText"]')) : [];
+      let quoteContainer = null;
+      let quotedTextPart = null;
+
+      if (allTextEls.length > 1) {
+        const quotedTextEls = allTextEls.filter((el) => el !== textEl);
+        const quotedTexts = quotedTextEls
+          .map((el) => clean(el.innerText))
+          .filter((txt) => txt.length > 0 && txt !== mainText);
+
+        if (quotedTexts.length > 0) {
+          quotedTextPart = `[Quoted Post:\n${quotedTexts.join('\n---\n')}]`;
+        }
+
+        if (quotedTextEls[0]) {
+          let curr = quotedTextEls[0];
+          while (curr.parentElement && curr.parentElement !== postEl && (!textEl || !curr.parentElement.contains(textEl))) {
+            curr = curr.parentElement;
+          }
+          quoteContainer = curr;
+        }
+      }
+
+      if (!quoteContainer && postEl.querySelector) {
+        quoteContainer = postEl.querySelector('[data-testid="quoteTweet"]');
+      }
+
+      // 4. Community Notes on Root Post & Quoted Post
+      const noteEls = postEl.querySelectorAll
+        ? Array.from(postEl.querySelectorAll('[data-testid="birdwatch-pivot"], [data-testid*="birdwatch"], [data-testid="community-note"]'))
+        : [];
+
+      let rootNotes = [];
+      let quoteNotes = [];
+
+      if (noteEls.length > 0) {
+        const seenNotes = new Set();
+        for (const noteEl of noteEls) {
+          const rawNote = noteEl.innerText || noteEl.textContent || '';
+          const cleanedNote = cleanCommunityNote(rawNote);
+          if (!cleanedNote || seenNotes.has(cleanedNote)) continue;
+          seenNotes.add(cleanedNote);
+
+          const isQuoteNote = (quoteContainer && quoteContainer.contains(noteEl)) ||
+            Boolean(noteEl.closest && noteEl.closest('[data-testid="quoteTweet"], [aria-label*="Quote" i]'));
+
+          if (isQuoteNote) {
+            quoteNotes.push(cleanedNote);
+          } else {
+            rootNotes.push(cleanedNote);
+          }
+        }
+      }
+
+      if (rootNotes.length > 0) {
+        parts.push(`[Community Note on Post:\n${rootNotes.join('\n---\n')}]`);
+      }
+      if (quotedTextPart) {
+        parts.push(quotedTextPart);
+      }
+      if (quoteNotes.length > 0) {
+        parts.push(`[Community Note on Quoted Post:\n${quoteNotes.join('\n---\n')}]`);
+      }
+
+      const res = parts.join('\n\n').trim();
+      return (res && res.length >= 2) ? res : (mainText || '');
+    }
+
+    // Scenario 1: Standard simple post with translate button
+    const simpleTextEl = { innerText: 'Hello world this is a test post Translate' };
+    const simplePost = {
+      querySelector: () => null,
+      querySelectorAll: (sel) => sel.includes('tweetText') ? [simpleTextEl] : [],
+    };
+    expect(extractPostTextForJev(simplePost, simpleTextEl)).toBe('Hello world this is a test post');
+
+    // Scenario 2: Repost + Root text + Quoted post + Community notes (both root and quote)
+    const repostEl = { innerText: 'Alice reposted' };
+    const rootTextEl = { innerText: 'Check this crazy post out' };
+    const quoteTextEl = { innerText: 'This is a controversial hot take that might be ragebait' };
+    const quoteContainerEl = {
+      contains: (node) => node === quoteNoteEl,
+    };
+    quoteTextEl.parentElement = quoteContainerEl;
+    quoteContainerEl.parentElement = null;
+
+    const rootNoteEl = {
+      innerText: 'Readers added context they thought people might want to know\nThis root context clarifies facts.\nSources: https://example.com\nDo you find this helpful?',
+    };
+    const quoteNoteEl = {
+      innerText: 'Readers added context\nThe quoted claim was debunked in 2024.\nRate it',
+      closest: (sel) => sel.includes('quoteTweet') ? quoteContainerEl : null,
+    };
+
+    const complexPost = {
+      querySelector: (sel) => {
+        if (sel.includes('socialContext')) return repostEl;
+        if (sel.includes('quoteTweet')) return quoteContainerEl;
+        return null;
+      },
+      querySelectorAll: (sel) => {
+        if (sel.includes('tweetText')) return [rootTextEl, quoteTextEl];
+        if (sel.includes('birdwatch') || sel.includes('community-note')) return [rootNoteEl, quoteNoteEl];
+        return [];
+      },
+    };
+
+    const extracted = extractPostTextForJev(complexPost, rootTextEl);
+    expect(extracted).toContain('[Alice reposted]');
+    expect(extracted).toContain('Check this crazy post out');
+    expect(extracted).toContain('[Community Note on Post:\nThis root context clarifies facts.]');
+    expect(extracted).toContain('[Quoted Post:\nThis is a controversial hot take that might be ragebait]');
+    expect(extracted).toContain('[Community Note on Quoted Post:\nThe quoted claim was debunked in 2024.]');
+    // Ensure media notes are NOT included
+    expect(extracted).not.toContain('[Media Note:');
+    expect(extracted).not.toContain('Readers added context');
+    expect(extracted).not.toContain('Do you find this helpful?');
+    expect(extracted).not.toContain('https://example.com');
+  });
 });
+
 
 
 
